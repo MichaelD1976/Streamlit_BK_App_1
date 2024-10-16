@@ -7,7 +7,7 @@ import math
 import numpy as np
 
 
-st.header("Daily Markets", divider='rainbow')
+st.header("Daily Markets", divider='blue')
 
 league_options = {
                 'England Premier': 'eng1',
@@ -27,11 +27,18 @@ market_options = [
 
 OVER_BIAS = 1.02
 
+# apply filters
+def apply_filters(df, selected_league, date):
+    league_code = league_options[selected_league]
+    df1 = df[df['league_name'] == league_code]
+    df2 = df1[df1['date'] == date]
+    return df2
+
 def main():
     @st.cache_data
     def load_data():
         time.sleep(1)
-        df = pd.read_csv(r'C:/Users/MikeD/Streamlit_BK_app/data/processed/next_fixts.csv')
+        df = pd.read_csv('data/processed/next_fixts.csv')
         # Convert the 'timestamp' column to datetime
         # df['date'] = pd.to_datetime(df['date'], format='%Y:%m:%d %H:%M:%S')
 
@@ -57,13 +64,6 @@ def main():
     today = datetime.now().date()
     date_chosen = st.sidebar.date_input('Select a date', today)
  
-
-    # apply filters
-    def apply_filters(df, selected_league, date):
-        league_code = league_options[selected_league]
-        df1 = df[df['league_name'] == league_code]
-        df2 = df1[df1['date'] == date]
-        return df2
     
     filtered_df = apply_filters(df, selected_league, date_chosen)
 
@@ -75,7 +75,7 @@ def main():
         st.write(filtered_df)
         #st.subheader(f'{selected_metric} :')
         if selected_metric == 'Daily Goals':
-            total_day_goals = round(filtered_df['HG_Exp'].sum() + filtered_df['HG_Exp'].sum(), 2)
+            total_day_goals = round(filtered_df['HG_Exp'].sum() + filtered_df['AG_Exp'].sum(), 2)
             if total_day_goals == 0:
                 st.write('No lines available')
             else:
@@ -84,7 +84,7 @@ def main():
 
                 # Calculate lines
                 main_line = np.floor(total_day_goals) + 0.5
-                if main_line > 20:
+                if 20 < main_line <= 50:
                     main_line_plus_1 = np.floor(total_day_goals) + 2.5
                     main_line_minus_1 = np.floor(total_day_goals) - 1.5
 
