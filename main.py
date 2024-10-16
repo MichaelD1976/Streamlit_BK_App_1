@@ -51,7 +51,7 @@ def main():
             st.write("")
             st.write("")
             st.image("images/BK_logo_large.png", width=325)
-        c1,c2,c3 = st.columns([2,13,2])
+        c1,c2,c3 = st.columns([2,10,2])
         with c2:
             st.write("")
             st.write("")
