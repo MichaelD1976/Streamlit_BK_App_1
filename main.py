@@ -1,6 +1,12 @@
 import streamlit as st
 import pandas as pd
 import time
+import warnings
+warnings.filterwarnings('ignore')
+import logging
+
+# Set Streamlit logger level to ERROR to suppress warnings
+logging.getLogger('streamlit').setLevel(logging.ERROR)
 
 
 st.set_page_config(layout="wide", initial_sidebar_state="expanded")
@@ -35,13 +41,35 @@ def main():
 
     if selected_page == 'Home':
 
-        st.header("Kingmakers Trading App", divider='blue')
+        col1,col2,col3 = st.columns([2,4,2])
+        with col2:
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.image("images/BK_logo_large.png", width=325)
+        c1,c2,c3 = st.columns([2,13,2])
+        with c2:
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.markdown("<h1 style='font-size: 70px;'>Kingmakers Trading App</h1>", unsafe_allow_html=True)
+            st.write("")
+            st.write("")
+
+
+        st.header("", divider='blue')
 
         st.write("")
         st.write("")
 
-        st.subheader('Market:')
-        st.write('Select required market from dropdown menu')
+        # st.write('Select required market from dropdown menu')
+
 
 
 

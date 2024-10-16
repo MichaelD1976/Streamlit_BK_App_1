@@ -7,7 +7,7 @@ import math
 import numpy as np
 
 
-st.header("Daily Markets", divider='blue')
+st.header("Daily Markets")
 
 league_options = {
                 'England Premier': 'eng1',
