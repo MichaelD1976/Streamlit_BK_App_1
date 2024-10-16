@@ -1,0 +1,52 @@
+league_name,season,date,home_name,away_name,odds_ft_1,odds_ft_x,odds_ft_2,HG_Exp,AG_Exp
+eng1,2024/2025,2024-09-30,AFC Bournemouth,Southampton,1.57,4.33,5.0,2.055,1.105
+eng1,2024/2025,2024-10-05,Arsenal,Southampton,1.17,7.0,15.0,2.7800000000000002,0.6799999999999999
+eng1,2024/2025,2024-10-06,Aston Villa,Manchester United,2.1,3.8,3.1,1.68,1.3800000000000001
+eng1,2024/2025,2024-10-05,Brentford,Wolverhampton Wanderers,2.1,3.6,3.3,1.57,1.22
+eng1,2024/2025,2024-10-06,Brighton & Hove Albion,Tottenham Hotspur,2.55,3.75,2.45,1.665,1.7149999999999999
+eng1,2024/2025,2024-10-06,Chelsea,Nottingham Forest,1.5,4.33,6.25,2.17,0.9700000000000001
+eng1,2024/2025,2024-10-05,Crystal Palace,Liverpool,4.33,4.0,1.73,1.23,1.9300000000000002
+eng1,2024/2025,2024-10-05,Everton,Newcastle United,4.0,3.7,1.85,1.23,1.83
+eng1,2024/2025,2024-10-05,Leicester City,AFC Bournemouth,2.75,3.6,2.35,1.4549999999999998,1.575
+eng1,2024/2025,2024-10-05,Manchester City,Fulham,1.2,6.5,13.0,2.63,0.6299999999999999
+eng1,2024/2025,2024-10-05,West Ham United,Ipswich Town,1.62,4.2,4.75,1.92,1.02
+spain1,2024/2025,2024-09-30,Villarreal,UD Las Palmas,1.53,4.1,6.0,2.125,0.9750000000000001
+spain1,2024/2025,2024-10-05,Getafe CF,CA Osasuna,0.0,0.0,0.0,,
+spain1,2024/2025,2024-10-05,Real Madrid,Villarreal,0.0,0.0,0.0,,
+spain1,2024/2025,2024-10-06,Deportivo Alavés,FC Barcelona,0.0,0.0,0.0,,
+spain1,2024/2025,2024-10-04,Leganés,Valencia CF,0.0,0.0,0.0,,
+spain1,2024/2025,2024-10-06,Girona FC,Athletic Club Bilbao,0.0,0.0,0.0,,
+spain1,2024/2025,2024-10-06,Real Sociedad,Atlético Madrid,0.0,0.0,0.0,,
+spain1,2024/2025,2024-10-06,Sevilla FC,Real Betis,0.0,0.0,0.0,,
+spain1,2024/2025,2024-10-05,UD Las Palmas,Celta de Vigo,0.0,0.0,0.0,,
+spain1,2024/2025,2024-10-05,Real Valladolid,Rayo Vallecano,0.0,0.0,0.0,,
+spain1,2024/2025,2024-10-05,RCD Espanyol,RCD Mallorca,0.0,0.0,0.0,,
+italy1,2024/2025,2024-09-30,Parma,Cagliari,2.1,3.45,3.25,1.595,1.2449999999999999
+italy1,2024/2025,2024-10-05,Atalanta,Genoa,1.5,4.33,6.0,1.9949999999999999,0.845
+italy1,2024/2025,2024-10-06,Bologna,Parma,1.75,3.75,4.5,1.755,1.005
+italy1,2024/2025,2024-10-06,Fiorentina,AC Milan,2.7,3.5,2.45,1.3699999999999999,1.47
+italy1,2024/2025,2024-10-04,Hellas Verona,Venezia,2.05,3.4,3.6,1.5050000000000001,1.055
+italy1,2024/2025,2024-10-05,Inter Milan,Torino,1.33,5.0,8.5,2.1950000000000003,0.595
+italy1,2024/2025,2024-10-06,Juventus,Cagliari,1.4,4.5,7.5,2.01,0.6100000000000001
+italy1,2024/2025,2024-10-06,Lazio,Empoli,1.5,4.1,6.5,1.9,0.7000000000000001
+italy1,2024/2025,2024-10-06,Monza,Roma,3.75,3.3,2.0,1.015,1.515
+italy1,2024/2025,2024-10-04,Napoli,Como,1.45,4.5,6.5,2.0700000000000003,0.8200000000000001
+italy1,2024/2025,2024-10-05,Udinese,Lecce,2.0,3.3,3.8,1.435,0.935
+fra1,2024/2025,2024-10-06,Olympique Lyonnais,Nantes,1.8,3.6,4.33,1.73,1.0299999999999998
+fra1,2024/2025,2024-10-06,Nice,PSG,4.0,3.8,1.8,1.17,1.77
+fra1,2024/2025,2024-10-05,Lille,Toulouse,1.73,4.0,4.2,1.705,1.005
+fra1,2024/2025,2024-10-05,Saint-Étienne,Auxerre,2.5,3.4,2.7,1.43,1.3299999999999998
+fra1,2024/2025,2024-10-06,Brest,Le Havre,1.73,3.8,4.5,1.675,0.925
+fra1,2024/2025,2024-10-04,Olympique Marseille,Angers SCO,1.25,6.0,10.0,2.495,0.645
+fra1,2024/2025,2024-10-05,Rennes,Monaco,2.6,3.6,2.5,1.5250000000000001,1.575
+fra1,2024/2025,2024-10-06,Strasbourg,Lens,3.4,3.4,2.1,1.195,1.595
+fra1,2024/2025,2024-10-06,Reims,Montpellier,1.91,3.6,3.8,1.745,1.1949999999999998
+ger1,2024/2025,2024-10-05,Bayer Leverkusen,Holstein Kiel,1.09,10.0,21.0,3.175,0.875
+ger1,2024/2025,2024-10-06,Stuttgart,Hoffenheim,1.33,5.75,7.0,2.59,1.19
+ger1,2024/2025,2024-10-06,Eintracht Frankfurt,Bayern München,5.0,4.75,1.53,1.315,2.315
+ger1,2024/2025,2024-10-06,Heidenheim,RB Leipzig,4.2,4.33,1.67,1.225,1.975
+ger1,2024/2025,2024-10-05,Werder Bremen,Freiburg,2.55,3.6,2.55,1.495,1.495
+ger1,2024/2025,2024-10-04,Augsburg,Borussia M'gladbach,2.4,3.6,2.7,1.655,1.5450000000000002
+ger1,2024/2025,2024-10-05,Union Berlin,Borussia Dortmund,3.0,3.5,2.25,1.295,1.495
+ger1,2024/2025,2024-10-05,Bochum,Wolfsburg,3.0,3.6,2.2,1.4,1.63
+ger1,2024/2025,2024-10-05,St. Pauli,Mainz 05,2.75,3.3,2.5,1.305,1.405
