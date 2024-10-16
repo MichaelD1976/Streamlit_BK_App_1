@@ -58,7 +58,7 @@ def main():
             st.write("")
             st.write("")
             st.write("")
-            st.markdown("<h1 style='font-size: 70px;'>Kingmakers Trading App</h1>", unsafe_allow_html=True)
+            st.markdown("<h1 style='font-size: 60px;'>Kingmakers Trading App</h1>", unsafe_allow_html=True)
             st.write("")
             st.write("")
 
