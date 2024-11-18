@@ -23,14 +23,14 @@ league_options = {
                 }
 
 page_options = [
-    'Home', 
-        'Daily Markets',
-        'Stat Markets',
-            'Goalscorer Matchbets',
-            'League Matchbets',
+                 'Home', 
+                'Shots on Target',
+                'Fouls',
+                'Goalscorer Matchbets',
+                'League Matchbets',
                 'Odds Calculators',
                 'Team News',
-                    ]
+                ]
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
 
     if selected_page == 'Home':
 
-        col1,col2,col3 = st.columns([2,4,2])
+        col1,col2,col3 = st.columns([1,8,1])
         with col2:
             st.write("")
             st.write("")
@@ -50,15 +50,13 @@ def main():
             st.write("")
             st.write("")
             st.write("")
-            st.image("images/BK_logo_large.png", width=325)
-        c1,c2,c3 = st.columns([2,10,2])
+            st.image("images/KM_Logo-bgr.png", width=700)
+        c1,c2,c3 = st.columns([1,11,1])
         with c2:
+            # st.write("")
             st.write("")
             st.write("")
-            st.write("")
-            st.write("")
-            st.write("")
-            st.markdown("<h1 style='font-size: 60px;'>Kingmakers Trading App</h1>", unsafe_allow_html=True)
+            # st.markdown("<h1 style='font-size: 80px;'>KingMakers Trading App</h1>", unsafe_allow_html=True)
             st.write("")
             st.write("")
 
@@ -73,13 +71,13 @@ def main():
 
 
 
-    elif selected_page == 'Daily Markets':
-        import page_2_daily_markets
-        page_2_daily_markets.main()
+    elif selected_page == 'Shots on Target':
+        import page_1_sot
+        page_1_sot.main()
 
-    elif selected_page == 'Stat Markets':
-        import page_3_stat_markets
-        page_3_stat_markets.main()
+    elif selected_page == 'Fouls':
+        import page_2_fouls
+        page_2_fouls.main()
 
     elif selected_page == 'Goalscorer Matchbets':
         import page_4_goalscorer_matchbets
@@ -96,6 +94,7 @@ def main():
     elif selected_page == 'Team News':
         import page_7_team_news
         page_7_team_news.main()
+
 
 
 if __name__ == '__main__':

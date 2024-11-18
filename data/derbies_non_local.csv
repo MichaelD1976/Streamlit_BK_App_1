@@ -1,0 +1,74 @@
+League,Home Team,Away Team,Mult
+England Premier League,Man Utd,Liverpool,1.05
+England Premier League,Liverpool,Man Utd,1.05
+England Premier League,Liverpool,Chelsea,1.03
+England Premier League,Chelsea,Liverpool,1.03
+England Premier League,Liverpool,Man City,1.03
+England Premier League,Man City,Liverpool,1.03
+England Premier League,Man Utd,Arsenal,1.03
+England Premier League,Arsenal,Man Utd,1.03
+England Premier League,Brighton,Crystal Palace,1.03
+England Premier League,Crystal Palace,Brighton,1.03
+England Premier League,Leeds,Man Utd,1.04
+England Premier League,Man Utd,Leeds,1.04
+England Premier League,Leeds,Chelsea,1.04
+England Premier League,Chelsea,Leeds,1.03
+England Premier League,Newcastle,Sunderland,1.04
+England Premier League,Sunderland,Newcastle,1.04
+England Championship,Leeds,Millwall,1.03
+England Championship,Millwall,Leeds,1.03
+England Championship,AFC Wimbledon,Milton Keynes Dons,1.03
+England Championship,Milton Keynes Dons,AFC Wimbledon,1.03
+Spain La Liga,Real Madrid,Barcelona,1.05
+Spain La Liga,Barcelona,Real Madrid,1.05
+Spain La Liga,Barcelona,Atl Madrid,1.03
+Spain La Liga,Atl Madrid,Barcelona,1.03
+Spain La Liga,Real Madrid,Valencia,1.03
+Spain La Liga,Valencia,Real Madrid,1.03
+Spain La Liga,Atl Madrid,Sevilla,1.02
+Spain La Liga,Sevilla,Atl Madrid,1.02
+Italy Serie A,Juventus,Napoli,1.04
+Italy Serie A,Napoli,Juventus,1.04
+Italy Serie A,AC Milan,Napoli,1.04
+Italy Serie A,Napoli,AC Milan,1.04
+Italy Serie A,Juventus,Inter,1.05
+Italy Serie A,Inter,Juventus,1.05
+Italy Serie A,Juventus,Genoa,1.03
+Italy Serie A,Genoa,Juventus,1.03
+Italy Serie A,Fiorentina,Juventus,1.02
+Italy Serie A,Juventus,Fiorentina,1.02
+Italy Serie A,AS Roma,Napoli,1.03
+Italy Serie A,Napoli,AS Roma,1.03
+Germany Bundesliga,Bayern Munich,Dortmund,1.05
+Germany Bundesliga,Dortmund,Bayern Munich,1.05
+Germany Bundesliga,Hamburg,Werder Bremen,1.03
+Germany Bundesliga,Werder Bremen,Hamburg,1.03
+Germany Bundesliga,Bayern Munich,RB Leipzig,1.02
+Germany Bundesliga,RB Leipzig,Bayern Munich,1.02
+Germany Bundesliga,Bayern Munich,Ein Frankfurt,1.02
+Germany Bundesliga,Ein Frankfurt,Bayern Munich,1.02
+Germany Bundesliga,Bayern Munich,Stuttgart,1.03
+Germany Bundesliga,Stuttgart,Bayern Munich,1.03
+France Ligue 1,Lyon,Marseille,1.03
+France Ligue 2,Marseille,Lyon,1.03
+France Ligue 3,Paris SG,Marseille,1.05
+France Ligue 4,Marseille,Paris SG,1.05
+France Ligue 5,Lyon,St Etienne,1.04
+France Ligue 6,St Etienne,Lyon,1.04
+France Ligue 7,Bordeaux,Paris SG,1.03
+France Ligue 8,Paris SG,Bordeaux,1.03
+France Ligue 9,Paris SG,Lille,1.02
+France Ligue 10,Lille,Paris SG,1.02
+France Ligue 11,Nice,Marseille,1.03
+France Ligue 12,Marseille,Nice,1.03
+France Ligue 13,Monaco,Paris SG,1.02
+France Ligue 14,Paris SG,Monaco,1.02
+Netherlands Eredivisie,Ajax,Feyenoord,1.05
+Netherlands Eredivisie,Feyenoord,Ajax,1.05
+Netherlands Eredivisie,Ajax,PSV Eindhoven,1.04
+Netherlands Eredivisie,PSV Eindhoven,Ajax,1.04
+Belgium Jupiler,Anderlecht,Club Brugge,1.05
+Belgium Jupiler,Porto,Benfica,1.05
+Belgium Jupiler,Benfica,Porto,1.05
+Belgium Jupiler,Porto,Sporting,1.03
+Belgium Jupiler,Sporting,Porto,1.03

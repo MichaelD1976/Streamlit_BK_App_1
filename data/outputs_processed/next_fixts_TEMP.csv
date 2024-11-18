@@ -1,0 +1,50 @@
+league_name,season,game_week,home_name,away_name,odds_ft_1,odds_ft_x,odds_ft_2,odds_ft_over25,odds_ft_under25,odds_corners_over_105,odds_corners_under_105,date
+eng1,2024/2025,8,AFC Bournemouth,Arsenal,6.01,1.89,2.42,1.62,2.25,2.04,1.68,2024-10-19
+eng1,2024/2025,8,Fulham,Aston Villa,2.44,3.52,2.92,1.8,2.0,2.08,1.65,2024-10-19
+eng1,2024/2025,8,Ipswich Town,Everton,2.42,3.43,3.01,1.83,1.95,1.82,1.86,2024-10-19
+eng1,2024/2025,8,Liverpool,Chelsea,1.35,4.04,7.99,1.36,3.1,0.0,0.0,2024-10-20
+eng1,2024/2025,8,Manchester United,Brentford,3.07,1.8,4.39,1.57,2.35,1.73,1.96,2024-10-19
+eng1,2024/2025,8,Newcastle United,Brighton & Hove Albion,1.95,3.75,3.5,1.53,2.5,1.81,1.88,2024-10-19
+eng1,2024/2025,8,Nottingham Forest,Crystal Palace,2.4,3.28,3.17,2.15,1.67,0.0,0.0,2024-10-21
+eng1,2024/2025,8,Southampton,Leicester City,2.43,3.53,2.92,1.75,2.05,1.92,1.77,2024-10-19
+eng1,2024/2025,8,Tottenham Hotspur,West Ham United,1.54,4.77,5.41,1.45,2.7,1.71,2.0,2024-10-19
+eng1,2024/2025,8,Wolverhampton Wanderers,Manchester City,2.67,3.37,2.29,1.44,2.75,0.0,0.0,2024-10-20
+spain1,2024/2025,10,Atletico Madrid,Leganes,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2024-10-20
+spain1,2024/2025,10,FC Barcelona,Sevilla FC,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2024-10-20
+spain1,2024/2025,10,Celta de Vigo,Real Madrid,4.5,4.5,1.62,1.62,2.3,2.3,1.54,2024-10-19
+spain1,2024/2025,10,Girona FC,Real Sociedad,2.4,3.4,2.88,2.2,1.67,2.88,1.3,2024-10-19
+spain1,2024/2025,10,RCD Mallorca,Rayo Vallecano,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2024-10-20
+spain1,2024/2025,10,Deportivo Alaves,Real Valladolid,1.7,4.0,4.5,2.2,1.67,2.55,1.44,2024-10-18
+spain1,2024/2025,10,CA Osasuna,Real Betis,2.63,3.4,2.55,2.1,1.73,2.45,1.48,2024-10-19
+spain1,2024/2025,10,Villarreal,Getafe CF,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2024-10-20
+spain1,2024/2025,10,Valencia CF,UD Las Palmas,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2024-10-21
+spain1,2024/2025,10,Athletic Club Bilbao,RCD Espanyol,1.5,4.0,7.0,1.91,1.91,2.3,1.54,2024-10-19
+italy1,2024/2025,8,Cagliari,Torino,2.75,3.2,2.6,2.13,1.74,0.0,0.0,2024-10-20
+italy1,2024/2025,8,Como,Parma,2.0,3.5,3.5,1.72,2.12,0.0,0.0,2024-10-19
+italy1,2024/2025,8,Empoli,Napoli,6.5,3.9,1.55,2.03,1.83,2.38,1.5,2024-10-20
+italy1,2024/2025,8,Genoa,Bologna,3.0,3.1,2.45,2.28,1.63,2.48,1.47,2024-10-19
+italy1,2024/2025,8,Hellas Verona,Monza,2.28,3.4,3.15,2.14,1.71,0.0,0.0,2024-10-21
+italy1,2024/2025,8,Juventus,Lazio,1.75,3.7,4.75,2.15,1.7,2.55,1.44,2024-10-19
+italy1,2024/2025,8,Lecce,Fiorentina,3.0,3.25,2.38,1.85,1.85,0.0,0.0,2024-10-20
+italy1,2024/2025,8,AC Milan,Udinese,1.36,4.6,8.0,1.61,2.3,2.14,1.62,2024-10-19
+italy1,2024/2025,8,Roma,Inter Milan,4.1,3.9,1.81,1.76,2.06,0.0,0.0,2024-10-20
+italy1,2024/2025,8,Venezia,Atalanta,6.0,4.0,1.55,1.76,2.11,0.0,0.0,2024-10-20
+fra1,2024/2025,8,Auxerre,Reims,2.5,3.3,2.7,1.76,2.07,0.0,0.0,2024-10-20
+fra1,2024/2025,8,Toulouse,Angers SCO,1.57,3.8,6.0,2.06,1.8,0.0,0.0,2024-10-20
+fra1,2024/2025,8,Le Havre,Olympique Lyonnais,3.6,3.4,2.0,1.8,2.06,0.0,0.0,2024-10-20
+fra1,2024/2025,8,Nantes,Nice,2.88,3.0,2.55,2.23,1.65,0.0,0.0,2024-10-20
+fra1,2024/2025,8,Montpellier,Olympique Marseille,4.33,3.8,1.73,1.53,2.45,0.0,0.0,2024-10-20
+fra1,2024/2025,8,Monaco,Lille,1.93,3.75,3.75,1.6,2.33,2.63,1.41,2024-10-18
+fra1,2024/2025,8,Saint-Etienne,Lens,5.8,3.9,1.57,1.79,2.02,2.55,1.44,2024-10-19
+fra1,2024/2025,8,Brest,Rennes,2.7,3.25,2.55,2.06,1.8,3.05,1.3,2024-10-19
+fra1,2024/2025,8,PSG,Strasbourg,1.3,5.0,8.5,1.36,3.1,2.15,1.61,2024-10-19
+ger1,2024/2025,7,Bayer Leverkusen,Eintracht Frankfurt,1.4,5.4,6.5,1.45,2.76,1.98,1.72,2024-10-19
+ger1,2024/2025,7,Bayern Munchen,Stuttgart,1.35,5.75,7.5,1.3,3.4,2.43,1.48,2024-10-19
+ger1,2024/2025,7,Borussia Dortmund,St. Pauli,1.28,6.0,9.5,1.45,2.7,2.23,1.57,2024-10-18
+ger1,2024/2025,7,Hoffenheim,Bochum,1.7,4.0,4.5,1.58,2.23,2.15,1.61,2024-10-19
+ger1,2024/2025,7,Freiburg,Augsburg,1.77,4.0,4.1,1.65,2.25,2.4,1.49,2024-10-19
+ger1,2024/2025,7,Wolfsburg,Werder Bremen,2.05,3.4,3.5,1.79,2.07,0.0,0.0,2024-10-20
+ger1,2024/2025,7,Mainz 05,RB Leipzig,4.2,3.75,1.8,1.6,2.35,2.55,1.44,2024-10-19
+ger1,2024/2025,7,Borussia M'gladbach,Heidenheim,1.75,4.2,4.1,1.55,2.4,0.0,0.0,2024-10-19
+ger1,2024/2025,7,Holstein Kiel,Union Berlin,4.0,3.4,1.91,1.81,2.0,0.0,0.0,2024-10-20
+sa1,2024/2025,0,Orlando Pirates,SuperSport United,1.57,3.4,5.86,2.5,1.5,0.0,0.0,2024-10-22
