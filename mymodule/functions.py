@@ -95,8 +95,12 @@ team_names_api_to_t1x2_dict = {
 @st.cache_data
 def get_fixtures(league_id, from_date, to_date, API_SEASON):
 
-    load_dotenv()
-    API_KEY = os.getenv('API_KEY_FOOTBALL-API')
+    if not st.secrets:
+        load_dotenv()
+        API_KEY = os.getenv("API_KEY_FOOTBALL_API")
+    else:
+        # Use Streamlit secrets in production
+        API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
 
 
     url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"

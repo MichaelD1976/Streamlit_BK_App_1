@@ -15,7 +15,6 @@ import os
 from dotenv import load_dotenv
 
 
-
 CURRENT_SEASON = '2024-25'
 LAST_SEASON = '2023-24'
 
