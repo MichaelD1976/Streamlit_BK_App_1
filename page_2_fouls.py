@@ -1016,7 +1016,7 @@ def main():
                 fixt_id_list = list(df_fixts['Fixture ID'].unique())
 
                 load_dotenv()
-                API_KEY = os.getenv('API_KEY_FOOTBALL-API')
+                API_KEY = os.getenv('API_KEY_FOOTBALL_API')
 
                 @st.cache_data
                 def get_odds(fixture_id, market_id, bookmakers):

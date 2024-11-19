@@ -930,7 +930,7 @@ def main():
             BOOKMAKERS = ['4']                  # Pinnacle = 4
             API_SEASON = CURRENT_SEASON[:4]
 
-
+            
             df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
 
             if df_fixtures.empty:
@@ -939,9 +939,10 @@ def main():
                 # Proceed with the next steps if data is available
                 df_fixts = df_fixtures[['Fixture ID', 'Date', 'Home Team', 'Away Team']]
                 fixt_id_list = list(df_fixts['Fixture ID'].unique())
+                
 
                 load_dotenv()
-                API_KEY = os.getenv('API_KEY_FOOTBALL-API')
+                API_KEY = os.getenv('API_KEY_FOOTBALL_API')
 
                 @st.cache_data
                 def get_odds(fixture_id, market_id, bookmakers):
@@ -1015,8 +1016,6 @@ def main():
                 # Use groupby and fillna to collapse rows and remove None values
                 df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
                     all_odds_df.groupby('Fixture ID').last()).reset_index()
-
-                # st.write(df_collapsed)
 
 
                 # Merge odds df_fixts with df_collapsed
@@ -1287,7 +1286,7 @@ def main():
                 df_final_wm = df_final.copy()
 
                 # Display the updated DataFrame
-                st.write('With marginalised odds appended:', df_final_wm)
+                st.write(df_final_wm)
 
 
 

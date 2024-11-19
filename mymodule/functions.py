@@ -98,6 +98,7 @@ def get_fixtures(league_id, from_date, to_date, API_SEASON):
     if not st.secrets:
         load_dotenv()
         API_KEY = os.getenv("API_KEY_FOOTBALL_API")
+
     else:
         # Use Streamlit secrets in production
         API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
@@ -161,6 +162,7 @@ def get_fixtures(league_id, from_date, to_date, API_SEASON):
 
     # Create a DataFrame from the extracted data
     df = pd.DataFrame(fixture_list) if fixture_list else pd.DataFrame()
+ 
 
     # Now apply team name team name conversion 
     if not df.empty:
