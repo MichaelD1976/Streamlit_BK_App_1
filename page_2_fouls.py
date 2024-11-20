@@ -271,8 +271,7 @@ def main():
 
 
     # Capture user selections
-    selected_league = st.sidebar.selectbox('Select League', label_visibility = 'visible', options=list(league_options.values()))
-    # selected_metric = st.sidebar.selectbox('Select Metric', options=list(metric_options.keys()))
+    selected_league = st.sidebar.selectbox('Select League', options=list(league_options.values()), label_visibility = 'visible')
     selected_metric = 'Fouls'
 
  
@@ -1001,7 +1000,7 @@ def main():
 
                 # warning if not all match  retrieved from API call matches the final df
                 if len(df) != len(fixt_id_list):
-                    st.warning('Awaiting odds for 1 or more matches!')
+                    st.warning('Odds for 1 or more matches not currently available!')
 
 
                 #  ----- Calculate Daily Totals --------

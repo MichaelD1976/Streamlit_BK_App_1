@@ -63,14 +63,14 @@ def main():
         container_1 = st.container(border=True)
         with container_1:
             st.subheader('Line to Expectation Calculator')
-            line = st.number_input('Input Line (half ball)', value=2.5, step=1.0)
+            line = st.number_input('Input Line (half ball)', value=2.5, step=1.0, label_visibility='visible')
             if line % 1 != 0.5:
                 st.error('Input a half ball line')
             else:
                 pass
 
-            odds1 = st.number_input('Input Over Odds', value = 1.85)
-            odds2 = st.number_input('Input Under Odds', value = 1.85)
+            odds1 = st.number_input('Input Over Odds', value = 1.85, label_visibility='visible')
+            odds2 = st.number_input('Input Under Odds', value = 1.85, label_visibility='visible')
 
             if odds1 == 0 or odds2 == 0:
                 # Handle the case where odds2 is zero
@@ -105,7 +105,7 @@ def main():
         with container_2:
             st.subheader('Expectation to Line Calculator')
             st.write("")
-            exp = st.number_input('Input Expectation', step=0.05, value=expected_value)
+            exp = st.number_input('Input Expectation', step=0.05, value=expected_value, label_visibility='visible')
 
             main_line = np.floor(exp) + 0.5
 

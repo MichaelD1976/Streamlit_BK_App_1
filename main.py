@@ -45,7 +45,7 @@ page_options = [
 def main():
 
     st.sidebar.title('Select Page')
-    selected_page = st.sidebar.selectbox('', page_options, label_visibility = 'visible')
+    selected_page = st.sidebar.selectbox('Choose a page', page_options, label_visibility = 'hidden')
     st.sidebar.write("---")
 
     if selected_page == 'Home':

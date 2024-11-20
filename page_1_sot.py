@@ -321,8 +321,7 @@ def main():
 
 
     # Capture user selections
-    selected_league = st.sidebar.selectbox('Select League', label_visibility = 'visible', options=list(league_options.values()))
-    # selected_metric = st.sidebar.selectbox('Select Metric', options=list(metric_options.keys()))
+    selected_league = st.sidebar.selectbox('Select League', options=list(league_options.values()), label_visibility = 'visible')
     selected_metric = 'Shots on Target'
 
  
