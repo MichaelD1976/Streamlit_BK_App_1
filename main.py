@@ -20,31 +20,32 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-league_options = {
-                'England Premier': 'eng1',
-                'Germany Bundesliga': 'ger1',
-                'Spain La Liga': 'spain1',
-                'France Ligue 1': 'fra1',
-                'Italy Serie A': 'italy1',
-                'Sweden Allsvenskan': 'swe1',
-                'Norway Eliteserien': 'nor1'
-                }
+# league_options = {
+#                 'England Premier': 'eng1',
+#                 'Germany Bundesliga': 'ger1',
+#                 'Spain La Liga': 'spain1',
+#                 'France Ligue 1': 'fra1',
+#                 'Italy Serie A': 'italy1',
+#                 'Sweden Allsvenskan': 'swe1',
+#                 'Norway Eliteserien': 'nor1'
+#                 }
 
 page_options = [
                  'Home', 
-                'Shots on Target',
-                'Fouls',
-                'Goalscorer Matchbets',
-                'League Matchbets',
-                'Odds Calculators',
-                'Team News',
+                 'Shots on Target',
+                 'Fouls',
+            #    'Daily Totals',
+            #    'Goalscorer Matchbets',
+            #    'League Matchbets',
+                 'Odds Calculators',
+                 'Team News',
                 ]
 
 
 def main():
 
     st.sidebar.title('Select Page')
-    selected_page = st.sidebar.selectbox('', page_options)
+    selected_page = st.sidebar.selectbox('', page_options, label_visibility = 'visible')
     st.sidebar.write("---")
 
     if selected_page == 'Home':

@@ -73,7 +73,6 @@ lg_ex_a_sot_p_g_dict = {
 DEFAULT_A_SOT_P_GL = 3.34 # avg +3%
 
 
-
 # ------------- Load the CSV file -----------------
 @st.cache_data
 def load_data():
@@ -87,8 +86,185 @@ def load_data():
     return df, df_prom_rel, df_ou, df_dnb
 
 
-# -------------------------------------------
+# --------------------  FIND TRUE 1X2 PRICES ------------------------------------- 
+# set marg_pc_move (amount to change the fav when odds-on eg 1.2 > 1.22 instead of 1.3)
+# complicated code. In testing it handles well transforming short price with margin > true price 
 
+def calculate_true_from_true_raw(h_pc_true_raw , d_pc_true_raw , a_pc_true_raw, margin):
+    marg_pc_remove = 0
+    if h_pc_true_raw > 0.90 or a_pc_true_raw > 0.90:
+        marg_pc_remove = 1    
+    elif h_pc_true_raw > 0.85 or a_pc_true_raw > 0.85:
+        marg_pc_remove = 0.85
+    elif h_pc_true_raw > 0.80 or a_pc_true_raw > 0.80:
+        marg_pc_remove = 0.7
+    elif h_pc_true_raw > 0.75 or a_pc_true_raw > 0.75:
+        marg_pc_remove = 0.6
+    elif h_pc_true_raw > 0.6 or a_pc_true_raw > 0.6:
+        marg_pc_remove = 0.5
+    elif h_pc_true_raw > 0.50 or a_pc_true_raw > 0.50:
+        marg_pc_remove = 0.4
+
+    if h_pc_true_raw >= a_pc_true_raw:
+        h_pc_true = h_pc_true_raw * (((marg_pc_remove * ((margin - 1) * 100)) / 100) + 1)
+        d_pc_true = d_pc_true_raw - ((h_pc_true - h_pc_true_raw) * 0.4) 
+        if h_pc_true + d_pc_true > 1:               # if greater than 100% (makes away price negative)
+            d_pc_true = 1 - h_pc_true - 0.0025
+            a_pc_true = 0.0025                              # make away price default 400
+        a_pc_true = 1 - h_pc_true - d_pc_true
+        if a_pc_true < 0:
+            a_pc_true = 0.0025
+    else:
+        a_pc_true = a_pc_true_raw * (((marg_pc_remove * ((margin - 1) * 100)) / 100) + 1)
+        d_pc_true= d_pc_true_raw - ((a_pc_true - a_pc_true_raw) * 0.4)
+        if a_pc_true + d_pc_true > 1:
+            d_pc_true = 1 - a_pc_true - 0.0025
+            h_pc_true = 0.0025
+        h_pc_true = 1 - a_pc_true - d_pc_true
+        if h_pc_true < 0:
+            h_pc_true = 0.0025
+
+    h_pc_true = round(h_pc_true, 2)
+    d_pc_true = round(d_pc_true, 2)
+    a_pc_true = round(a_pc_true, 2)
+
+    return (float(h_pc_true), float(d_pc_true), float(a_pc_true))
+
+#  ------------  Get match sup & HG/AG Exp then sot exp's --------
+
+# returns home and away sot for supremacy model given win percenatges home/away and df_dnb
+def calculate_sup_model_h_a_sot(h_pc_true, a_pc_true, gl_exp, df_dnb, selected_league):
+    # If gl_exp or h_pc_true or a_pc_true are missing, return None to skip this row
+    if gl_exp is None or h_pc_true is None or a_pc_true is None:
+        return None, None
+    dnb_pc = round(h_pc_true / (h_pc_true + a_pc_true), 2)
+    exp_sup = df_dnb.loc[df_dnb['dnb %'] == dnb_pc, 'Sup']
+    # If exp_sup is empty, return None to skip this row
+    if exp_sup.empty:
+        return None, None
+    sup_exp = exp_sup.iloc[0] if gl_exp != 0 else None
+    hg_exp = gl_exp / 2 + 0.5 * sup_exp
+    ag_exp = gl_exp / 2 - 0.5 * sup_exp
+    exp_h_sot_p_gl = lg_ex_h_sot_p_g_dict.get(selected_league, DEFAULT_H_SOT_P_GL)
+    exp_a_sot_p_gl = lg_ex_a_sot_p_g_dict.get(selected_league, DEFAULT_A_SOT_P_GL)
+    hg_fr_avg = (-0.0122 * hg_exp ** 3) + (0.118 * hg_exp ** 2) - (0.459 * hg_exp) + 1.445
+    ag_fr_avg = (-0.084 * ag_exp ** 3) + (0.507 * ag_exp ** 2) - (1.145 * ag_exp) + 1.76
+    h_sot_per_gl = hg_fr_avg * exp_h_sot_p_gl
+    a_sot_per_gl = ag_fr_avg * exp_a_sot_p_gl
+    h_sot_exp_s_mod = round(hg_exp * h_sot_per_gl, 2)
+    a_sot_exp_s_mod = round(ag_exp * a_sot_per_gl, 2)
+
+    return h_sot_exp_s_mod, a_sot_exp_s_mod
+
+# h_sot_exp_s_mod, a_sot_exp_s_mod = calculate_sup_model_h_a_sot(h_pc_true, a_pc_true, gl_exp, df_dnb)
+# st.write('h_sot_exp', h_sot_exp_s_mod)
+# st.write('a_sot_exp', a_sot_exp_s_mod)    
+
+
+# ---------------- Generate Probability Grid ---------------
+
+# Enter HC and AC exps' to return probability_grid, total_metrics_df (df of probability of each band), home_more_prob, equal_prob, away_more_prob (for matchups), total_metric_probabilities
+def calculate_probability_grid_hst_vs_ast(home_prediction, away_prediction):
+    # Set the range for corners
+    metric_range = np.arange(0, 30)
+
+    # Initialize a DataFrame to store probabilities
+    probability_grid = pd.DataFrame(index=metric_range, columns=metric_range)
+
+    # Calculate probabilities for each combination of home and away corners
+    for home_metric in metric_range:
+        for away_metric in metric_range:
+            # Calculate Poisson probabilities
+            poisson_home_prob = poisson.pmf(home_metric, home_prediction)
+            poisson_away_prob = poisson.pmf(away_metric, away_prediction)
+
+            # Calculate Negative Binomial probabilities
+            nb_home_prob = nbinom.pmf(home_metric, home_prediction, home_prediction / (home_prediction + home_prediction))
+            nb_away_prob = nbinom.pmf(away_metric, away_prediction, away_prediction / (away_prediction + away_prediction))
+
+            # Calculate combined probability (50% from Poisson, 50% from Negative Binomial)
+            combined_home_prob = 0.5 * poisson_home_prob + 0.5 * nb_home_prob
+            combined_away_prob = 0.5 * poisson_away_prob + 0.5 * nb_away_prob
+
+            # Store the combined probabilities in the grid
+            probability_grid.loc[home_metric, away_metric] = combined_home_prob * combined_away_prob
+
+    # Normalize the probability grid to ensure it sums to 1
+    probability_sum = probability_grid.values.sum()
+    probability_grid /= probability_sum  # Normalization step
+
+    # Calculate total probabilities after grid is normalized
+    equal_prob = round(np.trace(probability_grid), 2)  # Probability where home = away
+    home_more_mask = np.array(probability_grid.index)[:, None] > np.array(probability_grid.columns)
+    away_more_mask = np.array(probability_grid.index)[:, None] < np.array(probability_grid.columns)
+
+    home_more_prob = probability_grid.values[home_more_mask].sum()
+    away_more_prob = probability_grid.values[away_more_mask].sum()
+
+    # Calculate probabilities for total metrics (e.g., home_metric + away_metric)
+    range_value = np.arange(0, 30)
+    total_metric_probabilities = np.zeros(31)  # Array for outcomes 0-30
+    for home_metric in range_value:
+        for away_metric in range_value:
+            total_metrics = home_metric + away_metric
+            if total_metrics <= 30:
+                total_metric_probabilities[total_metrics] += probability_grid.loc[home_metric, away_metric]
+
+    total_metric_probabilities /= total_metric_probabilities.sum()  # Ensure it sums to 1
+
+    # Create a DataFrame to display the total metric probabilities
+    total_metrics_df = pd.DataFrame({
+        'Total Metrics': np.arange(len(total_metric_probabilities)),
+        'Probability': total_metric_probabilities
+    })
+
+    return probability_grid, total_metrics_df, home_more_prob, equal_prob, away_more_prob, total_metric_probabilities
+
+
+# ------------- CALCULATE MAIN & ALT LINES & ODDS (TOTAL) --------------------------
+
+# takes home_prediction and away_prediction as args and returns lines (main, minor, major) and over/under %'s
+def calculate_totals_lines_and_odds(home_prediction, away_prediction, total_metrics_df):
+    # Calculate main line & odds
+    total_prediction = round(home_prediction + away_prediction, 2)
+    tot_main_line = np.floor(total_prediction) + 0.5
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_main = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_main_line)]['Probability'].sum()
+    above_midpoint_p_main = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_main_line)]['Probability'].sum()
+
+    # Calculate minor line & odds
+    tot_minor_line = tot_main_line - 1
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_minor = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_minor_line)]['Probability'].sum()
+    above_midpoint_p_minor = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_minor_line)]['Probability'].sum()
+
+    # Calculate major line & odds
+    tot_major_line = tot_main_line + 1
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_major = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_major_line)]['Probability'].sum()
+    above_midpoint_p_major = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_major_line)]['Probability'].sum()
+
+    # Calculate minor line 2 & odds
+    tot_minor_line_2 = tot_main_line - 2
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_minor_2 = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_minor_line_2)]['Probability'].sum()
+    above_midpoint_p_minor_2 = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_minor_line_2)]['Probability'].sum()
+
+    # Calculate major line & odds
+    tot_major_line_2 = tot_main_line + 2
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_major_2 = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_major_line_2)]['Probability'].sum()
+    above_midpoint_p_major_2 = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_major_line_2)]['Probability'].sum()
+
+
+    return (float(total_prediction), float(tot_main_line), float(tot_minor_line), float(tot_major_line), float(tot_minor_line_2), float(tot_major_line_2),\
+            float(below_midpoint_p_main), float(above_midpoint_p_main), float(below_midpoint_p_minor), float(above_midpoint_p_minor), \
+            float(below_midpoint_p_major), float(above_midpoint_p_major), \
+            float(below_midpoint_p_minor_2), float(above_midpoint_p_minor_2), \
+            float(below_midpoint_p_major_2), float(above_midpoint_p_major_2)
+    )
+
+# --------------------------------------------------------------------
 
 def main():
     with st.spinner('Loading Data...'):
@@ -145,7 +321,7 @@ def main():
 
 
     # Capture user selections
-    selected_league = st.sidebar.selectbox('Select League', options=list(league_options.values()))
+    selected_league = st.sidebar.selectbox('Select League', label_visibility = 'visible', options=list(league_options.values()))
     # selected_metric = st.sidebar.selectbox('Select Metric', options=list(metric_options.keys()))
     selected_metric = 'Shots on Target'
 
@@ -156,26 +332,15 @@ def main():
     this_df = df[(df['Season'] == CURRENT_SEASON)]  # remove all matches that are not current season
     last_df = df[(df['Season'] == LAST_SEASON)] 
 
-    # team_options = sorted(this_df['HomeTeam'].unique().tolist())
-    # selected_team_h = st.sidebar.selectbox("Select Home Team", options=team_options, index=0)
-    # selected_team_a = st.sidebar.selectbox("Select Home Team", options=team_options, index=1)
-
 
     # -----------------------------------------------------------------------
 
-    st.header(f'{selected_metric} Model - {selected_league}', divider='blue')
-
-        # Check if the selected teams are the same
-    # if selected_team_h == selected_team_a:
-    #     st.write("Select two different teams to return match pricing data")
-    #     return  # Stop further execution if the teams are the same
-
+    st.header(f'{selected_metric} Model', divider='blue')
 
     # get fixtures
     league_id = leagues_dict.get(selected_league)
 
     # st.write(this_df)
-
 
     #  -----------  create df with just teams, MP and metric options - CURRENT SEASON  ------------------------
 
@@ -266,6 +431,7 @@ def main():
     perc_last_ssn = game_week_decay_dict.get(current_gw, 0)
     perc_this_ssn = 1 - perc_last_ssn
     # st.write('perc_last_season:', perc_last_ssn)
+
 
     # -------- Identify new teams in the league, ascertain whether prom or rel in, generates upper or lower quantile average --------------
 
@@ -389,520 +555,16 @@ def main():
     # Get metric columns for the selected metric
     metric_columns = metric_options[selected_metric][:2]  # First two columns only, HC and AC for 'Corners'
 
-    # ht_h_for= round(df_mix.loc[df_mix['Team'] == selected_team_h, 'H_for'].values[0], 2)
-    # ht_h_ag= round(df_mix.loc[df_mix['Team'] == selected_team_h, 'H_ag'].values[0], 2)
-    # ht_a_for = round(df_mix.loc[df_mix['Team'] == selected_team_h, 'A_for'].values[0], 2)
-    # ht_a_ag = round(df_mix.loc[df_mix['Team'] == selected_team_h, 'A_ag'].values[0], 2)
-
-    # at_h_for = round(df_mix.loc[df_mix['Team'] == selected_team_a, 'H_for'].values[0], 2)
-    # at_h_ag = round(df_mix.loc[df_mix['Team'] == selected_team_a, 'H_ag'].values[0], 2)
-    # at_a_for = round(df_mix.loc[df_mix['Team'] == selected_team_a, 'A_for'].values[0], 2)
-    # at_a_ag = round(df_mix.loc[df_mix['Team'] == selected_team_a, 'A_ag'].values[0], 2)
-
-    # st.write("---")
-
-
-    # st.write('Enter Approximate Match & Over/Under Odds:')
-    # c1,c2,c3,c4, c5 = st.columns([1,1,1,1,5])
-    # with c1:
-    #     try:
-    #         h_odds = float(st.text_input('Home Odds', value = 2.10))
-    #     except ValueError:
-    #             st.error("Please enter a valid number.")
-    # with c2:
-    #     try:
-    #         d_odds = float(st.text_input('Draw Odds', value = 3.40))
-    #     except ValueError:
-    #             st.error("Please enter a valid number.")
-    # with c3:
-    #     try:
-    #         a_odds = float(st.text_input('Away Odds', value = 3.50))
-    #     except ValueError:
-    #             st.error("Please enter a valid number.")
-    
-    # with c4:
-    #     st.write("")
-    #     st.write("")
-    #     margin = round(1/h_odds + 1/d_odds + 1/a_odds, 2)
-
-
-    # h_pc_true_raw = 1/(h_odds * margin)
-    # d_pc_true_raw = 1/(d_odds * margin)
-    # a_pc_true_raw = 1/(a_odds * margin)
-
-    # with c4:
-    #  st.write('Margin:', margin)
-
-    # # Error message if < 100 %
-    # if margin < 1:
-    #     st.warning('Margin must be > 1.00 !')
-
-
-    # #  -----------   Ov/Und Odds and HG/AG Expectation calculation  -----------------
-    # with c1:
-    #     try:
-    #         ov_odds = float(st.text_input('Over 2.5 Odds', value = 2.00))
-    #     except ValueError:
-    #             st.error("Please enter a valid number.")
-    # with c2:
-    #     try:
-    #         un_odds = float(st.text_input('Under 2.5 Odds', value = 2.00))
-    #     except ValueError:
-    #             st.error("Please enter a valid number.")
-
-    # margin_ou = round(1/ov_odds + 1/un_odds, 2)
-
-    # ov_pc_true_raw = 1/(ov_odds * margin_ou)
-    # un_pc_true_raw = 1/(un_odds * margin_ou)
-
-    # with c4:
-    #  st.write("")
-    #  st.write("")
-    #  st.write("")
-    #  st.write('Margin:', margin_ou)
-
-    # # Error message if < 100 %
-    # if margin_ou < 1:
-    #     st.warning('Margin must be > 1.00 !')
 
 
     df_dnb.drop(['dnb price'], axis=1, inplace=True)
     df_ou.drop(['Exp', 'Under', 'Over', 'Un2.5_%'], axis=1, inplace=True)
     df_ou.drop_duplicates(subset='Ov2.5_%', inplace=True)
-
-
-
-    # ov_pc_true_raw = round(ov_pc_true_raw, 2)
-    # # find ov_pc_true_raw in df_ou & extract exp
-    # gl_exp = df_ou.loc[df_ou['Ov2.5_%'] == ov_pc_true_raw, 'Exp1']
-    # gl_exp = gl_exp.iloc[0] if not gl_exp.empty else None  
-    
-
-   # --------------------  FIND TRUE 1X2 PRICES ------------------------------------- 
-   # set marg_pc_move (amount to change the fav when odds-on eg 1.2 > 1.22 instead of 1.3)
-   # complicated code. In testing it handles well transforming short price with margin > true price 
-
-    def calculate_true_from_true_raw(h_pc_true_raw , d_pc_true_raw , a_pc_true_raw, margin):
-        marg_pc_remove = 0
-        if h_pc_true_raw > 0.90 or a_pc_true_raw > 0.90:
-            marg_pc_remove = 1    
-        elif h_pc_true_raw > 0.85 or a_pc_true_raw > 0.85:
-            marg_pc_remove = 0.85
-        elif h_pc_true_raw > 0.80 or a_pc_true_raw > 0.80:
-            marg_pc_remove = 0.7
-        elif h_pc_true_raw > 0.75 or a_pc_true_raw > 0.75:
-            marg_pc_remove = 0.6
-        elif h_pc_true_raw > 0.6 or a_pc_true_raw > 0.6:
-            marg_pc_remove = 0.5
-        elif h_pc_true_raw > 0.50 or a_pc_true_raw > 0.50:
-            marg_pc_remove = 0.4
-
-        if h_pc_true_raw >= a_pc_true_raw:
-            h_pc_true = h_pc_true_raw * (((marg_pc_remove * ((margin - 1) * 100)) / 100) + 1)
-            d_pc_true = d_pc_true_raw - ((h_pc_true - h_pc_true_raw) * 0.4) 
-            if h_pc_true + d_pc_true > 1:               # if greater than 100% (makes away price negative)
-                d_pc_true = 1 - h_pc_true - 0.0025
-                a_pc_true = 0.0025                              # make away price default 400
-            a_pc_true = 1 - h_pc_true - d_pc_true
-            if a_pc_true < 0:
-                a_pc_true = 0.0025
-        else:
-            a_pc_true = a_pc_true_raw * (((marg_pc_remove * ((margin - 1) * 100)) / 100) + 1)
-            d_pc_true= d_pc_true_raw - ((a_pc_true - a_pc_true_raw) * 0.4)
-            if a_pc_true + d_pc_true > 1:
-                d_pc_true = 1 - a_pc_true - 0.0025
-                h_pc_true = 0.0025
-            h_pc_true = 1 - a_pc_true - d_pc_true
-            if h_pc_true < 0:
-                h_pc_true = 0.0025
-
-        h_pc_true = round(h_pc_true, 2)
-        d_pc_true = round(d_pc_true, 2)
-        a_pc_true = round(a_pc_true, 2)
-
-        return (float(h_pc_true), float(d_pc_true), float(a_pc_true))
-
-    # --------------------------------------------------------
-
-    # h_pc_true, d_pc_true, a_pc_true = calculate_true_from_true_raw(h_pc_true_raw, d_pc_true_raw, a_pc_true_raw, margin)
-
-        # with c5:
-    #     st.write('Approx. home win true probability:', h_pc_true)
-    #     st.write('Approx. draw true probability:', d_pc_true)
-    #     st.write('Approx. away win true probability:', a_pc_true)
-
-    #  ------------  Get match sup & HG/AG Exp then sot exp's --------
-
-    # returns home and away sot for supremacy model given win percenatges home/away and df_dnb
-    def calculate_sup_model_h_a_sot(h_pc_true, a_pc_true, gl_exp, df_dnb):
-        # If gl_exp or h_pc_true or a_pc_true are missing, return None to skip this row
-        if gl_exp is None or h_pc_true is None or a_pc_true is None:
-            return None, None
-        dnb_pc = round(h_pc_true / (h_pc_true + a_pc_true), 2)
-        exp_sup = df_dnb.loc[df_dnb['dnb %'] == dnb_pc, 'Sup']
-        # If exp_sup is empty, return None to skip this row
-        if exp_sup.empty:
-            return None, None
-        sup_exp = exp_sup.iloc[0] if gl_exp != 0 else None
-        hg_exp = gl_exp / 2 + 0.5 * sup_exp
-        ag_exp = gl_exp / 2 - 0.5 * sup_exp
-        exp_h_sot_p_gl = lg_ex_h_sot_p_g_dict.get(selected_league, DEFAULT_H_SOT_P_GL)
-        exp_a_sot_p_gl = lg_ex_a_sot_p_g_dict.get(selected_league, DEFAULT_A_SOT_P_GL)
-        hg_fr_avg = (-0.0122 * hg_exp ** 3) + (0.118 * hg_exp ** 2) - (0.459 * hg_exp) + 1.445
-        ag_fr_avg = (-0.084 * ag_exp ** 3) + (0.507 * ag_exp ** 2) - (1.145 * ag_exp) + 1.76
-        h_sot_per_gl = hg_fr_avg * exp_h_sot_p_gl
-        a_sot_per_gl = ag_fr_avg * exp_a_sot_p_gl
-        h_sot_exp_s_mod = round(hg_exp * h_sot_per_gl, 2)
-        a_sot_exp_s_mod = round(ag_exp * a_sot_per_gl, 2)
-
-        return h_sot_exp_s_mod, a_sot_exp_s_mod
-
-    # h_sot_exp_s_mod, a_sot_exp_s_mod = calculate_sup_model_h_a_sot(h_pc_true, a_pc_true, gl_exp, df_dnb)
-    # st.write('h_sot_exp', h_sot_exp_s_mod)
-    # st.write('a_sot_exp', a_sot_exp_s_mod)    
-
-
-    # ---------------------------------------------------------
-
-    # st.write("---")
-    # st.header(f'{selected_metric} Model Outputs')
-    # st.write(' - Model Feature Inputs - weighted averages current & previous season')
-
-    # st.write(metric_columns[2])
+   
 
     h_lg_avg = round(this_df[metric_columns[0]].mean(), 2)  # HC or H_SOT
     a_lg_avg = round(this_df[metric_columns[1]].mean(), 2)     # AC or A_SOT
-
-    # cl1,cl2, cl3 = st.columns([7,1,7])
-    # with cl1:
-    #     st.subheader('Home')
-    #     st.caption(f'Home win probability: {h_pc_true}')
-    #     st.caption(f'Home Team, home for: {ht_h_for}')
-    #     st.caption(f'Home Team, away for: {ht_a_for}')
-    #     st.caption(f'Away Team, away against: {at_a_ag}')
-    #     st.caption(f'Away Team, home against: {at_h_ag}')
-    #     st.caption(f'Home {selected_metric} League Average: {h_lg_avg}')
-
-    # with cl3:
-    #     st.subheader('Away')
-    #     st.caption(f'Away win probability: {a_pc_true}')
-    #     st.caption(f'Away Team, away for: {at_a_for}')
-    #     st.caption(f'Away Team, home for: {at_h_for}')
-    #     st.caption(f'HomeTeam, away against: {ht_a_ag}')
-    #     st.caption(f'Home Team, home against: {ht_h_ag}')
-    #     st.caption(f'Away {selected_metric} League Average: {a_lg_avg}')
-
-    # ------------  Enter own parameters -----------------
-
-    # with cl1:
-    #     show_manual_inputs_h = st.checkbox('Enter inputs manually (Home)')
-    #     if show_manual_inputs_h:
-    #         h_pc_true = st.number_input('Home Team, win probability', value=h_pc_true )
-    #         ht_h_for = st.number_input('Home Team, home for', value = ht_h_for)
-    #         ht_a_for = st.number_input('Home Team, away for', value = ht_a_for)
-    #         at_a_ag = st.number_input('Away Team, away against', value = at_a_ag)
-    #         at_h_ag = st.number_input('Away Team, home against', value = at_h_ag )
-    #         h_lg_avg = st.number_input('Home Competition Average', value = h_lg_avg)
-
-
-    # with cl3:
-    #     show_manual_inputs_a = st.checkbox('Enter inputs manually (Away)')
-    #     if show_manual_inputs_a:
-    #         a_pc_true = st.number_input('Away Team, win probability', value=a_pc_true)
-    #         at_a_for = st.number_input('Away Team, away for', value = at_a_for)
-    #         at_h_for= st.number_input('Away Team, home for', value = at_h_for)
-    #         ht_a_ag = st.number_input('Home Team, away against', value = ht_a_ag)
-    #         ht_h_ag = st.number_input('Home Team, home against', value = ht_h_ag)
-    #         a_lg_avg = st.number_input('Away Competition Average', value = a_lg_avg)
-
-
-    # h_sot_exp_s_mod, a_sot_exp_s_mod =  calculate_sup_model_h_a_sot(h_pc_true, a_pc_true, gl_exp, df_dnb)
-
-    # inputs_array_h = np.array([[h_pc_true, ht_h_for, ht_a_for, at_a_ag, at_h_ag, h_lg_avg]])
-    # inputs_array_a = np.array([[a_pc_true, at_a_for, at_h_for, ht_a_ag, ht_h_ag, a_lg_avg]])
-
-
-    # # Model Home
-    # poly_h = PolynomialFeatures(degree=2, include_bias=True)
-    # X_poly_input_h = poly_h.fit_transform(inputs_array_h)
-    # sot_model_h_prediction = sot_model_h.predict(X_poly_input_h)
-    # home_prediction_ml = round(sot_model_h_prediction[0], 2)
-
-    # # mix with sup_model
-    # home_prediction = round((home_prediction_ml * PERC_ML_MODEL) + (h_sot_exp_s_mod * PERC_SUP_MODEL), 2)
-    # with cl1:
-    #     st.success(f'Home Prediction: {home_prediction}')
-
-    # # Model Away
-    # poly_a = PolynomialFeatures(degree=2, include_bias=True)
-    # X_poly_input_a = poly_a.fit_transform(inputs_array_a)
-    # sot_model_a_prediction = sot_model_a.predict(X_poly_input_a)   
-    # away_prediction_ml = round(sot_model_a_prediction[0], 2)
-
-    # # mix with sup_model
-    # away_prediction = round((away_prediction_ml * PERC_ML_MODEL) + (a_sot_exp_s_mod * PERC_SUP_MODEL), 2)
-    # with cl3:
-    #     st.success(f'Away Prediction: {away_prediction}')
-
-    # ---------------  CREATE OVER UNDER LINES AND PROBABILITIES -------------------
-    # FUNCTION - calculate_corners_lines_and_odds()
-
-    # # Home lines/odds
-    # h_main_line, h_minor_line, h_major_line, h_prob_under_main, h_prob_over_main, \
-    # h_prob_under_min, h_prob_over_min, h_prob_under_maj, h_prob_over_maj = calculate_home_away_lines_and_odds(home_prediction)
-    # # Away lines/odds
-    # a_main_line, a_minor_line, a_major_line, a_prob_under_main, a_prob_over_main, \
-    # a_prob_under_min, a_prob_over_min, a_prob_under_maj, a_prob_over_maj = calculate_home_away_lines_and_odds(away_prediction)
-
-
-    # with cl1:
-    # # Output the results
-    #     st.write(f"Main Line: {h_main_line}")
-    #     st.caption(f"Probability Under: {h_prob_under_main}")
-    #     st.caption(f"Probability Over: {h_prob_over_main}")
-    #     st.info(f'Home Odds - Under {h_main_line}: {round(1 / h_prob_under_main, 2)}')
-    #     st.info(f'Home Odds - Over {h_main_line}: {round(1 / h_prob_over_main, 2)}')
-
-    #     show_alternate_lines_h = st.checkbox('Show alternate home lines')
-    #     if show_alternate_lines_h:
-    #         st.write(f'Minor Line: [{h_minor_line}] - Under: {round(1 / h_prob_under_min, 2)}, Over: {round(1 / h_prob_over_min, 2)}')
-    #         st.write(f'Major Line: [{h_major_line}] - Under: {round(1 / h_prob_under_maj, 2)}, Over: {round(1 / h_prob_over_maj, 2)}')
-    #         st.write("---")
-
-    # with cl3:
-    # # Output the results
-    #     st.write(f"Main Line: {a_main_line}")
-    #     st.caption(f"Mixed Probability Under: {a_prob_under_main}")
-    #     st.caption(f"Mixed Probability Over: {a_prob_over_main}")
-    #     st.info(f'Away Odds - Under {a_main_line}: {round(1 / a_prob_under_main, 2)}')
-    #     st.info(f'Away Odds - Over {a_main_line}: {round(1 / a_prob_over_main, 2)}')
-
-    #     show_alternate_lines_a = st.checkbox('Show alternate away lines')
-    #     if show_alternate_lines_a:
-    #         st.write(f'Minor Line: [{a_minor_line}] - Under: {round(1 / a_prob_under_min, 2)}, Over: {round(1 / a_prob_over_min, 2)}')
-    #         st.write(f'Major Line: [{a_major_line}] - Under: {round(1 / a_prob_under_maj, 2)}, Over: {round(1 / a_prob_over_maj, 2)}')
-    #         st.write("---")
-
   
-    # --- Probability grid HC vs AC ---------------------------------------------------
-
-    # Enter HC and AC exps' to return probability_grid, total_metrics_df (df of probability of each band), home_more_prob, equal_prob, away_more_prob (for matchups), total_metric_probabilities
-    def calculate_probability_grid_hst_vs_ast(home_prediction, away_prediction):
-        # Set the range for corners
-        metric_range = np.arange(0, 30)
-
-        # Initialize a DataFrame to store probabilities
-        probability_grid = pd.DataFrame(index=metric_range, columns=metric_range)
-
-        # # HC adjustments
-        # home_mode = int(np.floor(home_prediction))  # Mode approximation by flooring the expected value
-        # bins_below_mode = home_mode
-        # reduction_per_bin = 0.05 / bins_below_mode if bins_below_mode > 0 else 0
-
-        # bins_above_mode = 7  # Bins from mode + 3 to mode + 9
-        # increase_factors = np.linspace(0.05, 0, bins_above_mode)  # Gradual scaling down of the 5% increase
-
-        # # AC adjustments
-        # away_mode = int(np.floor(away_prediction))  # Mode approximation for AC
-        # bins_below_away_mode = away_mode + 1  # From mode - 1 to 0
-        # increase_per_bin_away = 0.07 / bins_below_away_mode if bins_below_away_mode > 0 else 0
-
-        # bins_above_away_mode = 11  # From mode + 2 to mode + 12
-        # decrease_factors_away = np.linspace(0.07, 0, bins_above_away_mode + 1)  # Gradual scaling down of the 7% decrease
-
-        # Calculate probabilities for each combination of home and away corners
-        for home_metric in metric_range:
-            for away_metric in metric_range:
-                # Calculate Poisson probabilities
-                poisson_home_prob = poisson.pmf(home_metric, home_prediction)
-                poisson_away_prob = poisson.pmf(away_metric, away_prediction)
-
-                # Calculate Negative Binomial probabilities
-                nb_home_prob = nbinom.pmf(home_metric, home_prediction, home_prediction / (home_prediction + home_prediction))
-                nb_away_prob = nbinom.pmf(away_metric, away_prediction, away_prediction / (away_prediction + away_prediction))
-
-                # Calculate combined probability (50% from Poisson, 50% from Negative Binomial)
-                combined_home_prob = 0.5 * poisson_home_prob + 0.5 * nb_home_prob
-                combined_away_prob = 0.5 * poisson_away_prob + 0.5 * nb_away_prob
-
-                # # Adjust HC probabilities (Home corners)
-                # if home_metric < home_mode:
-                #     combined_home_prob *= (1 - reduction_per_bin)
-                # elif home_metric == home_mode:
-                #     pass  # Mode bin remains unchanged
-                # elif home_mode + 3 <= home_metric <= home_mode + 9:
-                #     offset = home_metric - (home_mode + 3)
-                #     combined_home_prob *= (1 + increase_factors[offset])
-
-
-                # # Adjust AC probabilities (Away corners)
-                # if 0 <= away_metric <= away_mode - 1:
-                #     combined_away_prob *= (1 + increase_per_bin_away)
-                # elif away_mode + 2 <= away_metric <= away_mode + 12:
-                #     offset = away_metric - (away_mode + 2)
-                #     combined_away_prob *= (1 - decrease_factors_away[offset])
-
-                # # Increase Away mode bin by 0.5%
-                # if away_metric == away_mode:
-                #     combined_away_prob *= 1.005  # Increase the away mode bin by 0.5%
-
-                # Store the combined probabilities in the grid
-                probability_grid.loc[home_metric, away_metric] = combined_home_prob * combined_away_prob
-
-        # Normalize the probability grid to ensure it sums to 1
-        probability_sum = probability_grid.values.sum()
-        probability_grid /= probability_sum  # Normalization step
-
-        # Calculate total probabilities after grid is normalized
-        equal_prob = round(np.trace(probability_grid), 2)  # Probability where home = away
-        home_more_mask = np.array(probability_grid.index)[:, None] > np.array(probability_grid.columns)
-        away_more_mask = np.array(probability_grid.index)[:, None] < np.array(probability_grid.columns)
-
-        home_more_prob = probability_grid.values[home_more_mask].sum()
-        away_more_prob = probability_grid.values[away_more_mask].sum()
-
-        # Calculate probabilities for total metrics (e.g., home_metric + away_metric)
-        range_value = np.arange(0, 30)
-        total_metric_probabilities = np.zeros(31)  # Array for outcomes 0-30
-        for home_metric in range_value:
-            for away_metric in range_value:
-                total_metrics = home_metric + away_metric
-                if total_metrics <= 30:
-                    total_metric_probabilities[total_metrics] += probability_grid.loc[home_metric, away_metric]
-
-        total_metric_probabilities /= total_metric_probabilities.sum()  # Ensure it sums to 1
-
-        # Create a DataFrame to display the total metric probabilities
-        total_metrics_df = pd.DataFrame({
-            'Total Metrics': np.arange(len(total_metric_probabilities)),
-            'Probability': total_metric_probabilities
-        })
-
-        return probability_grid, total_metrics_df, home_more_prob, equal_prob, away_more_prob, total_metric_probabilities
-    # ---------------------------------------------------------------
-
-    # probability_grid, total_metrics_df, home_more_prob, equal_prob, away_more_prob, total_metric_probabilities = calculate_probability_grid_hst_vs_ast(home_prediction, away_prediction)
-
-
-    # st.write('probability_grid', probability_grid)    
-    # st.write('total_metrics_df', total_metrics_df)
-
-    # # --- plot as histograms -------------------------------------------
-    # # Extract marginal probabilities
-    # home_probabilities = probability_grid.sum(axis=1)  # Sum rows for home corners
-    # away_probabilities = probability_grid.sum(axis=0)  # Sum columns for away corners
-
-    # with cl1:
-    #     show_home_prob_dist = st.checkbox(f'Show estimated probability distribution for Home {selected_metric}')
-    #     if show_home_prob_dist:
-    #         # Histogram for Home Corners
-    #         st.subheader(f"Estimated Probability Distribution for Home {selected_metric}")
-    #         st.bar_chart(home_probabilities)
-
-    # with cl3:
-    #     show_away_prob_dist = st.checkbox(f'Show estimated probability distribution for Away {selected_metric}')
-    #     if show_away_prob_dist:
-    #         # Histogram for Away Corners
-    #         st.subheader(f"Estimated Probability Distribution for Away {selected_metric}")
-    #         st.bar_chart(away_probabilities)
-
-
-
-    # # Display bands
-    # with cl1:
-    #     show_bands = st.checkbox('Show bands probability breakdown')
-    #     if show_bands:
-    #         st.subheader(f"Probability Distribution for Total {selected_metric}")
-    #         st.dataframe(total_metrics_df)
-
-
-
-    # ------------- CALCULATE MAIN & ALT LINES & ODDS (TOTAL) --------------------------
-
-    # takes home_prediction and away_prediction as args and returns lines (main, minor, major) and over/under %'s
-    def calculate_totals_lines_and_odds(home_prediction, away_prediction, total_metrics_df):
-        # Calculate main line & odds
-        total_prediction = round(home_prediction + away_prediction, 2)
-        tot_main_line = np.floor(total_prediction) + 0.5
-        # Sum probabilities below and above this midpoint
-        below_midpoint_p_main = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_main_line)]['Probability'].sum()
-        above_midpoint_p_main = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_main_line)]['Probability'].sum()
-
-        # Calculate minor line & odds
-        tot_minor_line = tot_main_line - 1
-        # Sum probabilities below and above this midpoint
-        below_midpoint_p_minor = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_minor_line)]['Probability'].sum()
-        above_midpoint_p_minor = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_minor_line)]['Probability'].sum()
-
-        # Calculate major line & odds
-        tot_major_line = tot_main_line + 1
-        # Sum probabilities below and above this midpoint
-        below_midpoint_p_major = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_major_line)]['Probability'].sum()
-        above_midpoint_p_major = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_major_line)]['Probability'].sum()
-
-        # Calculate minor line 2 & odds
-        tot_minor_line_2 = tot_main_line - 2
-        # Sum probabilities below and above this midpoint
-        below_midpoint_p_minor_2 = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_minor_line_2)]['Probability'].sum()
-        above_midpoint_p_minor_2 = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_minor_line_2)]['Probability'].sum()
-
-        # Calculate major line & odds
-        tot_major_line_2 = tot_main_line + 2
-        # Sum probabilities below and above this midpoint
-        below_midpoint_p_major_2 = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_major_line_2)]['Probability'].sum()
-        above_midpoint_p_major_2 = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_major_line_2)]['Probability'].sum()
-
-
-        return (float(total_prediction), float(tot_main_line), float(tot_minor_line), float(tot_major_line), float(tot_minor_line_2), float(tot_major_line_2),\
-               float(below_midpoint_p_main), float(above_midpoint_p_main), float(below_midpoint_p_minor), float(above_midpoint_p_minor), \
-               float(below_midpoint_p_major), float(above_midpoint_p_major), \
-               float(below_midpoint_p_minor_2), float(above_midpoint_p_minor_2), \
-               float(below_midpoint_p_major_2), float(above_midpoint_p_major_2)
-        )
-
-    # # PASS THROUGH FUNCTION
-    # total_prediction, tot_main_line, tot_minor_line, tot_major_line, tot_minor_line_2, tot_major_line_2, below_midpoint_p_main, \
-    # above_midpoint_p_main, below_midpoint_p_minor, above_midpoint_p_minor, below_midpoint_p_major, \
-    # above_midpoint_p_major, below_midpoint_p_minor_2, above_midpoint_p_minor_2, \
-    # below_midpoint_p_major_2, above_midpoint_p_major_2 = calculate_totals_lines_and_odds(home_prediction, away_prediction, total_metrics_df)
-
-
-    # with cl1:
-    #     # Show odds of over/under mainline
-    #     st.write("")
-    #     st.subheader(f'Total {selected_metric}')
-    #     st.success(f'Total prediction: **{total_prediction}**')
-    #     st.write(f'Total Main Line: {tot_main_line}')
-    #     st.info(f'Under {tot_main_line}: **{round(1 / below_midpoint_p_main, 2)}**')
-    #     st.info(f'Over {tot_main_line}: **{round(1 / above_midpoint_p_main, 2)}**')
-
-    #     show_alternate_lines_tot = st.checkbox('Show alternate Total lines')
-    #     if show_alternate_lines_tot:
-    #         st.write(f'Minor Line: [{tot_minor_line}] - Under: {round(1 / below_midpoint_p_minor, 2)}, Over: {round(1 / above_midpoint_p_minor, 2)}')
-    #         st.write(f'Major Line: [{tot_major_line}] - Under: {round(1 / below_midpoint_p_major, 2)}, Over: {round(1 / above_midpoint_p_major, 2)}')
-    #         st.write("---")
-
-
-        # show_tot_hist = st.checkbox(f'Show estimated Total {selected_metric} distribution')
-        # if show_tot_hist:
-        #     st.bar_chart(total_metric_probabilities)
-
-        # show_prob_grid = st.checkbox(f'Show estimated Total {selected_metric} probability grid')
-        # if show_prob_grid:
-        #     st.write(probability_grid)
-
-
-    # with cl3:
-    #     st.write("")
-    #     st.write("")
-    #     st.write("")
-    #     st.write("")
-    #     st.subheader(f'Team Most {selected_metric}')
-    #     st.write(f'Home:', round(1 / home_more_prob, 2))
-    #     st.write('Tie:', round(1 / equal_prob, 2))
-    #     st.write('Away:', round(1 / away_more_prob, 2))
-
-
 
     # -------------------------------------------- CREATE ODDS FOR ALL UPCOMING FIXTURES --------------------------------------------------------------------
 
@@ -913,7 +575,7 @@ def main():
 
     with column1:
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.09, min_value=1.01, max_value=1.2, key='margin_to_apply')
-        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.03, min_value=1.00, max_value=1.06, key='bias_to_apply')
+        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.04, min_value=1.00, max_value=1.06, key='bias_to_apply')
 
 
     generate_odds_all_matches = st.button(f'Click to generate')
@@ -1007,10 +669,13 @@ def main():
                 # Collect odds for all fixtures
                 all_odds_df = pd.DataFrame()  # DataFrame to collect all odds
 
+                # st.write(fixt_id_list)
+
                 # Iterate through each fixture ID and get odds
                 for fixture_id in fixt_id_list:
                     for market_id in MARKET_IDS:
                         odds_df = get_odds(fixture_id, market_id, BOOKMAKERS)
+                        # st.write(odds_df)
                         if not odds_df.empty:
                             all_odds_df = pd.concat([all_odds_df, odds_df], ignore_index=True)
 
@@ -1025,7 +690,7 @@ def main():
                 # Merge odds df_fixts with df_collapsed
                 df = df_fixts.merge(df_collapsed, on='Fixture ID')
                 df = df.dropna()
-
+                # st.write(df)
 
                 #  ---------------  Create true wdw odds ---------------
                 # Convert columns to numeric (if they are strings or objects)
@@ -1088,7 +753,7 @@ def main():
 
                 # --------------   GET SOT FOR SUP MODEL   -----------------
                 df[['h_sot_exp_s_mod', 'a_sot_exp_s_mod']] = df.apply(
-                    lambda row: calculate_sup_model_h_a_sot(row['h_pc_true'], row['a_pc_true'], row['gl_exp'], df_dnb),
+                    lambda row: calculate_sup_model_h_a_sot(row['h_pc_true'], row['a_pc_true'], row['gl_exp'], df_dnb, selected_league),
                     axis=1, result_type='expand'
                 )
 
@@ -1292,6 +957,30 @@ def main():
                 # Display the updated DataFrame
                 st.write(df_final_wm)
 
+                # warning if not all match  retrieved from API call matches the final df
+                if len(df) != len(fixt_id_list):
+                    st.warning('Odds for 1 or more matches not currently available!')
+
+
+                #  ----- Calculate Daily Totals --------
+
+                # Convert to datetime
+                df_final_wm['Date'] = pd.to_datetime(df_final_wm['Date'])
+
+                # Group by the day only (ignoring time)
+                df_final_wm['Day'] = df_final_wm['Date'].dt.date  # Extract just the date (day)
+
+                aggregated = df_final_wm.groupby('Day').agg(
+                    TST=('TST_Exp', 'sum'), 
+                    Match_Count=('TST_Exp', 'size')
+                ).reset_index()
+
+                df_result = aggregated[aggregated['Match_Count'] >= 2]
+
+                st.write("---")
+                st.subheader('Daily Shots on Target')
+                st.write("")
+                st.write(df_result)
 
 
 
