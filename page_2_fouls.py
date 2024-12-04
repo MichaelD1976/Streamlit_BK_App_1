@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import poisson, nbinom
 from sklearn.preprocessing import PolynomialFeatures
 import joblib
-from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds
+from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities
 import requests
 import os
 from dotenv import load_dotenv
@@ -594,8 +594,8 @@ def main():
     column1,column2 = st.columns([1,2])
 
     with column1:
-        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.09, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
-        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.04, min_value=1.00, max_value=1.06, key='bias_to_apply', label_visibility = 'visible')
+        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
+        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.05, min_value=1.00, max_value=1.06, key='bias_to_apply', label_visibility = 'visible')
 
 
     generate_odds_all_matches = st.button(f'Click to generate')
@@ -1003,7 +1003,11 @@ def main():
                     st.warning('Odds for 1 or more matches not currently available!')
 
 
-                #  ----- Calculate Daily Totals --------
+                # ---------  show simplified odds - just minor line  ---------
+                df_simple = df_final_wm[['Date', 'Home Team', 'Away Team', 'T_-1_line', 'T_-1_un_w.%', 'T_-1_ov_w.%',]]
+
+
+                #  ----- Calculate Daily Total FOULS and GOALS --------
 
                 # Convert to datetime
                 df_final_wm['Date'] = pd.to_datetime(df_final_wm['Date'])
@@ -1011,19 +1015,58 @@ def main():
                 # Group by the day only (ignoring time)
                 df_final_wm['Day'] = df_final_wm['Date'].dt.date  # Extract just the date (day)
 
-                aggregated = df_final_wm.groupby('Day').agg(
+                aggregated_fl = df_final_wm.groupby('Day').agg(
                     TF=('TF_Exp', 'sum'), 
                     Match_Count=('TF_Exp', 'size')
                 ).reset_index()
 
-                df_result = aggregated[aggregated['Match_Count'] >= 2]
+
+                df_result_fl = aggregated_fl[aggregated_fl['Match_Count'] >= 2]
+
+
+                # ------- Get increment prior to calling poisson functions for Daily Totals  --------------------------------
+
+                def calculate_increment(main_line):
+                    """Determine increment based on main_line value."""
+                    if main_line > 35:
+                        return 3
+                    elif main_line > 14:
+                        return 2
+                    return 1
+
+                # -------  Display Simple DF and Daily Shots side by side  --------------
 
                 st.write("---")
-                st.subheader('Daily Fouls')
+                st.subheader('Lines to Publish')
                 st.write("")
-                st.write(df_result)
+                st.write(df_simple)
 
+                st.write("---")
+                st.subheader('Total Daily Fouls')
+                st.write("")
+                st.write(df_result_fl)
+                # Get poisson odds and lines for each day returned for Daly Goals
+                for _, row in df_result_fl.iterrows():
+                    exp = row['TF']
+                    day = row['Day']
+                    main_line = np.floor(exp) + 0.5
 
+                    increment = calculate_increment(main_line)
+
+                    line_minus_1 = main_line - increment
+                    line_minus_2 = main_line - increment * 2
+                    line_plus_1 = main_line + increment
+                    line_plus_2 = main_line + increment * 2
+
+                    probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
+                        
+                    st.caption(f"{day} (100% Prices)")
+                    st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
+                    st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
+                    st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
+                    st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
+                    st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
+                    st.write("")
 
 
 if __name__ == "__main__":

@@ -2,53 +2,7 @@ import streamlit as st
 import numpy as np
 from scipy.stats import poisson
 from scipy.optimize import minimize_scalar
-
-
-def poisson_expectation(line, unders_prob):
-    # Poisson is a discrete distribution, so we deal with integers below the line
-    # We need to find lambda such that P(X <= floor(line)) is approximately unders_prob
-    
-    # Define the function we want to minimize: difference between CDF and unders_prob
-    def objective(lmbda):
-        return abs(poisson.cdf(int(line), lmbda) - unders_prob)
-    
-    # Use a scalar minimizer to find the lambda that minimizes the objective function
-    result = minimize_scalar(objective, bounds=(0, 100), method='bounded')
-
-    # Return the lambda (expected value) that best fits the given probabilities
-    return result.x
-
-
-def poisson_probabilities(expectation, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2):
-    # Calculate the cumulative probabilities (CDF) for under scenarios
-    under_main = round(poisson.cdf(main_line, expectation), 2)
-    under_minus_1 = round(poisson.cdf(line_minus_1, expectation), 2)
-    under_plus_1 = round(poisson.cdf(line_plus_1, expectation), 2)
-    under_minus_2 = round(poisson.cdf(line_minus_2, expectation), 2)
-    under_plus_2 = round(poisson.cdf(line_plus_2, expectation), 2)
-    
-    # Over probabilities are 1 - CDF, or using the survival function
-    over_main = round(poisson.sf(main_line, expectation), 2)  # sf(x, lambda) = 1 - cdf(x, lambda)
-    over_minus_1 = round(poisson.sf(line_minus_1, expectation), 2)
-    over_plus_1 = round(poisson.sf(line_plus_1, expectation), 2)
-    over_minus_2 = round(poisson.sf(line_minus_2, expectation), 2)
-    over_plus_2 = round(poisson.sf(line_plus_2, expectation), 2)
-
-    # Return the probabilities as a dictionary for clarity
-    return {
-        f'under_main {main_line}': under_main,
-        f'over_main {main_line}': over_main,
-        f'under_minus_1 {line_minus_1}': under_minus_1,
-        f'over_minus_1 {line_minus_1}': over_minus_1,
-        f'under_plus_1 {line_plus_1}': under_plus_1,
-        f'over_plus_1 {line_plus_1}': over_plus_1,
-        f'under_minus_2 {line_minus_2}': under_minus_2,
-        f'over_minus_2 {line_minus_2}': over_minus_2,
-        f'under_plus_2 {line_plus_2}': under_plus_2,
-        f'over_plus_2 {line_plus_2}': over_plus_2
-    }
-
-
+from mymodule.functions import poisson_expectation, poisson_probabilities
 
 
 def main():
