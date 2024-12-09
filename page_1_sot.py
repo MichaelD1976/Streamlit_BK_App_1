@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 
 CURRENT_SEASON = '2024-25'
 LAST_SEASON = '2023-24'
+OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 26.5 > 27.03. Odds change outputs also dafaulted on front-end.
 
 sot_model_h = joblib.load('models/sot/sot_home_poisson.pkl')
 sot_model_a = joblib.load('models/sot/sot_away_poisson.pkl')
@@ -568,13 +569,13 @@ def main():
     # -------------------------------------------- CREATE ODDS FOR ALL UPCOMING FIXTURES --------------------------------------------------------------------
 
     # st.write("---")
-    st.subheader(f'Generate Odds for all upcoming {selected_league} matches (Up to 7 days ahead)')
+    st.subheader(f'Generate odds for all upcoming {selected_league} matches (Up to 7 days ahead)')
 
     column1,column2 = st.columns([1,2])
 
     with column1:
-        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.09, min_value=1.01, max_value=1.2, key='margin_to_apply')
-        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.05, min_value=1.00, max_value=1.06, key='bias_to_apply')
+        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply')
+        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.07, min_value=1.00, max_value=1.12, key='bias_to_apply')
 
 
     generate_odds_all_matches = st.button(f'Click to generate')
@@ -785,7 +786,7 @@ def main():
                     X_poly_input_h = poly_h.fit_transform(ml_inputs_array_h)  # Transform the input features
 
                     # Predict using the model
-                    sot_model_h_prediction_ml = sot_model_h.predict(X_poly_input_h)
+                    sot_model_h_prediction_ml = sot_model_h.predict(X_poly_input_h) * OVERS_BOOST
 
                     # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
                     df['hst_exp_ml'] = np.round(sot_model_h_prediction_ml, 2)
@@ -836,7 +837,7 @@ def main():
                     X_poly_input_a = poly_a.fit_transform(ml_inputs_array_a)  # Transform the input features
 
                     # Predict using the model
-                    sot_model_a_prediction_ml = sot_model_a.predict(X_poly_input_a)
+                    sot_model_a_prediction_ml = sot_model_a.predict(X_poly_input_a) * OVERS_BOOST
 
                     # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
                     df['ast_exp_ml'] = np.round(sot_model_a_prediction_ml, 2)
@@ -963,7 +964,7 @@ def main():
 
                 # ---------  show simplified odds - just minor line  ---------
                 df_simple = df_final_wm[['Date', 'Home Team', 'Away Team', 'T_-1_line', 'T_-1_un_w.%', 'T_-1_ov_w.%',]]
-        
+    
                 #  ----- Calculate Daily Total SOT and GOALS --------
 
                 # Convert to datetime

@@ -4,8 +4,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import time
-import statsmodels.api as sm
-import matplotlib.pyplot as plt
+# import statsmodels.api as sm
+# import matplotlib.pyplot as plt
 from scipy.stats import poisson, nbinom
 from sklearn.preprocessing import PolynomialFeatures
 import joblib
@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 
 CURRENT_SEASON = '2024-25'
 LAST_SEASON = '2023-24'
+OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 26.5 > 27.03. Odds change outputs also dafaulted on front-end.
 
 fouls_model_h = joblib.load('models/fouls/fouls_home_neg_binom.pkl')
 fouls_model_a = joblib.load('models/fouls/fouls_away_neg_binom.pkl')
@@ -595,7 +596,7 @@ def main():
 
     with column1:
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
-        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.05, min_value=1.00, max_value=1.06, key='bias_to_apply', label_visibility = 'visible')
+        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.07, min_value=1.00, max_value=1.12, key='bias_to_apply', label_visibility = 'visible')
 
 
     generate_odds_all_matches = st.button(f'Click to generate')
@@ -837,7 +838,7 @@ def main():
                     X_poly_input_h = poly_h.fit_transform(ml_inputs_array_h)  # Transform the input features
 
                     # Predict using the model
-                    fouls_model_h_prediction = fouls_model_h.predict(X_poly_input_h)
+                    fouls_model_h_prediction = fouls_model_h.predict(X_poly_input_h) * OVERS_BOOST
 
                     # Assign the predictions to the DataFrame
                     df['HF_Exp'] = np.round(fouls_model_h_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
@@ -883,7 +884,7 @@ def main():
                     X_poly_input_a = poly_a.fit_transform(ml_inputs_array_a)  # Transform the input features
 
                     # Predict using the model
-                    fouls_model_a_prediction = fouls_model_a.predict(X_poly_input_a)
+                    fouls_model_a_prediction = fouls_model_a.predict(X_poly_input_a) * OVERS_BOOST
 
                     # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
                     df['AF_Exp'] = np.round(fouls_model_a_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
