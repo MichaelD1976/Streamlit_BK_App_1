@@ -542,14 +542,14 @@ def main():
 
     df_mix = df_mix_1[['Team', 'H_for', 'H_ag', 'A_for', 'A_ag']]
 
-    # show_df_mix = st.checkbox(f'Show combined team {selected_metric} stats (weighted current & previous season)')
-    # if show_df_mix:
-    #     st.write(df_mix)
-    #     st.write('''
-    #              Current season and previous season statistics are merged based on a weighting of number of games through the current season.
-    #              Previous season data decays logarithmically from 100% at game 1 to 0 % by game 24. Teams new to a division are allocated
-    #              an initial defaulted previous season 1st or 3rd league quantile value (depending if promoted or relegated in), so predictions for those teams may be less reliable early season.
-    #              ''')
+    show_df_mix = st.checkbox(f'Show team {selected_metric} stats (weighted current & previous season)')
+    if show_df_mix:
+        st.write(df_mix)
+        st.caption('''
+                 Current season and previous season statistics are merged based on a weighting of number of games through the current season.
+                 Previous season data decays logarithmically from 100% at game 1 to 0 % by game 24. Teams new to a division are allocated
+                 an initial defaulted previous season 1st or 3rd league quantile value (depending if promoted or relegated in), so predictions for those teams may be less reliable early season.
+                 ''')
 
 
     # Get metric columns for the selected metric

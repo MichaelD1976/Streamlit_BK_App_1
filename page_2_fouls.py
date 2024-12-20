@@ -18,7 +18,8 @@ from dotenv import load_dotenv
 
 CURRENT_SEASON = '2024-25'
 LAST_SEASON = '2023-24'
-OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 26.5 > 27.03. Odds change outputs also dafaulted on front-end.
+OVERS_BOOST = 1.03 # increase all overs expectations by this amount as a foundation. 26.5 > 27.3. Odds change outputs also dafaulted on front-end.
+TOTALS_BOOST = 1.02 # increase daily totals by this factor
 
 fouls_model_h = joblib.load('models/fouls/fouls_home_neg_binom.pkl')
 fouls_model_a = joblib.load('models/fouls/fouls_away_neg_binom.pkl')
@@ -497,14 +498,14 @@ def main():
     df_mix = df_mix_1[['Team', 'H_for', 'H_ag', 'A_for', 'A_ag']]
 
 
-    # show_df_mix = st.checkbox(f'Show combined team {selected_metric} Statistics (Weighted current & Previous Season)')
-    # if show_df_mix:
-    #     st.write(df_mix)
-    #     st.write('''
-    #              Current season and previous season statistics are merged based on a weighting of number of games through the current season.
-    #              Previous season data decays logarithmically from 100% at game 1 to 0 % by game 24. Teams new to a division are allocated
-    #              an initial defaulted previous season 1st or 3rd league quantile value (depending if promoted or relegated in), so predictions for those teams may be less reliable early season.
-    #              ''')
+    show_df_mix = st.checkbox(f'Show team {selected_metric} stats (weighted current & previous season)')
+    if show_df_mix:
+        st.write(df_mix)
+        st.caption('''
+                 Current season and previous season statistics are merged based on a weighting of number of games through the current season.
+                 Previous season data decays logarithmically from 100% at game 1 to 0 % by game 24. Teams new to a division are allocated
+                 an initial defaulted previous season 1st or 3rd league quantile value (depending if promoted or relegated in), so predictions for those teams may be less reliable early season.
+                 ''')
 
 
     # Get metric columns for the selected metric
@@ -1048,7 +1049,7 @@ def main():
                 st.write(df_result_fl)
                 # Get poisson odds and lines for each day returned for Daly Goals
                 for _, row in df_result_fl.iterrows():
-                    exp = row['TF']
+                    exp = row['TF'] * 1/OVERS_BOOST * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
                     day = row['Day']
                     main_line = np.floor(exp) + 0.5
 
