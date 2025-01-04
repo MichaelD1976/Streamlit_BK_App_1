@@ -982,17 +982,13 @@ def main():
                 ]
 
 
-                # Apply margin to all columns in the list
-                for col in cols_to_add_margin:
-                    # Apply margin to all columns (multiplying or dividing by margin_to_apply)
-                    df_final[f'{col}_w.%'] = round(df_final[col].apply(lambda x: x / margin_to_apply), 2)  # default for margin
 
-                # Apply bias for '_un' and '_ov' columns
+                # Apply margin & bias for '_un' and '_ov' columns
                 for col in cols_to_add_margin:
                     if col.endswith('_ov'):  # For '_ov' columns, divide by margin_to_apply
-                        df_final[f'{col}_w.%'] = round(df_final[f'{col}_w.%'].apply(lambda x: x / bias_to_apply), 2)
+                        df_final = df_final.assign(**{f'{col}_w.%': df_final[col].apply(lambda x: round(x / margin_to_apply / bias_to_apply, 2))})
                     elif col.endswith('_un'):  # For '_un' columns, multiply by bias_to_apply
-                        df_final[f'{col}_w.%'] = round(df_final[f'{col}_w.%'].apply(lambda x: x * bias_to_apply), 2)
+                        df_final = df_final.assign(**{f'{col}_w.%': df_final[col].apply(lambda x: round(x / margin_to_apply * bias_to_apply, 2))})
 
                 # Create a copy of the DataFrame with the new columns added
                 df_final_wm = df_final.copy()
