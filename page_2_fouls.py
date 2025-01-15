@@ -756,9 +756,9 @@ def main():
                 
                 # st.write(merged_df)
 
-                # Only update 'Derby_mul' if the current value is 1
-                df['Derby_mult'] = df['Derby_mult'].where(df['Derby_mult'] != 1, merged_df['Mult'])
-                df['Derby_mult'] = df['Derby_mult'].fillna(1)
+                # Only update 'Derby_mult' if 'Mult' is not None (ie is a non local derby) 
+                df['Derby_mult'] = np.where(merged_df['Mult'].notna(), merged_df['Mult'], df['Derby_mult'])
+                # df['Derby_mult'] = df['Derby_mult'].fillna(1)
 
                 # st.write(df)
 
