@@ -317,3 +317,48 @@ def poisson_probabilities(expectation, main_line, line_minus_1, line_plus_1, lin
         f'under_plus_2 {line_plus_2}': under_plus_2,
         f'over_plus_2 {line_plus_2}': over_plus_2
     }
+
+
+# --------------------  FIND TRUE 1X2 PRICES ------------------------------------- 
+# set marg_pc_move (amount to change the fav when odds-on eg 1.2 > 1.22 instead of 1.3)
+# complicated code. In testing it handles well transforming short price with margin > true price 
+
+def calculate_true_from_true_raw(h_pc_true_raw , d_pc_true_raw , a_pc_true_raw, margin):
+    marg_pc_remove = 0
+    if h_pc_true_raw > 0.90 or a_pc_true_raw > 0.90:
+        marg_pc_remove = 1    
+    elif h_pc_true_raw > 0.85 or a_pc_true_raw > 0.85:
+        marg_pc_remove = 0.85
+    elif h_pc_true_raw > 0.80 or a_pc_true_raw > 0.80:
+        marg_pc_remove = 0.7
+    elif h_pc_true_raw > 0.75 or a_pc_true_raw > 0.75:
+        marg_pc_remove = 0.6
+    elif h_pc_true_raw > 0.6 or a_pc_true_raw > 0.6:
+        marg_pc_remove = 0.5
+    elif h_pc_true_raw > 0.50 or a_pc_true_raw > 0.50:
+        marg_pc_remove = 0.4
+
+    if h_pc_true_raw >= a_pc_true_raw:
+        h_pc_true = h_pc_true_raw * (((marg_pc_remove * ((margin - 1) * 100)) / 100) + 1)
+        d_pc_true = d_pc_true_raw - ((h_pc_true - h_pc_true_raw) * 0.4) 
+        if h_pc_true + d_pc_true > 1:               # if greater than 100% (makes away price negative)
+            d_pc_true = 1 - h_pc_true - 0.0025
+            a_pc_true = 0.0025                              # make away price default 400
+        a_pc_true = 1 - h_pc_true - d_pc_true
+        if a_pc_true <= 0:
+            a_pc_true = 0.0025
+    else:
+        a_pc_true = a_pc_true_raw * (((marg_pc_remove * ((margin - 1) * 100)) / 100) + 1)
+        d_pc_true= d_pc_true_raw - ((a_pc_true - a_pc_true_raw) * 0.4)
+        if a_pc_true + d_pc_true > 1:
+            d_pc_true = 1 - a_pc_true - 0.0025
+            h_pc_true = 0.0025
+        h_pc_true = 1 - a_pc_true - d_pc_true
+        if h_pc_true <= 0:
+            h_pc_true = 0.0025
+
+    h_pc_true = round(h_pc_true, 2)
+    d_pc_true = round(d_pc_true, 2)
+    a_pc_true = round(a_pc_true, 2)
+
+    return (float(h_pc_true), float(d_pc_true), float(a_pc_true))

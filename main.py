@@ -41,6 +41,9 @@ page_options = [
                  'Home', 
                  'Shots on Target',
                  'Fouls',
+                 'Corners',
+                 'Throw Ins',
+                 'Offsides',
             #    'Daily Totals',
             #    'Goalscorer Matchbets',
             #    'League Matchbets',
@@ -67,6 +70,13 @@ def main():
             st.write("")
             st.write("")
             st.image("images/KM_Logo-bgr.png", width=700)
+            st.write("")
+            st.write("""
+                     **Updates**:
+                     - Shots on Target and Fouls model outputs still in testing - keep using auto pricing emails
+                     - Corners added - okay to use as a reference to position ourselves or for specials creation
+                     - Throw-Ins/Offsides in development 
+                     """)
         c1,c2,c3 = st.columns([1,11,1])
         with c2:
             # st.write("")
@@ -95,6 +105,10 @@ def main():
         import page_2_fouls
         page_2_fouls.main()
 
+    elif selected_page == 'Corners':
+        import page_3_corners
+        page_3_corners.main()
+
     elif selected_page == 'Goalscorer Matchbets':
         import page_4_goalscorer_matchbets
         page_4_goalscorer_matchbets.main()
@@ -110,6 +124,14 @@ def main():
     elif selected_page == 'Team News':
         import page_7_team_news
         page_7_team_news.main()
+
+    elif selected_page == 'Throw Ins':
+        import page_8_throw_ins
+        page_8_throw_ins.main()
+
+    elif selected_page == 'Offsides':
+        import page_9_offsides
+        page_9_offsides.main()
 
 
 

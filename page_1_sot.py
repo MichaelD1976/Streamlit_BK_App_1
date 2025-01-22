@@ -556,7 +556,6 @@ def main():
     metric_columns = metric_options[selected_metric][:2]  # First two columns only, HC and AC for 'Corners'
 
 
-
     df_dnb.drop(['dnb price'], axis=1, inplace=True)
     df_ou.drop(['Exp', 'Under', 'Over', 'Un2.5_%'], axis=1, inplace=True)
     df_ou.drop_duplicates(subset='Ov2.5_%', inplace=True)
@@ -995,67 +994,69 @@ def main():
                 # -------  Display Simple DF and Daily Shots side by side  --------------
 
                 st.write("---")
-                col1, col2 = st.columns([1,1])
-                with col1:
-                    st.subheader('Lines to Publish')
+
+
+                st.subheader('Lines to Publish')
+                st.write("")
+                st.write(df_simple)
+
+                st.write("---")
+                st.subheader('Daily Goals')
+                st.write("")
+                st.write(df_result_gl)
+
+                # Get poisson odds and lines for each day returned for Daly Goals
+                for _, row in df_result_gl.iterrows():
+                    exp = row['TG']
+                    day = row['Day']
+                    main_line = np.floor(exp) + 0.5
+
+                    increment = calculate_increment(main_line)
+
+                    line_minus_1 = main_line - increment
+                    line_minus_2 = main_line - increment * 2
+                    line_plus_1 = main_line + increment
+                    line_plus_2 = main_line + increment * 2
+
+                    probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
+
+                    
+                    st.caption(f"{day} (100% Prices)")
+                    st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
+                    st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
+                    st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
+                    st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
+                    st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
                     st.write("")
-                    st.write(df_simple)
-                with col2:
-                    st.subheader('Daily Goals')
+
+
+                st.write("---")
+                st.subheader('Daily Shots on Target')
+                st.write("")
+                st.write(df_result_sot)
+
+                # Get poisson odds and lines for each day returned for Daily SOT
+                for _, row in df_result_sot.iterrows():
+                    exp = row['TST']
+                    day = row['Day']
+                    main_line = np.floor(exp) + 0.5
+
+                    increment = calculate_increment(main_line)
+
+                    line_minus_1 = main_line - increment
+                    line_minus_2 = main_line - increment * 2
+                    line_plus_1 = main_line + increment
+                    line_plus_2 = main_line + increment * 2
+
+                    probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
+
+                    st.caption(f"{day} (100% Prices)")
+                    st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
+                    st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
+                    st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
+                    st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
+                    st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
                     st.write("")
-                    st.write(df_result_gl)
-
-                    # Get poisson odds and lines for each day returned for Daly Goals
-                    for _, row in df_result_gl.iterrows():
-                        exp = row['TG']
-                        day = row['Day']
-                        main_line = np.floor(exp) + 0.5
-
-                        increment = calculate_increment(main_line)
-
-                        line_minus_1 = main_line - increment
-                        line_minus_2 = main_line - increment * 2
-                        line_plus_1 = main_line + increment
-                        line_plus_2 = main_line + increment * 2
-
-                        probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
-
-                        
-                        st.caption(f"{day} (100% Prices)")
-                        st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
-                        st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
-                        st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
-                        st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
-                        st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
-                        st.write("")
-
-                with col1:
-                    st.subheader('Daily Shots on Target')
-                    st.write("")
-                    st.write(df_result_sot)
-
-                    # Get poisson odds and lines for each day returned for Daily SOT
-                    for _, row in df_result_sot.iterrows():
-                        exp = row['TST']
-                        day = row['Day']
-                        main_line = np.floor(exp) + 0.5
-
-                        increment = calculate_increment(main_line)
-
-                        line_minus_1 = main_line - increment
-                        line_minus_2 = main_line - increment * 2
-                        line_plus_1 = main_line + increment
-                        line_plus_2 = main_line + increment * 2
-
-                        probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
-
-                        st.caption(f"{day} (100% Prices)")
-                        st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
-                        st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
-                        st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
-                        st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
-                        st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
-                        st.write("")
 
 
 
