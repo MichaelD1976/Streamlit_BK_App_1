@@ -729,13 +729,13 @@ def main():
                 # Function to assign Derby_mult based on Dist value
                 def get_derby_mult(dist):
                     if dist < 8:
-                        return 1.05
-                    elif 8 <= dist < 15:
-                        return 1.04
-                    elif 15 <= dist < 24:
                         return 1.03
-                    elif 24 <= dist < 33:                       
+                    elif 8 <= dist < 15:
+                        return 1.025
+                    elif 15 <= dist < 24:
                         return 1.02
+                    elif 24 <= dist < 33:                       
+                        return 1.015
                     elif 33 <= dist < 40:
                         return 1.01
                     else:
