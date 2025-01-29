@@ -42,7 +42,7 @@ page_options = [
                  'Shots on Target',
                  'Fouls',
                  'Corners',
-                 'Throw Ins',
+            #     'Throw Ins',
                  'Offsides',
             #    'Daily Totals',
             #    'Goalscorer Matchbets',
@@ -75,7 +75,7 @@ def main():
                      **Updates**:
                      - Shots on Target and Fouls model outputs still in testing - keep using auto pricing emails
                      - Corners added - okay to use as a reference to position ourselves or for specials creation
-                     - Throw-Ins/Offsides in development 
+                     - Offsides in development 
                      """)
         c1,c2,c3 = st.columns([1,11,1])
         with c2:
@@ -124,10 +124,6 @@ def main():
     elif selected_page == 'Team News':
         import page_7_team_news
         page_7_team_news.main()
-
-    elif selected_page == 'Throw Ins':
-        import page_8_throw_ins
-        page_8_throw_ins.main()
 
     elif selected_page == 'Offsides':
         import page_9_offsides
