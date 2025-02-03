@@ -17,7 +17,8 @@ from dotenv import load_dotenv
 
 CURRENT_SEASON = '2024-25'
 LAST_SEASON = '2023-24'
-OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 26.5 > 27.03. Odds change outputs also dafaulted on front-end.
+OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 8.5 > 8.67. Odds change outputs also dafaulted on front-end.
+TOTALS_BOOST = 1.02 # increase daily totals by this
 
 sot_model_h = joblib.load('models/sot/sot_home_poisson.pkl')
 sot_model_a = joblib.load('models/sot/sot_away_poisson.pkl')
@@ -336,6 +337,10 @@ def main():
     # -----------------------------------------------------------------------
 
     st.header(f'{selected_metric} Model', divider='blue')
+
+    show_model_info = st.checkbox('Model Info')
+    if show_model_info:
+        st.caption('Evaluation metrics show good modelling performance. Good to publish standalone prices.')
 
     # get fixtures
     league_id = leagues_dict.get(selected_league)
@@ -795,7 +800,7 @@ def main():
 
                     # calculate_sot_lines_and_odds(prediction)
                     df[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 'h_-1_under_%', 'h_-1_over_%', 'h_+1_under_%', 'h_+1_over_%']] = df.apply(
-                        lambda row: calculate_home_away_lines_and_odds(row['HST_Exp']), 
+                        lambda row: calculate_home_away_lines_and_odds(row['HST_Exp'], selected_metric), 
                         axis=1, result_type='expand')
                     
                     df['h_main_un'] = round(1 / df['h_main_under_%'], 2)
@@ -846,7 +851,7 @@ def main():
 
                     # calculate_corners_lines_and_odds(prediction)
                     df[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = df.apply(
-                        lambda row: calculate_home_away_lines_and_odds(row['AST_Exp']), 
+                        lambda row: calculate_home_away_lines_and_odds(row['AST_Exp'], selected_metric), 
                         axis=1, result_type='expand')
                     
                     df['a_main_un'] = round(1 / df['a_main_under_%'], 2)
@@ -1003,11 +1008,12 @@ def main():
                 st.write("---")
                 st.subheader('Daily Goals')
                 st.write("")
-                st.write(df_result_gl)
+                # if df_result_gl.shape[0] < 1:
+                #     st.write('One or fewer matches within the time period')
 
                 # Get poisson odds and lines for each day returned for Daly Goals
                 for _, row in df_result_gl.iterrows():
-                    exp = row['TG']
+                    exp = row['TG'] 
                     day = row['Day']
                     main_line = np.floor(exp) + 0.5
 
@@ -1033,11 +1039,12 @@ def main():
                 st.write("---")
                 st.subheader('Daily Shots on Target')
                 st.write("")
-                st.write(df_result_sot)
+                # if df_result_sot.shape[0] < 2:
+                #     st.write('One or fewer matches within the time period')
 
                 # Get poisson odds and lines for each day returned for Daily SOT
                 for _, row in df_result_sot.iterrows():
-                    exp = row['TST']
+                    exp = row['TST'] * 1/OVERS_BOOST * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
                     day = row['Day']
                     main_line = np.floor(exp) + 0.5
 

@@ -17,7 +17,8 @@ import gc
 
 CURRENT_SEASON = '2024-25'
 LAST_SEASON = '2023-24'
-OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 10.5 > 210.71. Odds change outputs also dafaulted on front-end.
+OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 10.5 > 10.71. Odds change outputs also dafaulted on front-end.
+TOTALS_BOOST = 1.02
 
 corners_model_h = joblib.load('models/corners/corners_home_neg_binom.pkl')
 corners_model_a = joblib.load('models/corners/corners_away_neg_binom.pkl')
@@ -144,6 +145,13 @@ def main():
     # -----------------------------------------------------------------------
 
     st.header(f'{selected_metric} ML Model - {selected_league}', divider='blue')
+
+    show_model_info = st.checkbox('Model Info')
+    if show_model_info:
+        st.caption('''
+                Evaluation metrics show adequate modelling performance. Given strong market, use outputs as a reference to position
+                our prices if market differences or for early marketing requirements.
+                 ''')
 
     # get fixtures
     league_id = leagues_dict.get(selected_league)
@@ -796,7 +804,7 @@ def main():
     with column1:
         # WIDGET
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.09, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
-        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.07, min_value=0.95, max_value=1.1, key='bias_to_apply', label_visibility = 'visible')
+        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.06, min_value=0.95, max_value=1.1, key='bias_to_apply', label_visibility = 'visible')
 
     generate_odds_all_matches = st.button(f'Click to generate')
 
@@ -984,7 +992,7 @@ def main():
                         X_poly_input_h = poly_h.fit_transform(ml_inputs_array_h)  # Transform the input features
 
                         # Predict using the model
-                        corners_model_h_prediction = corners_model_h.predict(X_poly_input_h)
+                        corners_model_h_prediction = corners_model_h.predict(X_poly_input_h) * OVERS_BOOST
 
 
                         # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
@@ -996,7 +1004,7 @@ def main():
 
                         # calculate_corners_lines_and_odds(prediction)
                         df[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 'h_-1_under_%', 'h_-1_over_%', 'h_+1_under_%', 'h_+1_over_%']] = df.apply(
-                            lambda row: calculate_home_away_lines_and_odds(row['HC_Exp']), 
+                            lambda row: calculate_home_away_lines_and_odds(row['HC_Exp'], selected_metric), 
                             axis=1, result_type='expand')
                         
                         df['h_main_un'] = round(1 / df['h_main_under_%'], 2)
@@ -1038,7 +1046,7 @@ def main():
 
 
                         # Predict using the model
-                        corners_model_a_prediction = corners_model_a.predict(X_poly_input_a)
+                        corners_model_a_prediction = corners_model_a.predict(X_poly_input_a) * OVERS_BOOST
 
                         del ml_inputs_array_a
                         gc.collect()
@@ -1048,7 +1056,7 @@ def main():
 
                         # calculate_corners_lines_and_odds(prediction)
                         df[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = df.apply(
-                            lambda row: calculate_home_away_lines_and_odds(row['AC_Exp']), 
+                            lambda row: calculate_home_away_lines_and_odds(row['AC_Exp'], selected_metric), 
                             axis=1, result_type='expand')
                         
                         df['a_main_un'] = round(1 / df['a_main_under_%'], 2)
@@ -1208,12 +1216,15 @@ def main():
                     st.subheader('Total Daily Corners')
                     st.caption(f"Total expected Corners for {selected_league} for specified day")
                     st.write("")
-                    st.write(df_result_corn)
+                    if df_result_corn.shape[0] > 1:
+                        st.write(df_result_corn)
+                    else:
+                        st.write('No lines available')
                     st.write("")
 
                     # Get poisson odds and lines for each day returned for Daily SOT
                     for _, row in df_result_corn.iterrows():
-                        exp = row['TC']
+                        exp = row['TC'] * 1/OVERS_BOOST * TOTALS_BOOST
                         day = row['Day']
                         main_line = np.floor(exp) + 0.5
 

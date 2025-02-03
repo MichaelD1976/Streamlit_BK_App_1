@@ -288,6 +288,13 @@ def main():
 
     st.header(f'{selected_metric} Model', divider='blue')
 
+    show_model_info = st.checkbox('Model Info')
+    if show_model_info:
+        st.caption('''
+                 Evaluation metrics show good modelling performance. Good to publish standalone prices. Margin set to 11% given high variance of outputs
+                 and likelihood of competitor line differences.
+                 ''')
+
     # get fixtures
     league_id = leagues_dict.get(selected_league)
 
@@ -596,7 +603,7 @@ def main():
     column1,column2 = st.columns([1,2])
 
     with column1:
-        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
+        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.11, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.07, min_value=1.00, max_value=1.12, key='bias_to_apply', label_visibility = 'visible')
 
 
@@ -847,7 +854,7 @@ def main():
                     # Calculate additional metrics using the prediction
                     df[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 
                         'h_-1_under_%', 'h_-1_over_%', 'h_+1_under_%', 'h_+1_over_%']] = df.apply(
-                        lambda row: calculate_home_away_lines_and_odds(row['HF_Exp']), 
+                        lambda row: calculate_home_away_lines_and_odds(row['HF_Exp'], selected_metric), 
                         axis=1, result_type='expand'
                     )
 
@@ -892,7 +899,7 @@ def main():
 
                     # calculate_corners_lines_and_odds(prediction)
                     df[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = df.apply(
-                        lambda row: calculate_home_away_lines_and_odds(row['AF_Exp']), 
+                        lambda row: calculate_home_away_lines_and_odds(row['AF_Exp'], selected_metric), 
                         axis=1, result_type='expand')
                     
                     df['a_main_un'] = round(1 / df['a_main_under_%'], 2)
@@ -1042,7 +1049,10 @@ def main():
                 st.write("---")
                 st.subheader('Total Daily Fouls')
                 st.write("")
-                st.write(df_result_fl)
+                # if df_result_fl.shape[0] < 2:
+                    # st.write(df_result_fl)
+                    # st.write('One or fewer matches within time period')
+
                 # Get poisson odds and lines for each day returned for Daly Goals
                 for _, row in df_result_fl.iterrows():
                     exp = row['TF'] * 1/OVERS_BOOST * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost

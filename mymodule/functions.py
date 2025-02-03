@@ -182,7 +182,14 @@ def get_fixtures(league_id, from_date, to_date, API_SEASON):
 # due to neg binom k factor (dispersion) to calculate 'Total' exp, add together probabilities generated (dont pass through summed exp's to this funct)
 # Both corners and sot are distributed in an almost 50/50 split between neg binom and poisson. Also used for fouls.
 # 
-def calculate_home_away_lines_and_odds(prediction):
+def calculate_home_away_lines_and_odds(prediction, model):
+
+    if model == 'Offsides':
+        poisson_weight = 0.7
+        nb_weight = 0.3
+    else:
+        poisson_weight = 0.5
+        nb_weight = 0.5
 
     if prediction == 0:
         # Handle the edge case where prediction is zero

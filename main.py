@@ -39,11 +39,12 @@ st.markdown(
 
 page_options = [
                  'Home', 
-                 'Shots on Target',
-                 'Fouls',
-                 'Corners',
+                 'Models',
+            #     'Shots on Target',
+            #     'Fouls',
+             #    'Corners',
             #     'Throw Ins',
-                 'Offsides',
+             #    'Offsides',
             #    'Daily Totals',
             #    'Goalscorer Matchbets',
             #    'League Matchbets',
@@ -73,9 +74,10 @@ def main():
             st.write("")
             st.write("""
                      **Updates**:
-                     - Shots on Target and Fouls model outputs still in testing - keep using auto pricing emails
+                     - Offsides Model added - okay to use as a reference to position ourselves or for specials creation
                      - Corners added - okay to use as a reference to position ourselves or for specials creation
-                     - Offsides in development 
+                     - Shots on Target - successfully tested and good to use 
+                     - Fouls model outputs still in testing - keep using auto pricing emails
                      """)
         c1,c2,c3 = st.columns([1,11,1])
         with c2:
@@ -95,19 +97,21 @@ def main():
         # st.write('Select required market from dropdown menu')
 
 
+    # elif selected_page == 'Shots on Target':
+    #     import page_1_sot
+    #     page_1_sot.main()
 
+    # elif selected_page == 'Fouls':
+    #     import page_2_fouls
+    #     page_2_fouls.main()
 
-    elif selected_page == 'Shots on Target':
-        import page_1_sot
-        page_1_sot.main()
+    # elif selected_page == 'Corners':
+    #     import page_3_corners
+    #     page_3_corners.main()
 
-    elif selected_page == 'Fouls':
-        import page_2_fouls
-        page_2_fouls.main()
-
-    elif selected_page == 'Corners':
-        import page_3_corners
-        page_3_corners.main()
+    elif selected_page == 'Models':
+        import page_10_models_choose
+        page_10_models_choose.main()
 
     elif selected_page == 'Goalscorer Matchbets':
         import page_4_goalscorer_matchbets
@@ -125,9 +129,9 @@ def main():
         import page_7_team_news
         page_7_team_news.main()
 
-    elif selected_page == 'Offsides':
-        import page_9_offsides
-        page_9_offsides.main()
+    # elif selected_page == 'Offsides':
+    #     import page_9_offsides
+    #     page_9_offsides.main()
 
 
 
