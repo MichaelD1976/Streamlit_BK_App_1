@@ -288,12 +288,12 @@ def main():
 
     st.header(f'{selected_metric} Model', divider='blue')
 
-    show_model_info = st.checkbox('Model Info')
-    if show_model_info:
-        st.caption('''
-                 Evaluation metrics show good modelling performance. Good to publish standalone prices. Margin set to 11% given high variance of outputs
-                 and likelihood of competitor line differences.
-                 ''')
+    # show_model_info = st.checkbox('Model Info')
+    # if show_model_info:
+    #     st.caption('''
+    #              Evaluation metrics show good modelling performance. Good to publish standalone prices. Margin set to 11% given high variance of outputs
+    #              and likelihood of competitor line differences.
+    #              ''')
 
     # get fixtures
     league_id = leagues_dict.get(selected_league)

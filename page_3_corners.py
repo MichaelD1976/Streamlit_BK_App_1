@@ -146,12 +146,12 @@ def main():
 
     st.header(f'{selected_metric} ML Model - {selected_league}', divider='blue')
 
-    show_model_info = st.checkbox('Model Info')
-    if show_model_info:
-        st.caption('''
-                Evaluation metrics show adequate modelling performance. Given strong market, use outputs as a reference to position
-                our prices if market differences or for early marketing requirements.
-                 ''')
+    # show_model_info = st.checkbox('Model Info')
+    # if show_model_info:
+    #     st.caption('''
+    #             Evaluation metrics show adequate modelling performance. Given strong market, use outputs as a reference to position
+    #             our prices if market differences or for early marketing requirements.
+    #              ''')
 
     # get fixtures
     league_id = leagues_dict.get(selected_league)

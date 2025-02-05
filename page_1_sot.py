@@ -338,9 +338,9 @@ def main():
 
     st.header(f'{selected_metric} Model', divider='blue')
 
-    show_model_info = st.checkbox('Model Info')
-    if show_model_info:
-        st.caption('Evaluation metrics show good modelling performance. Good to publish standalone prices.')
+    # show_model_info = st.checkbox('Model Info')
+    # if show_model_info:
+    #     st.caption('Evaluation metrics show good modelling performance. Good to publish standalone prices.')
 
     # get fixtures
     league_id = leagues_dict.get(selected_league)

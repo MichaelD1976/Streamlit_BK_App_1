@@ -155,13 +155,13 @@ def main():
 
     st.header(f'{selected_metric} ML Model - {selected_league}', divider='blue')
 
-    show_model_info = st.checkbox('Model Info')
-    if show_model_info:
-        st.caption('''
-                 Evaluation metrics show that offsides do not model as well as other stat markets.
-                 Not recommended to publish standalone lines unless for marketing purposes or if offering an overs price only with extra margin added.
-                 Fine to use as a reference to position ourselves within an established market.
-                 ''')
+    # show_model_info = st.checkbox('Model Info')
+    # if show_model_info:
+    #     st.caption('''
+    #              Evaluation metrics show that offsides do not model as well as other stat markets.
+    #              Not recommended to publish standalone lines unless for marketing purposes or if offering an overs price only with extra margin added.
+    #              Fine to use as a reference to position ourselves within an established market.
+    #              ''')
 
     # get fixtures
     league_id = leagues_dict.get(selected_league)
