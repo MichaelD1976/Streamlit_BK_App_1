@@ -153,7 +153,7 @@ def main():
 
     # -----------------------------------------------------------------------
 
-    st.header(f'{selected_metric} ML Model - {selected_league}', divider='blue')
+    st.header(f'{selected_metric} Model - {selected_league}', divider='blue')
 
     # show_model_info = st.checkbox('Model Info')
     # if show_model_info:
@@ -543,8 +543,9 @@ def main():
 
     with column1:
         # WIDGET
-        margin_to_apply = st.slider('Margin to apply:', step=0.01, value = 1.11, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
-        bias_to_apply = st.slider('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.07, min_value=0.95, max_value=1.1, key='bias_to_apply', label_visibility = 'visible')
+        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
+        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.07, min_value=0.95, max_value=1.1, key='bias_to_apply', label_visibility = 'visible')
+
 
     generate_odds_all_matches = st.button(f'Click to generate')
 
@@ -856,8 +857,6 @@ def main():
                     df_final_wm = df_final.copy()
 
                     # Display the updated DataFrame
-                    st.subheader('All Lines')
-                    st.caption('Marginalised odds appended')
                     st.write(df_final_wm)
 
                     # warning if not all match  retrieved from API call matches the final df

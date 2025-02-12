@@ -9,20 +9,25 @@ import time
 from scipy.stats import poisson, nbinom
 from sklearn.preprocessing import PolynomialFeatures
 import joblib
-from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities
+from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities, calculate_true_from_true_raw
 import requests
 import os
 from dotenv import load_dotenv
+import csv
 
 
+dict_api_to_bk_league_names = {
+     'England Premier':'England Premier League',
+     'Spain La Liga' : 'Spain LaLiga',
+ }
 
 CURRENT_SEASON = '2024-25'
 LAST_SEASON = '2023-24'
 OVERS_BOOST = 1.03 # increase all overs expectations by this amount as a foundation. 26.5 > 27.3. Odds change outputs also dafaulted on front-end.
 TOTALS_BOOST = 1.02 # increase daily totals by this factor
 
-fouls_model_h = joblib.load('models/fouls/fouls_home_neg_binom.pkl')
-fouls_model_a = joblib.load('models/fouls/fouls_away_neg_binom.pkl')
+fouls_model_h = joblib.load('models/fouls/fouls_home_neg_binom_4.pkl')
+fouls_model_a = joblib.load('models/fouls/fouls_away_neg_binom_4.pkl')
 
 # key = current gw, value is perc of last season
 game_week_decay_dict = {
@@ -50,50 +55,6 @@ game_week_decay_dict = {
     22: 0.02,
     23: 0.02
 }
-
-# ----------------------  SET MARGIN MOVE  ------------------------------------ 
-# set marg_pc_move (amount to change the fav when odds-on eg 1.2 > 1.22 instead of 1.3)
-# complicated code. In testing it handles well transforming short price with margin > true price 
-
-def calculate_true_from_true_raw(h_pc_true_raw , d_pc_true_raw , a_pc_true_raw, margin):
-    marg_pc_remove = 0
-    if h_pc_true_raw > 0.90 or a_pc_true_raw > 0.90:
-        marg_pc_remove = 1    
-    elif h_pc_true_raw > 0.85 or a_pc_true_raw > 0.85:
-        marg_pc_remove = 0.85
-    elif h_pc_true_raw > 0.80 or a_pc_true_raw > 0.80:
-        marg_pc_remove = 0.7
-    elif h_pc_true_raw > 0.75 or a_pc_true_raw > 0.75:
-        marg_pc_remove = 0.6
-    elif h_pc_true_raw > 0.6 or a_pc_true_raw > 0.6:
-        marg_pc_remove = 0.5
-    elif h_pc_true_raw > 0.50 or a_pc_true_raw > 0.50:
-        marg_pc_remove = 0.4
-
-    if h_pc_true_raw >= a_pc_true_raw:
-        h_pc_true = h_pc_true_raw * (((marg_pc_remove * ((margin - 1) * 100)) / 100) + 1)
-        d_pc_true = d_pc_true_raw - ((h_pc_true - h_pc_true_raw) * 0.4) 
-        if h_pc_true + d_pc_true > 1:               # if greater than 100% (makes away price negative)
-            d_pc_true = 1 - h_pc_true - 0.0025
-            a_pc_true = 0.0025                              # make away price default 400
-        a_pc_true = 1 - h_pc_true - d_pc_true
-        if a_pc_true < 0:
-            a_pc_true = 0.0025
-    else:
-        a_pc_true = a_pc_true_raw * (((marg_pc_remove * ((margin - 1) * 100)) / 100) + 1)
-        d_pc_true= d_pc_true_raw - ((a_pc_true - a_pc_true_raw) * 0.4)
-        if a_pc_true + d_pc_true > 1:
-            d_pc_true = 1 - a_pc_true - 0.0025
-            h_pc_true = 0.0025
-        h_pc_true = 1 - a_pc_true - d_pc_true
-        if h_pc_true < 0:
-            h_pc_true = 0.0025
-
-    h_pc_true = round(h_pc_true, 2)
-    d_pc_true = round(d_pc_true, 2)
-    a_pc_true = round(a_pc_true, 2)
-
-    return (float(h_pc_true), float(d_pc_true), float(a_pc_true))
 
 
 # --------------- Probability grid HC vs AC -----------------
@@ -214,8 +175,6 @@ def load_data():
 # -------------------------------------------
 
 
-
-
 def main():
     with st.spinner('Loading Data...'):
         df, df_prom_rel = load_data()
@@ -275,14 +234,11 @@ def main():
     # Capture user selections
     selected_league = st.sidebar.selectbox('Select League', options=list(league_options.values()), label_visibility = 'visible')
     selected_metric = 'Fouls'
-
  
     df = df[df['League'] == [key for key, value in league_options.items() if value == selected_league][0]]           
 
-
     this_df = df[(df['Season'] == CURRENT_SEASON)]  # remove all matches that are not current season
     last_df = df[(df['Season'] == LAST_SEASON)] 
-
 
     # -----------------------------------------------------------------------
 
@@ -299,7 +255,6 @@ def main():
     league_id = leagues_dict.get(selected_league)
 
     # st.write(this_df)
-
 
     #  -----------  create df with just teams, MP and metric options - CURRENT SEASON  ------------------------
 
@@ -337,12 +292,10 @@ def main():
     this_options_df['A_for'] = A_f
     this_options_df['A_ag'] = A_ag
 
-
     # # Display the resulting DataFrame
     # show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats')
     # if show_this_ssn_stats:
     #     st.write(this_options_df)
-
 
     # ---- LAST SEASON ------------------
 
@@ -603,7 +556,7 @@ def main():
     column1,column2 = st.columns([1,2])
 
     with column1:
-        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.11, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
+        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.07, min_value=1.00, max_value=1.12, key='bias_to_apply', label_visibility = 'visible')
 
 
@@ -611,471 +564,568 @@ def main():
 
     if generate_odds_all_matches:    
         with st.spinner("Odds being compiled..."):
+            try:
+                # GET FIXTURES WEEK AHEAD
+                today = datetime.now()
+                to_date = today + timedelta(days=5)
+                from_date_str = today.strftime("%Y-%m-%d")
+                to_date_str = to_date.strftime("%Y-%m-%d")
+                MARKET_IDS = ['1', '5']             # WDW & Ov/Un
+                BOOKMAKERS = ['8']                  # Pinnacle = 4, 365 = 8
+                API_SEASON = CURRENT_SEASON[:4]
 
 
-            # GET FIXTURES WEEK AHEAD
-            today = datetime.now()
-            to_date = today + timedelta(days=5)
-            from_date_str = today.strftime("%Y-%m-%d")
-            to_date_str = to_date.strftime("%Y-%m-%d")
-            MARKET_IDS = ['1', '5']             # WDW & Ov/Un
-            BOOKMAKERS = ['8']                  # Pinnacle = 4, 365 = 8
-            API_SEASON = CURRENT_SEASON[:4]
-
-
-            df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
-            if df_fixtures.empty:
-                st.write("No data returned for the specified league and date range.")
-            else:
-                df_fixts = df_fixtures[['Fixture ID', 'Date', 'Referee', 'Home Team', 'Away Team']]
-                # st.write(df_fixts)
-
-                fixt_id_list = list(df_fixts['Fixture ID'].unique())
-
-                if not st.secrets:
-                    load_dotenv()
-                    API_KEY = os.getenv("API_KEY_FOOTBALL_API")
-
+                df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
+                if df_fixtures.empty:
+                    st.write("No data returned for the specified league and date range.")
                 else:
-                    # Use Streamlit secrets in production
-                    API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
+                    df_fixts = df_fixtures[['Fixture ID', 'Date', 'Referee', 'Home Team', 'Away Team']]
+                    # st.write(df_fixts)
 
-                @st.cache_data
-                def get_odds(fixture_id, market_id, bookmakers):
-                    url = "https://api-football-v1.p.rapidapi.com/v3/odds"
-                    headers = {
-                        "X-RapidAPI-Key": API_KEY,
-                        "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
-                    }
-                    querystring = {
-                        "fixture": fixture_id,
-                        "bet": market_id,
-                        "timezone": "Europe/London"
-                    }
+                    fixt_id_list = list(df_fixts['Fixture ID'].unique())
 
-                    response = requests.get(url, headers=headers, params=querystring)
-                    data = response.json()
+                    if not st.secrets:
+                        load_dotenv()
+                        API_KEY = os.getenv("API_KEY_FOOTBALL_API")
 
-                    if 'response' in data and data['response']:
-                        odds_dict = {
-                            'Fixture ID': fixture_id,
-                            'Home Win': None,
-                            'Draw': None,
-                            'Away Win': None,
-                            'Over 2.5': None,
-                            'Under 2.5': None
+                    else:
+                        # Use Streamlit secrets in production
+                        API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
+
+                    @st.cache_data
+                    def get_odds(fixture_id, market_id, bookmakers):
+                        url = "https://api-football-v1.p.rapidapi.com/v3/odds"
+                        headers = {
+                            "X-RapidAPI-Key": API_KEY,
+                            "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+                        }
+                        querystring = {
+                            "fixture": fixture_id,
+                            "bet": market_id,
+                            "timezone": "Europe/London"
                         }
 
-                        # Loop through bookmakers
-                        for bookmaker_data in data['response'][0].get('bookmakers', []):
-                            if str(bookmaker_data['id']) in bookmakers:
-                                # Loop through each market (bet) offered by the bookmaker
-                                for bet_data in bookmaker_data['bets']:
-                                    if bet_data['id'] == int(market_id):  # Ensure it's the selected market
-                                        # Extract the outcomes (selections) and their corresponding odds
-                                        for value in bet_data['values']:
-                                            selection = value['value']
-                                            odd = value['odd']
-                                            
-                                            # Assign the odds based on the selection type
-                                            if selection == 'Home':
-                                                odds_dict['Home Win'] = odd
-                                            elif selection == 'Draw':
-                                                odds_dict['Draw'] = odd
-                                            elif selection == 'Away':
-                                                odds_dict['Away Win'] = odd
-                                            elif selection == 'Over 2.5':
-                                                odds_dict['Over 2.5'] = odd
-                                            elif selection == 'Under 2.5':
-                                                odds_dict['Under 2.5'] = odd
+                        response = requests.get(url, headers=headers, params=querystring)
+                        data = response.json()
 
-                        # Create a DataFrame with a single row containing all the odds
-                        odds_df = pd.DataFrame([odds_dict])
-                        return odds_df
+                        if 'response' in data and data['response']:
+                            odds_dict = {
+                                'Fixture ID': fixture_id,
+                                'Home Win': None,
+                                'Draw': None,
+                                'Away Win': None,
+                                'Over 2.5': None,
+                                'Under 2.5': None
+                            }
 
-                    # Return empty DataFrame if no data is found
-                    return pd.DataFrame()
+                            # Loop through bookmakers
+                            for bookmaker_data in data['response'][0].get('bookmakers', []):
+                                if str(bookmaker_data['id']) in bookmakers:
+                                    # Loop through each market (bet) offered by the bookmaker
+                                    for bet_data in bookmaker_data['bets']:
+                                        if bet_data['id'] == int(market_id):  # Ensure it's the selected market
+                                            # Extract the outcomes (selections) and their corresponding odds
+                                            for value in bet_data['values']:
+                                                selection = value['value']
+                                                odd = value['odd']
+                                                
+                                                # Assign the odds based on the selection type
+                                                if selection == 'Home':
+                                                    odds_dict['Home Win'] = odd
+                                                elif selection == 'Draw':
+                                                    odds_dict['Draw'] = odd
+                                                elif selection == 'Away':
+                                                    odds_dict['Away Win'] = odd
+                                                elif selection == 'Over 2.5':
+                                                    odds_dict['Over 2.5'] = odd
+                                                elif selection == 'Under 2.5':
+                                                    odds_dict['Under 2.5'] = odd
 
-                # Collect odds for all fixtures
-                all_odds_df = pd.DataFrame()  # DataFrame to collect all odds
+                            # Create a DataFrame with a single row containing all the odds
+                            odds_df = pd.DataFrame([odds_dict])
+                            return odds_df
 
-                # Iterate through each fixture ID and get odds
-                for fixture_id in fixt_id_list:
-                    for market_id in MARKET_IDS:
-                        odds_df = get_odds(fixture_id, market_id, BOOKMAKERS)
-                        if not odds_df.empty:
-                            all_odds_df = pd.concat([all_odds_df, odds_df], ignore_index=True)
+                        # Return empty DataFrame if no data is found
+                        return pd.DataFrame()
 
-                # Display the collected odds
-                # st.write(all_odds_df)
+                    # Collect odds for all fixtures
+                    all_odds_df = pd.DataFrame()  # DataFrame to collect all odds
 
-                # Use groupby and fillna to collapse rows and remove None values
-                df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
-                    all_odds_df.groupby('Fixture ID').last()).reset_index()
+                    # Iterate through each fixture ID and get odds
+                    for fixture_id in fixt_id_list:
+                        for market_id in MARKET_IDS:
+                            odds_df = get_odds(fixture_id, market_id, BOOKMAKERS)
+                            if not odds_df.empty:
+                                all_odds_df = pd.concat([all_odds_df, odds_df], ignore_index=True)
 
-                # st.write(df_collapsed)
+                    # Display the collected odds
+                    # st.write(all_odds_df)
 
-                # Merge odds df_fixts with df_collapsed
-                df = df_fixts.merge(df_collapsed, on='Fixture ID')
-                df = df.dropna(subset=['Home Win', 'Draw', 'Away Win', 'Over 2.5', 'Under 2.5'])
-                # st.write(df)
+                    # Use groupby and fillna to collapse rows and remove None values
+                    df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
+                        all_odds_df.groupby('Fixture ID').last()).reset_index()
 
-                # ---------------- Incorporate Distance/Derby factor --------
+                    # st.write(df_collapsed)
+
+                    # Merge odds df_fixts with df_collapsed
+                    df = df_fixts.merge(df_collapsed, on='Fixture ID')
+                    df = df.dropna(subset=['Home Win', 'Draw', 'Away Win', 'Over 2.5', 'Under 2.5'])
+                    # st.write(df)
+
+                    # ---------------- Incorporate Distance/Derby factor --------
+
+                    # 1. Now check for LOCAL derbies.
+
+                    df_dist_grid = pd.read_csv(f'data/coordinates/dist_grid_{selected_league}.csv')
+                    # st.write(df_dist_grid)
+                    # Setting 'Unnamed:0' as the index of dist_grid for easier lookup
+                    df_dist_grid.set_index('Unnamed: 0', inplace=True)
+
+                    # Now, loop over each row in df to extract the distance from dist_grid
+                    df['Dist'] = df.apply(lambda row: df_dist_grid.at[row['Home Team'], row['Away Team']], axis=1)
+
+                    # Function to assign Derby_mult based on Dist value
+                    def get_derby_mult(dist):
+                        if dist < 8:
+                            return 1.03
+                        elif 8 <= dist < 15:
+                            return 1.02
+                        elif 15 <= dist < 24:
+                            return 1.015
+                        elif 24 <= dist < 33:                       
+                            return 1.01
+                        elif 33 <= dist < 40:
+                            return 1.00
+                        else:
+                            return 1.00
+                        
+                    df['Derby_mult'] = df['Dist'].apply(get_derby_mult)
 
 
-                # 1. Now check for LOCAL derbies.
+                    # 1. Check for NON local derbies first 1st, reference csv
+                    df_non_local_derby = pd.read_csv('data/derbies_non_local.csv')
+                    # st.write(df_non_local_derby)
 
-                df_dist_grid = pd.read_csv(f'data/coordinates/dist_grid_{selected_league}.csv')
-                # st.write(df_dist_grid)
-                # Setting 'Unnamed:0' as the index of dist_grid for easier lookup
-                df_dist_grid.set_index('Unnamed: 0', inplace=True)
-
-                # Now, loop over each row in df to extract the distance from dist_grid
-                df['Dist'] = df.apply(lambda row: df_dist_grid.at[row['Home Team'], row['Away Team']], axis=1)
-
-                # Function to assign Derby_mult based on Dist value
-                def get_derby_mult(dist):
-                    if dist < 8:
-                        return 1.03
-                    elif 8 <= dist < 15:
-                        return 1.025
-                    elif 15 <= dist < 24:
-                        return 1.02
-                    elif 24 <= dist < 33:                       
-                        return 1.015
-                    elif 33 <= dist < 40:
-                        return 1.01
-                    else:
-                        return 1.00
+                    # Merge df with df_non_local_derby on matching Home Team and Away Team
+                    merged_df = df.merge(df_non_local_derby[['Home Team', 'Away Team', 'Mult']], 
+                                        left_on=['Home Team', 'Away Team'], 
+                                        right_on=['Home Team', 'Away Team'], 
+                                        how='left')
                     
-                df['Derby_mult'] = df['Dist'].apply(get_derby_mult)
+                    # st.write(merged_df)
+
+                    # Only update 'Derby_mult' if 'Mult' is not None (ie is a non local derby) 
+                    df['Derby_mult'] = np.where(merged_df['Mult'].notna(), merged_df['Mult'], df['Derby_mult'])
+                    # df['Derby_mult'] = df['Derby_mult'].fillna(1)
+
+                    # st.write(df)
+
+                    # ---------------- Incorporate Ref Factor --------------
+
+                    df = df.merge(df_avg_tf_per_ref[['Referee', 'Factor']], on='Referee', how='left')
+                    df.rename(columns={'Factor': 'Ref_mult'}, inplace=True)
+                    df['Ref_mult'] = df['Ref_mult'].fillna(1)
+                    # st.write(df)
+
+                    #  ---------------  Create true wdw odds ---------------
+                    # Convert columns to numeric (if they are strings or objects)
+                    df['Home Win'] = pd.to_numeric(df['Home Win'], errors='coerce')
+                    df['Draw'] = pd.to_numeric(df['Draw'], errors='coerce')
+                    df['Away Win'] = pd.to_numeric(df['Away Win'], errors='coerce')
+
+                    df['margin'] = 1/df['Home Win'] + 1/df['Draw'] + 1/df['Away Win']
+
+                    df['h_pc_true_raw'] = (1 / df['Home Win']) / df['margin']
+                    df['d_pc_true_raw'] = (1 / df['Draw']) / df['margin'] 
+                    df['a_pc_true_raw'] = (1 / df['Away Win']) / df['margin'] 
+
+                    df[['h_pc_true', 'd_pc_true', 'a_pc_true']] = df.apply(
+                        lambda row: calculate_true_from_true_raw(row['h_pc_true_raw'], row['d_pc_true_raw'], row['a_pc_true_raw'], row['margin']), 
+                        axis=1, result_type='expand')
+                            
+
+                    # ------------------  Incorporate into the df stats from df_mix ------------------
+                    # Merge for the Home Team
+                    df = df.merge(df_mix[['Team', 'H_for', 'H_ag', 'A_for', 'A_ag']], 
+                                left_on='Home Team', right_on='Team', 
+                                how='left', suffixes=('', '_Home'))
+
+                    # Merge for the Away Team
+                    df = df.merge(df_mix[['Team', 'H_for', 'H_ag', 'A_for', 'A_ag']], 
+                                left_on='Away Team', right_on='Team', 
+                                how='left', suffixes=('', '_Away'))
+
+                    # Drop the extra 'team' columns from both merges
+                    df = df.drop(columns=['Team', 'Team_Away'])
+                    df.rename(columns={'H_for':'H_h_for', 'H_ag':'H_h_ag', 'A_for':'H_a_for', 'A_ag': 'H_a_ag', 'H_for_Away': 'A_h_for', 'H_ag_Away':'A_h_ag', 'A_for_Away': 'A_a_for', 'A_ag_Away': 'A_a_ag'}, inplace=True)
+
+                    # st.write(df)
 
 
-                # 1. Check for NON local derbies first 1st, reference csv
-                df_non_local_derby = pd.read_csv('data/derbies_non_local.csv')
-                # st.write(df_non_local_derby)
-
-                # Merge df with df_non_local_derby on matching Home Team and Away Team
-                merged_df = df.merge(df_non_local_derby[['Home Team', 'Away Team', 'Mult']], 
-                                    left_on=['Home Team', 'Away Team'], 
-                                    right_on=['Home Team', 'Away Team'], 
-                                    how='left')
-                
-                # st.write(merged_df)
-
-                # Only update 'Derby_mult' if 'Mult' is not None (ie is a non local derby) 
-                df['Derby_mult'] = np.where(merged_df['Mult'].notna(), merged_df['Mult'], df['Derby_mult'])
-                # df['Derby_mult'] = df['Derby_mult'].fillna(1)
-
-                # st.write(df)
-
-                # ---------------- Incorporate Ref Factor --------------
-
-                df = df.merge(df_avg_tf_per_ref[['Referee', 'Factor']], on='Referee', how='left')
-                df.rename(columns={'Factor': 'Ref_mult'}, inplace=True)
-                df['Ref_mult'] = df['Ref_mult'].fillna(1)
-                # st.write(df)
-
-                #  ---------------  Create true wdw odds ---------------
-                # Convert columns to numeric (if they are strings or objects)
-                df['Home Win'] = pd.to_numeric(df['Home Win'], errors='coerce')
-                df['Draw'] = pd.to_numeric(df['Draw'], errors='coerce')
-                df['Away Win'] = pd.to_numeric(df['Away Win'], errors='coerce')
-
-                df['margin'] = 1/df['Home Win'] + 1/df['Draw'] + 1/df['Away Win']
-
-                df['h_pc_true_raw'] = (1 / df['Home Win']) / df['margin']
-                df['d_pc_true_raw'] = (1 / df['Draw']) / df['margin'] 
-                df['a_pc_true_raw'] = (1 / df['Away Win']) / df['margin'] 
-
-                df[['h_pc_true', 'd_pc_true', 'a_pc_true']] = df.apply(
-                    lambda row: calculate_true_from_true_raw(row['h_pc_true_raw'], row['d_pc_true_raw'], row['a_pc_true_raw'], row['margin']), 
-                    axis=1, result_type='expand')
-                           
-
-                # ------------------  Incorporate into the df stats from df_mix ------------------
-                # Merge for the Home Team
-                df = df.merge(df_mix[['Team', 'H_for', 'H_ag', 'A_for', 'A_ag']], 
-                            left_on='Home Team', right_on='Team', 
-                            how='left', suffixes=('', '_Home'))
-
-                # Merge for the Away Team
-                df = df.merge(df_mix[['Team', 'H_for', 'H_ag', 'A_for', 'A_ag']], 
-                            left_on='Away Team', right_on='Team', 
-                            how='left', suffixes=('', '_Away'))
-
-                # Drop the extra 'team' columns from both merges
-                df = df.drop(columns=['Team', 'Team_Away'])
-                df.rename(columns={'H_for':'H_h_for', 'H_ag':'H_h_ag', 'A_for':'H_a_for', 'A_ag': 'H_a_ag', 'H_for_Away': 'A_h_for', 'H_ag_Away':'A_h_ag', 'A_for_Away': 'A_a_for', 'A_ag_Away': 'A_a_ag'}, inplace=True)
-
-                # st.write(df)
+                    # ------------------------ APPLY MODELS ---------------------------------------
+                    df['h_lg_avg'] = h_lg_avg
+                    df['a_lg_avg'] = a_lg_avg
+                    # df['const'] = 1
 
 
-                # ------------------------ APPLY MODELS ---------------------------------------
-                df['h_lg_avg'] = h_lg_avg
-                df['a_lg_avg'] = a_lg_avg
-                # df['const'] = 1
+                    # Get features mix (interaction terms of features used in modelling)
+                    # df['H_mix'] = df['H_h_for'] * 0.3 + df['H_a_for'] * 0.15 + df['A_a_ag'] * 0.2 + df['A_h_ag'] * 0.15 + df['h_lg_avg'] * 0.2
+                    # df['A_mix'] = df['A_a_for'] * 0.3 + df['A_h_for'] * 0.15 + df['H_a_ag'] * 0.2 + df['H_h_ag'] * 0.15 + df['a_lg_avg'] * 0.2
 
-                # Get features mix (interaction terms of features used in modelling)
-                df['H_mix'] = df['H_h_for'] * 0.3 + df['H_a_for'] * 0.15 + df['A_a_ag'] * 0.2 + df['A_h_ag'] * 0.15 + df['h_lg_avg'] * 0.2
-                df['A_mix'] = df['A_a_for'] * 0.3 + df['A_h_for'] * 0.15 + df['H_a_ag'] * 0.2 + df['H_h_ag'] * 0.15 + df['a_lg_avg'] * 0.2
+                    # ----- CREATE ARRAY TO PAASS INTO MODELS -----------
 
-                # -----HOME -----------
+                    # Creating a 2D array where each row is a sample, and each column is a feature
+                    ml_inputs_array = np.array([
+                        df['h_pc_true'], 
+                        df['a_pc_true'],
+                        df['H_h_for'],
+                        df['H_h_ag'],
+                        df['H_a_for'],
+                        df['H_a_ag'],
+                        df['A_h_for'],
+                        df['A_h_ag'],
+                        df['A_a_for'],
+                        df['A_a_ag'],
+                    ]).T  # Transpose to make sure it's of shape (n_samples, n_features)
 
-                # Creating a 2D array where each row is a sample, and each column is a feature
-                ml_inputs_array_h = np.array([
-                    df['h_pc_true'], 
-                    df['H_mix'] 
-                ]).T  # Transpose to make sure it's of shape (n_samples, n_features)
 
-                # Check for NaN values in ml_inputs_array_a
-                if np.any(np.isnan(ml_inputs_array_h)):
-                    # If NaN values are found, handle them as per your requirement:
-                    # Replace NaNs with a specific value (e.g., 0 or None), or drop rows with NaNs.
-                    ml_inputs_array_h = np.nan_to_num(ml_inputs_array_h, nan=0)  # Replace NaNs with None
+                    # Check for NaN values in ml_inputs_array_a
+                    if np.any(np.isnan(ml_inputs_array)):
+                        # If NaN values are found, handle them as per your requirement:
+                        # Replace NaNs with a specific value (e.g., 0 or None), or drop rows with NaNs.
+                        ml_inputs_array = np.nan_to_num(ml_inputs_array, nan=0)  # Replace NaNs with None
 
-                try:
-                    # Model Home
-                    poly_h = PolynomialFeatures(degree=2, include_bias=True)
+                    try:
+                        # Model Home
+                        poly_array = PolynomialFeatures(degree=2, include_bias=True)
 
-                    # Check if there are NaN values in ml_inputs_array_h
-                    if np.any(np.isnan(ml_inputs_array_h)):
-                        raise ValueError("Input data contains NaN values, skipping prediction.")
+                        # Check if there are NaN values in ml_inputs_array_h
+                        if np.any(np.isnan(ml_inputs_array)):
+                            raise ValueError("Input data contains NaN values, skipping prediction.")
 
-                    # Transform the input features
-                    X_poly_input_h = poly_h.fit_transform(ml_inputs_array_h)  # Transform the input features
+                        # Transform the input features
+                        X_poly_input = poly_array.fit_transform(ml_inputs_array)  # Transform the input features
 
-                    # Predict using the model
-                    fouls_model_h_prediction = fouls_model_h.predict(X_poly_input_h) * OVERS_BOOST
+                        # Predict using the HOME FOULS model
+                        fouls_model_h_prediction = fouls_model_h.predict(X_poly_input) * OVERS_BOOST
 
-                    # Assign the predictions to the DataFrame
-                    df['HF_Exp'] = np.round(fouls_model_h_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
+                        # Assign the predictions to the DataFrame
+                        df['HF_Exp'] = np.round(fouls_model_h_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
 
-                    # Calculate additional metrics using the prediction
-                    df[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 
-                        'h_-1_under_%', 'h_-1_over_%', 'h_+1_under_%', 'h_+1_over_%']] = df.apply(
-                        lambda row: calculate_home_away_lines_and_odds(row['HF_Exp'], selected_metric), 
-                        axis=1, result_type='expand'
+                        # Calculate additional metrics using the prediction
+                        df[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 
+                            'h_-1_under_%', 'h_-1_over_%', 'h_+1_under_%', 'h_+1_over_%']] = df.apply(
+                            lambda row: calculate_home_away_lines_and_odds(row['HF_Exp'], selected_metric), 
+                            axis=1, result_type='expand'
+                        )
+
+                        df['h_main_un'] = round(1 / df['h_main_under_%'], 2)
+                        df['h_main_ov'] = round(1 / df['h_main_over_%'], 2)
+                        df['h_-1_un'] = round(1 / df['h_-1_under_%'], 2)
+                        df['h_-1_ov'] = round(1 / df['h_-1_over_%'], 2)
+                        df['h_+1_un'] = round(1 / df['h_+1_under_%'], 2)
+                        df['h_+1_ov'] = round(1 / df['h_+1_over_%'], 2)
+
+                    except Exception as e:
+                        #st.write(f"An error occurred: {e}")
+                        # If an error occurs, assign None to the predictions and related columns
+                        df['HF_Exp'] = 0
+                        df[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 
+                            'h_-1_under_%', 'h_-1_over_%', 'h_+1_under_%', 'h_+1_over_%']] = 0
+                    
+
+                    # ------ AWAY -----------
+
+                    try:
+                        # Model AWAY
+                        # Predict using the model
+                        fouls_model_a_prediction = fouls_model_a.predict(X_poly_input) * OVERS_BOOST
+
+                        # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
+                        df['AF_Exp'] = np.round(fouls_model_a_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
+
+                        # calculate_corners_lines_and_odds(prediction)
+                        df[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = df.apply(
+                            lambda row: calculate_home_away_lines_and_odds(row['AF_Exp'], selected_metric), 
+                            axis=1, result_type='expand')
+                        
+                        df['a_main_un'] = round(1 / df['a_main_under_%'], 2)
+                        df['a_main_ov'] = round(1 / df['a_main_over_%'], 2)
+                        df['a_-1_un'] = round(1 / df['a_-1_under_%'], 2)
+                        df['a_-1_ov'] = round(1 / df['a_-1_over_%'], 2)
+                        df['a_+1_un'] = round(1 / df['a_+1_under_%'], 2)
+                        df['a_+1_ov'] = round(1 / df['a_+1_over_%'], 2)
+
+                    except Exception as e:
+                        # st.write(f"An error occurred: {e}")
+                        # If an error occurs, assign None to the predictions and related columns
+                        df['AF_Exp'] = 0
+                        df[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 
+                            'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = 0
+                    
+
+                    # --------  TOTAL ---------------
+
+                    df[['TF_Exp', 'T_main_line', 'T_-1_line', 'T_+1_line', 'T_-2_line', 'T_+2_line','T_main_under_%', 
+                        'T_main_over_%', 'T_-1_under_%', 'T_-1_over_%', 'T_+1_under_%', 
+                        'T_+1_over_%', 'T_-2_under_%', 'T_-2_over_%', 'T_+2_under_%', 
+                        'T_+2_over_%',]] = df.apply(
+                        lambda row: calculate_totals_lines_and_odds(
+                            row['HF_Exp'], 
+                            row['AF_Exp'], 
+                            total_metrics_df=calculate_probability_grid_hc_vs_ac(row['HF_Exp'], row['AF_Exp'])[1]
+                        ),
+                        axis=1, 
+                        result_type='expand'
                     )
 
-                    df['h_main_un'] = round(1 / df['h_main_under_%'], 2)
-                    df['h_main_ov'] = round(1 / df['h_main_over_%'], 2)
-                    df['h_-1_un'] = round(1 / df['h_-1_under_%'], 2)
-                    df['h_-1_ov'] = round(1 / df['h_-1_over_%'], 2)
-                    df['h_+1_un'] = round(1 / df['h_+1_under_%'], 2)
-                    df['h_+1_ov'] = round(1 / df['h_+1_over_%'], 2)
+                    df['T_main_un'] = round(1 / df['T_main_under_%'], 2)
+                    df['T_main_ov'] = round(1 / df['T_main_over_%'], 2)
+                    df['T_-1_un'] = round(1 / df['T_-1_under_%'], 2)
+                    df['T_-1_ov'] = round(1 / df['T_-1_over_%'], 2)
+                    df['T_+1_un'] = round(1 / df['T_+1_under_%'], 2)
+                    df['T_+1_ov'] = round(1 / df['T_+1_over_%'], 2)
+                    df['T_-2_un'] = round(1 / df['T_-2_under_%'], 2)
+                    df['T_-2_ov'] = round(1 / df['T_-2_over_%'], 2)
+                    df['T_+2_un'] = round(1 / df['T_+2_under_%'], 2)
+                    df['T_+2_ov'] = round(1 / df['T_+2_over_%'], 2)
 
-                except Exception as e:
-                    #st.write(f"An error occurred: {e}")
-                    # If an error occurs, assign None to the predictions and related columns
-                    df['HF_Exp'] = 0
-                    df[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 
-                        'h_-1_under_%', 'h_-1_over_%', 'h_+1_under_%', 'h_+1_over_%']] = 0
-                
 
-                # ------ AWAY -----------
+                    df[['H_most_%', 'Tie_%', 'A_most_%']] = df.apply(
+                        lambda row: pd.Series(calculate_probability_grid_hc_vs_ac(row['HF_Exp'], row['AF_Exp'])[2:5]), 
+                        axis=1, 
+                        result_type='expand'
+                    )
 
-                ml_inputs_array_a = np.array([
-                    df['a_pc_true'], 
-                    df['A_mix'], 
-                ]).T  # Transpose to make sure it's of shape (n_samples, n_features)
 
-                # Check for NaN values in ml_inputs_array_a
-                if np.any(np.isnan(ml_inputs_array_a)):
-                    # If NaN values are found, handle them as per your requirement:
-                    # Replace NaNs with a specific value (e.g., 0 or None), or drop rows with NaNs.
-                    ml_inputs_array_h = np.nan_to_num(ml_inputs_array_a, nan=0)  # Replace NaNs with None
+                    df['H_most'] = round(1 / df['H_most_%'], 2)
+                    df['Tie'] = round(1 / df['Tie_%'], 2)
+                    df['A_most'] = round(1 / df['A_most_%'], 2)
 
-                try:
-                    # Model Away
-                    poly_a = PolynomialFeatures(degree=2, include_bias=True)
-                    X_poly_input_a = poly_a.fit_transform(ml_inputs_array_a)  # Transform the input features
+                    # Sub-select final columns
+                    df_final = df[['Date', 'Home Team', 'Away Team','Home Win', 'Draw', 'Away Win', 'Derby_mult', 'Ref_mult',
+                                'HF_Exp', 'h_main_line', 'h_main_un', 'h_main_ov', 
+                                'h_-1_line', 'h_-1_un', 'h_-1_ov',
+                                'h_+1_line', 'h_+1_un', 'h_+1_ov',
+                                'AF_Exp', 'a_main_line', 'a_main_un', 'a_main_ov',
+                                'a_-1_line', 'a_-1_un', 'a_-1_ov',
+                                'a_+1_line', 'a_+1_un', 'a_+1_ov',
+                                'TF_Exp', 'T_main_line', 'T_main_un', 'T_main_ov', 
+                                'T_-1_line', 'T_-1_un', 'T_-1_ov',
+                                'T_+1_line', 'T_+1_un', 'T_+1_ov',
+                                'T_-2_line', 'T_-2_un', 'T_-2_ov',
+                                'T_+2_line', 'T_+2_un', 'T_+2_ov',
+                                'H_most', 'Tie', 'A_most'
+                                ]]
 
-                    # Predict using the model
-                    fouls_model_a_prediction = fouls_model_a.predict(X_poly_input_a) * OVERS_BOOST
+                    # st.write('True odds:', df_final)
 
-                    # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
-                    df['AF_Exp'] = np.round(fouls_model_a_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
+                    # select columns on which to apply margin
+                    cols_to_add_margin = ['h_main_un', 'h_main_ov', 
+                                'h_-1_un', 'h_-1_ov',
+                                'h_+1_un', 'h_+1_ov',
+                                'a_main_un', 'a_main_ov',
+                                'a_-1_un', 'a_-1_ov',
+                                'a_+1_un', 'a_+1_ov',
+                                'T_main_un', 'T_main_ov', 
+                                'T_-1_un', 'T_-1_ov',
+                                'T_+1_un', 'T_+1_ov',
+                                'T_-2_un', 'T_-2_ov',
+                                'T_+2_un', 'T_+2_ov',
+                        #       'H_most', 'Tie', 'A_most'
+                    ]
 
-                    # calculate_corners_lines_and_odds(prediction)
-                    df[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = df.apply(
-                        lambda row: calculate_home_away_lines_and_odds(row['AF_Exp'], selected_metric), 
-                        axis=1, result_type='expand')
+
+                    # Apply margin & bias for '_un' and '_ov' columns
+                    for col in cols_to_add_margin:
+                        if col.endswith('_ov'):  # For '_ov' columns, divide by margin_to_apply
+                            df_final = df_final.assign(**{f'{col}_w.%': df_final[col].apply(lambda x: round(x / margin_to_apply / bias_to_apply, 2))})
+                        elif col.endswith('_un'):  # For '_un' columns, multiply by bias_to_apply
+                            df_final = df_final.assign(**{f'{col}_w.%': df_final[col].apply(lambda x: round(x / margin_to_apply * bias_to_apply, 2))})
+
+                    # Create a copy of the DataFrame with the new columns added
+                    df_final_wm = df_final.copy()
+
+                    # Display the updated DataFrame
+                    st.write(df_final_wm)
+
+                    # warning if not all match  retrieved from API call matches the final df
+                    if len(df) != len(fixt_id_list):
+                        st.warning('Odds for 1 or more matches not currently available!')
+
+
+                    # ---------  Simplified odds ----------
+                    df_simple_only_overs = df_final_wm[['Date', 'Home Team', 'Away Team',
+                                            'T_main_line', 'T_main_ov_w.%',
+                                            'T_-1_line', 'T_-1_ov_w.%',
+                                            'T_-2_line',  'T_-2_ov_w.%',
+                                            'T_+1_line', 'T_+1_ov_w.%',
+                                            'T_+2_line',  'T_+2_ov_w.%',                                          
+                                            ]]
                     
-                    df['a_main_un'] = round(1 / df['a_main_under_%'], 2)
-                    df['a_main_ov'] = round(1 / df['a_main_over_%'], 2)
-                    df['a_-1_un'] = round(1 / df['a_-1_under_%'], 2)
-                    df['a_-1_ov'] = round(1 / df['a_-1_over_%'], 2)
-                    df['a_+1_un'] = round(1 / df['a_+1_under_%'], 2)
-                    df['a_+1_ov'] = round(1 / df['a_+1_over_%'], 2)
+                    df_simple_o_and_u = df_final_wm[['Date', 'Home Team', 'Away Team',
+                                # 'T_main_line', 'T_main_ov_w.%',
+                                'T_-1_line', 'T_-1_ov_w.%', 'T_-1_un_w.%', 
+                                # 'T_-2_line',  'T_-2_ov_w.%', 'T_-2_un_w.%',
+                                # 'T_+1_line', 'T_+1_ov_w.%', 'T_+1_un_w.%',
+                                # 'T_+2_line',  'T_+2_ov_w.%', 'T_+2_un_w.%'                                         
+                                ]]
+                    
 
-                except Exception as e:
-                    # st.write(f"An error occurred: {e}")
-                    # If an error occurs, assign None to the predictions and related columns
-                    df['AF_Exp'] = 0
-                    df[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 
-                        'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = 0
-                
+                    #  ----- Calculate Daily Total FOULS  --------
 
-                # --------  TOTAL ---------------
+                    # Convert to datetime
+                    df_final_wm['Date'] = pd.to_datetime(df_final_wm['Date'])
 
-                df[['TF_Exp', 'T_main_line', 'T_-1_line', 'T_+1_line', 'T_-2_line', 'T_+2_line','T_main_under_%', 
-                    'T_main_over_%', 'T_-1_under_%', 'T_-1_over_%', 'T_+1_under_%', 
-                    'T_+1_over_%', 'T_-2_under_%', 'T_-2_over_%', 'T_+2_under_%', 
-                    'T_+2_over_%',]] = df.apply(
-                    lambda row: calculate_totals_lines_and_odds(
-                        row['HF_Exp'], 
-                        row['AF_Exp'], 
-                        total_metrics_df=calculate_probability_grid_hc_vs_ac(row['HF_Exp'], row['AF_Exp'])[1]
-                    ),
-                    axis=1, 
-                    result_type='expand'
-                )
+                    # Group by the day only (ignoring time)
+                    df_final_wm['Day'] = df_final_wm['Date'].dt.date  # Extract just the date (day)
+                    df_final_wm['Time'] = df_final_wm['Date'].dt.time  # Extract just the time (HH:MM:SS)
 
-                df['T_main_un'] = round(1 / df['T_main_under_%'], 2)
-                df['T_main_ov'] = round(1 / df['T_main_over_%'], 2)
-                df['T_-1_un'] = round(1 / df['T_-1_under_%'], 2)
-                df['T_-1_ov'] = round(1 / df['T_-1_over_%'], 2)
-                df['T_+1_un'] = round(1 / df['T_+1_under_%'], 2)
-                df['T_+1_ov'] = round(1 / df['T_+1_over_%'], 2)
-                df['T_-2_un'] = round(1 / df['T_-2_under_%'], 2)
-                df['T_-2_ov'] = round(1 / df['T_-2_over_%'], 2)
-                df['T_+2_un'] = round(1 / df['T_+2_under_%'], 2)
-                df['T_+2_ov'] = round(1 / df['T_+2_over_%'], 2)
+                    aggregated_fl = df_final_wm.groupby('Day').agg(
+                        TF=('TF_Exp', 'sum'), 
+                        Match_Count=('TF_Exp', 'size'),
+                        Time=('Time', 'first')
+                    ).reset_index()
 
 
-                df[['H_most_%', 'Tie_%', 'A_most_%']] = df.apply(
-                    lambda row: pd.Series(calculate_probability_grid_hc_vs_ac(row['HF_Exp'], row['AF_Exp'])[2:5]), 
-                    axis=1, 
-                    result_type='expand'
-                )
+                    df_result_fl = aggregated_fl[aggregated_fl['Match_Count'] >= 2]
 
 
-                df['H_most'] = round(1 / df['H_most_%'], 2)
-                df['Tie'] = round(1 / df['Tie_%'], 2)
-                df['A_most'] = round(1 / df['A_most_%'], 2)
+                    # ------- Get increment prior to calling poisson functions for Daily Totals  --------------------------------
 
-                # Sub-select final columns
-                df_final = df[['Date', 'Home Team', 'Away Team','Home Win', 'Draw', 'Away Win', 'Derby_mult', 'Ref_mult',
-                            'HF_Exp', 'h_main_line', 'h_main_un', 'h_main_ov', 
-                            'h_-1_line', 'h_-1_un', 'h_-1_ov',
-                            'h_+1_line', 'h_+1_un', 'h_+1_ov',
-                            'AF_Exp', 'a_main_line', 'a_main_un', 'a_main_ov',
-                            'a_-1_line', 'a_-1_un', 'a_-1_ov',
-                            'a_+1_line', 'a_+1_un', 'a_+1_ov',
-                            'TF_Exp', 'T_main_line', 'T_main_un', 'T_main_ov', 
-                            'T_-1_line', 'T_-1_un', 'T_-1_ov',
-                            'T_+1_line', 'T_+1_un', 'T_+1_ov',
-                            'T_-2_line', 'T_-2_un', 'T_-2_ov',
-                            'T_+2_line', 'T_+2_un', 'T_+2_ov',
-                            'H_most', 'Tie', 'A_most'
-                            ]]
+                    def calculate_increment(main_line):
+                        """Determine increment based on main_line value."""
+                        if main_line > 35:
+                            return 3
+                        elif main_line > 14:
+                            return 2
+                        return 1
 
-                # st.write('True odds:', df_final)
+                    # -------  Display Simple DFs and Daily Shots --------------
 
-                # select columns on which to apply margin
-                cols_to_add_margin = ['h_main_un', 'h_main_ov', 
-                            'h_-1_un', 'h_-1_ov',
-                            'h_+1_un', 'h_+1_ov',
-                            'a_main_un', 'a_main_ov',
-                            'a_-1_un', 'a_-1_ov',
-                            'a_+1_un', 'a_+1_ov',
-                            'T_main_un', 'T_main_ov', 
-                            'T_-1_un', 'T_-1_ov',
-                            'T_+1_un', 'T_+1_ov',
-                            'T_-2_un', 'T_-2_ov',
-                            'T_+2_un', 'T_+2_ov',
-                     #       'H_most', 'Tie', 'A_most'
-                ]
+                    st.write("---")
+                    st.subheader("Lines to Publish")
+                    st.write("##### Over and Under")
+                    st.write("")
+                    st.write(df_simple_o_and_u)
 
+                    st.write("##### Overs only")
+                    st.write("")
+                    st.write(df_simple_only_overs)
 
-
-                # Apply margin & bias for '_un' and '_ov' columns
-                for col in cols_to_add_margin:
-                    if col.endswith('_ov'):  # For '_ov' columns, divide by margin_to_apply
-                        df_final = df_final.assign(**{f'{col}_w.%': df_final[col].apply(lambda x: round(x / margin_to_apply / bias_to_apply, 2))})
-                    elif col.endswith('_un'):  # For '_un' columns, multiply by bias_to_apply
-                        df_final = df_final.assign(**{f'{col}_w.%': df_final[col].apply(lambda x: round(x / margin_to_apply * bias_to_apply, 2))})
-
-                # Create a copy of the DataFrame with the new columns added
-                df_final_wm = df_final.copy()
-
-                # Display the updated DataFrame
-                st.write(df_final_wm)
-
-                # warning if not all match  retrieved from API call matches the final df
-                if len(df) != len(fixt_id_list):
-                    st.warning('Odds for 1 or more matches not currently available!')
-
-
-                # ---------  show simplified odds - just minor line  ---------
-                df_simple = df_final_wm[['Date', 'Home Team', 'Away Team', 'T_-1_line', 'T_-1_un_w.%', 'T_-1_ov_w.%',]]
-
-
-                #  ----- Calculate Daily Total FOULS and GOALS --------
-
-                # Convert to datetime
-                df_final_wm['Date'] = pd.to_datetime(df_final_wm['Date'])
-
-                # Group by the day only (ignoring time)
-                df_final_wm['Day'] = df_final_wm['Date'].dt.date  # Extract just the date (day)
-
-                aggregated_fl = df_final_wm.groupby('Day').agg(
-                    TF=('TF_Exp', 'sum'), 
-                    Match_Count=('TF_Exp', 'size')
-                ).reset_index()
-
-
-                df_result_fl = aggregated_fl[aggregated_fl['Match_Count'] >= 2]
-
-
-                # ------- Get increment prior to calling poisson functions for Daily Totals  --------------------------------
-
-                def calculate_increment(main_line):
-                    """Determine increment based on main_line value."""
-                    if main_line > 35:
-                        return 3
-                    elif main_line > 14:
-                        return 2
-                    return 1
-
-                # -------  Display Simple DF and Daily Shots side by side  --------------
-
-                st.write("---")
-                st.subheader('Lines to Publish')
-                st.write("")
-                st.write(df_simple)
-
-                st.write("---")
-                st.subheader('Total Daily Fouls')
-                st.write("")
-                # if df_result_fl.shape[0] < 2:
-                    # st.write(df_result_fl)
-                    # st.write('One or fewer matches within time period')
-
-                # Get poisson odds and lines for each day returned for Daly Goals
-                for _, row in df_result_fl.iterrows():
-                    exp = row['TF'] * 1/OVERS_BOOST * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
-                    day = row['Day']
-                    main_line = np.floor(exp) + 0.5
-
-                    increment = calculate_increment(main_line)
-
-                    line_minus_1 = main_line - increment
-                    line_minus_2 = main_line - increment * 2
-                    line_plus_1 = main_line + increment
-                    line_plus_2 = main_line + increment * 2
-
-                    probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
-                        
-                    st.caption(f"{day} (100% Prices)")
-                    st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
-                    st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
-                    st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
-                    st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
-                    st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
+                    st.write("---")
+                    st.subheader('Total Daily Fouls')
                     st.write("")
 
+                    st.write(df_result_fl)
+                    st.write("")
 
+                    # Get poisson odds and lines for each day returned for Daly Goals
+                    for _, row in df_result_fl.iterrows():
+                        exp = row['TF'] * 1/OVERS_BOOST * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
+                        day = row['Day']
+                        time = row['Time']
+                        main_line = np.floor(exp) + 0.5
+
+                        increment = calculate_increment(main_line)
+
+                        line_minus_1 = main_line - increment
+                        line_minus_2 = main_line - increment * 2
+                        line_plus_1 = main_line + increment
+                        line_plus_2 = main_line + increment * 2
+
+                        probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
+
+                        st.write("")
+                        st.write(f'##### Fixtures {day}')
+                        #st.write(probabilities)
+
+                        margin_configured = ((margin_to_apply * 100 - 100) * 0.5) / 100   # margin to ADD to each side
+                        # update probabiities dict by adding to each item
+                        probabilities_marginated = {key: value + margin_configured for key, value in probabilities.items()}
+                        #st.write(probabilities_marginated)
+
+
+                        st.caption(f"{day} (with margin)")
+                        st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities_marginated[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_2 {line_plus_2}'], 2))
+                        st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2))
+                        st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities_marginated[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities_marginated[f'under_main {main_line}'], 2))
+                        st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2))
+                        st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities_marginated[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_2 {line_minus_2}'], 2))
+                        st.write("")
+
+                        # st.write(df_result_fl)
+
+                        columns = [
+                            'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
+                            'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
+                            'START TIME', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
+                            'PUBLISHED'
+                        ]
+
+                        # Get today's date in YYYY-MM-DD format
+                        today_date = datetime.today().strftime('%Y-%m-%d')
+
+                        # Create an empty DataFrame with 6 rows and specified columns
+                        df_csv = pd.DataFrame(index=range(6), columns=columns)
+
+                        # Set the top 6 rows of specific columns
+                        df_csv['EVENT TYPE'].iloc[:6] = 'Special'
+                        df_csv['SPORT'].iloc[:6] = 'Football'
+                        df_csv['CATEGORY'].iloc[:6] = 'Special Offer'
+                        df_csv['COMPETITION'].iloc[:6] = 'Daily League Fouls'
+                        df_csv['MARKET TYPE NAME'].iloc[:6] = 'Daily Fouls O/U {line}'
+                        # df_csv['SELECTION NAME'].iloc[:6] = 'Daily Fouls {O/U} line'
+
+                        df_csv.loc[[0, 2, 4], 'SELECTION NAME'] = 'Over {line}'
+                        df_csv.loc[[1, 3, 5], 'SELECTION NAME'] = 'Under {line}'
+
+                        # Assign 'LINE' values
+                        df_csv.loc[[0, 1], 'LINE'] = line_minus_1
+                        df_csv.loc[[2, 3], 'LINE'] = main_line
+                        df_csv.loc[[4, 5], 'LINE'] = line_plus_1
+
+                        df_csv['OFFER START TIME'].iloc[:6] = '09:00:00'
+                        df_csv['PUBLISHED'].iloc[:6] = 'NO'
+                        df_csv['START DATE'] = today_date  # Today's date
+                        df_csv['OFFER END DATE'] = day  
+                        df_csv['START TIME'] = time
+                        df_csv['OFFER END TIME'] = time
+
+                        # Assign 'PRICE' values (rounded to 2 decimal places)
+                        df_csv.loc[0, 'PRICE'] = round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2)
+                        df_csv.loc[1, 'PRICE'] = round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2)
+                        df_csv.loc[2, 'PRICE'] = round(1 / probabilities_marginated[f'over_main {main_line}'], 2)
+                        df_csv.loc[3, 'PRICE'] = round(1 / probabilities_marginated[f'under_main {main_line}'], 2)
+                        df_csv.loc[4, 'PRICE'] = round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2)
+                        df_csv.loc[5, 'PRICE'] = round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2)
+
+                        # Generate the event name using selected_league, match count, and date
+                        selected_league_revised = dict_api_to_bk_league_names.get(selected_league, selected_league) # if api league name different from BK league name
+                        event_name = f"{selected_league_revised} ({row['Match_Count']} matches {day})"
+                        df_csv['EVENT NAME'].iloc[:6] = event_name
+
+                        # Converting multiple columns to string format
+                        columns_to_convert = ['START DATE', 'START TIME', 'OFFER END DATE', 'OFFER END TIME']
+                        df_csv[columns_to_convert] = df_csv[columns_to_convert].astype(str)
+
+                        df_csv = df_csv.reset_index(drop=True)
+
+                        # Store the dataframe for this date
+                        # df_csv_list.append(df_csv)
+
+                        st.write("")
+                        st.write('Downloadable FMH upload file')
+
+                        df_csv.set_index('EVENT TYPE', inplace=True)
+                        st.write(df_csv)
+
+                        st.write("---")
+
+            except Exception as e:
+                st.write(f'An error has occurred whilst compiling: {e}')       
+
+
+                    
 if __name__ == "__main__":
     main()
