@@ -100,6 +100,7 @@ def main():
         'La Liga': 'Spain La Liga',
         'Ligue 1': 'France Ligue 1',
         'Serie A': 'Italy Serie A',
+        'Premier Soccer League': 'South Africa Premier',
         'Eredivisie': 'Netherlands Eredivisie',
         'Jupiler Pro League': 'Belgium Jupiler',
         'Primeira Liga': 'Portugal Liga I',
@@ -124,7 +125,8 @@ def main():
         "Netherlands Eredivisie": "88",
         "Belgium Jupiler": "144",
         "Portugal Liga I": '94',
-        "Scotland Premier": '179'
+        "Scotland Premier": '179',
+        "South Africa Premier": "288",
     }
 
     metric_options = {
@@ -155,13 +157,13 @@ def main():
 
     st.header(f'{selected_metric} Model - {selected_league}', divider='blue')
 
-    # show_model_info = st.checkbox('Model Info')
-    # if show_model_info:
-    #     st.caption('''
-    #              Evaluation metrics show that offsides do not model as well as other stat markets.
-    #              Not recommended to publish standalone lines unless for marketing purposes or if offering an overs price only with extra margin added.
-    #              Fine to use as a reference to position ourselves within an established market.
-    #              ''')
+    show_model_info = st.checkbox('Model Info')
+    if show_model_info:
+        st.caption('''
+                 Evaluation metrics show non-robust model performance. Likely due to teams alternating tactics depending on oppsition.
+                 Not recommended to publish standalone lines unless for marketing purposes or if offering an overs price only with extra margin added.
+                 Fine to use as a reference to position ourselves within an established market.
+                 ''')
 
     # get fixtures
     league_id = leagues_dict.get(selected_league)
@@ -867,7 +869,7 @@ def main():
                     # ---------  show simplified odds - just main lines  ---------
                     df_simple = df_final_wm[['Date', 'Home Team', 'Away Team', 'T_main_line', 'T_main_un_w.%', 'T_main_ov_w.%','h_main_line', 'h_main_un_w.%', 'h_main_ov_w.%', 'a_main_line', 'a_main_un_w.%', 'a_main_ov_w.%']]
             
-                    #  ----- Calculate Daily Total CORNERS --------
+                    #  ----- Calculate Daily Total OFFSIDES --------
 
                     # Convert to datetime
                     df_final_wm['Date'] = pd.to_datetime(df_final_wm['Date'], format="%d-%m-%y %H:%M", errors="coerce")
@@ -875,12 +877,12 @@ def main():
                     # Group by the day only (ignoring time)
                     df_final_wm['Day'] = df_final_wm['Date'].dt.date  # Extract just the date (day)
 
-                    aggregated_corn = df_final_wm.groupby('Day').agg(
+                    aggregated_offs = df_final_wm.groupby('Day').agg(
                         TO=('TO_Exp', 'sum'), 
                         Match_Count=('TO_Exp', 'size')
                     ).reset_index()
 
-                    df_result_corn = aggregated_corn[aggregated_corn['Match_Count'] >= 2]
+                    df_result_offs = aggregated_offs[aggregated_offs['Match_Count'] >= 2]
 
 
                     # ------- Get increment prior to calling poisson functions for Daily Totals  --------------------------------
@@ -900,37 +902,36 @@ def main():
                     st.subheader('Main Lines')
                     st.write("")
                     st.write(df_simple)
-                    st.write("---")
 
-
+                    st.subheader("", divider='blue')
                     st.subheader('Total Daily Offsides')
                     st.write("")
-                    if df_result_corn.shape[0] > 1:
-                        st.write(df_result_corn)
-                    st.write("")
+                    if df_result_offs.shape[0] < 2:
+                        st.caption('Less than two matches')
+                    else:
+                        st.write(df_result_offs)
+                        # Get poisson odds and lines for each day returned for Daily SOT
+                        for _, row in df_result_offs.iterrows():
+                            exp = row['TO'] * 1/OVERS_BOOST * TOTALS_BOOST
+                            day = row['Day']
+                            main_line = np.floor(exp) + 0.5
 
-                    # Get poisson odds and lines for each day returned for Daily SOT
-                    for _, row in df_result_corn.iterrows():
-                        exp = row['TO'] * 1/OVERS_BOOST * TOTALS_BOOST
-                        day = row['Day']
-                        main_line = np.floor(exp) + 0.5
+                            increment = calculate_increment(main_line)
 
-                        increment = calculate_increment(main_line)
+                            line_minus_1 = main_line - increment
+                            line_minus_2 = main_line - increment * 2
+                            line_plus_1 = main_line + increment
+                            line_plus_2 = main_line + increment * 2
 
-                        line_minus_1 = main_line - increment
-                        line_minus_2 = main_line - increment * 2
-                        line_plus_1 = main_line + increment
-                        line_plus_2 = main_line + increment * 2
+                            probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
 
-                        probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
-
-                        st.caption(f"{day} (100% Prices)")
-                        st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
-                        st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
-                        st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
-                        st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
-                        st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
-                        st.write("")
+                            st.caption(f"{day} (100% Prices)")
+                            st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
+                            st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
+                            st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
+                            st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
+                            st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
+                            st.write("")
 
             except Exception as e:
                 st.write(f'An error has occurred whilst compiling: {e}')

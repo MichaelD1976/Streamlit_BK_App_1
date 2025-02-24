@@ -74,10 +74,8 @@ def main():
             st.write("")
             st.write("""
                      **Updates**:
-                     - Offsides Model added - okay to use as a reference to position ourselves or for specials creation
-                     - Corners added - okay to use as a reference to position ourselves or for specials creation
-                     - Shots on Target - successfully tested and good to use 
-                     - Fouls model outputs still in testing - keep using auto pricing emails
+                     - South Africa Data added
+                     - Shots and Fouls tested and fine to use. Reconfig of outputs to allign with FMH upload in development.
                      """)
         c1,c2,c3 = st.columns([1,11,1])
         with c2:
