@@ -65,6 +65,7 @@ lg_ex_h_sot_p_g_dict = {
     'France Ligue 1': 3.19,
     'Spain La Liga': 3.29,
     'Italy Serie A': 3.23,
+    'South Africa Premier': 3.55
 }
 
 DEFAULT_H_SOT_P_GL = 3.27 # avg +3%
@@ -74,7 +75,8 @@ lg_ex_a_sot_p_g_dict = {
     'Germany Bundesliga' : 3.21,
     'France Ligue 1': 3.24,
     'Spain La Liga': 3.32,
-    'Italy Serie A': 3.16
+    'Italy Serie A': 3.16,
+    'South Africa Premier': 3.70
 }
 
 DEFAULT_A_SOT_P_GL = 3.34 # avg +3%
@@ -1022,112 +1024,111 @@ def main():
                     st.subheader("", divider='blue')
                     st.subheader('Daily Goals')
                     st.write("")
-                    if df_result_gl.shape[0] < 2:
-                        st.caption('Less than two matches')
+                    # if df_result_gl.shape[0] < 2:
+                    #     st.caption('Less than two matches')
 
-                    else:
-                        # Define the column structure for csv df
-                        columns = [
-                            'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
-                            'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
-                            'START TIME', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
-                            'PUBLISHED'
-                        ]
-                        # Iterate through each row in df_result_fl (each date)
-                        # df_csv_list = []
+                    # Define the column structure for csv df
+                    columns = [
+                        'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
+                        'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
+                        'START TIME', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
+                        'PUBLISHED'
+                    ]
+                    # Iterate through each row in df_result_fl (each date)
+                    # df_csv_list = []
 
-                        st.write(df_result_gl)
+                    st.write(df_result_gl)
+                    st.write("")
+
+                    # Get poisson odds and lines for each day returned for Daly Goals
+                    for _, row in df_result_gl.iterrows():
+                        exp = row['TG'] 
+                        day = row['Day']
+                        time = row['Time']
+                        main_line = np.floor(exp) + 0.5
+
+                        increment = calculate_increment(main_line)
+
+                        line_minus_1 = main_line - increment
+                        line_minus_2 = main_line - increment * 2
+                        line_plus_1 = main_line + increment
+                        line_plus_2 = main_line + increment * 2
+
+                        probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
+                        st.write("")
+                        st.write(f'##### Fixtures {day}')
+                        #st.write(probabilities)
+
+                        margin_configured = ((margin_to_apply * 100 - 100) * 0.5) / 100   # maergin to ADD to each side
+                        # update probabiities dict by adding to each item
+                        probabilities_marginated = {key: value + margin_configured for key, value in probabilities.items()}
+                        #st.write(probabilities_marginated)
+                        
+                        st.caption(f"{day} (with margin)")
+                        st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities_marginated[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_2 {line_plus_2}'], 2))
+                        st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2))
+                        st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities_marginated[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities_marginated[f'under_main {main_line}'], 2))
+                        st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2))
+                        st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities_marginated[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_2 {line_minus_2}'], 2))
                         st.write("")
 
-                        # Get poisson odds and lines for each day returned for Daly Goals
-                        for _, row in df_result_gl.iterrows():
-                            exp = row['TG'] 
-                            day = row['Day']
-                            time = row['Time']
-                            main_line = np.floor(exp) + 0.5
 
-                            increment = calculate_increment(main_line)
+                        # Get today's date in YYYY-MM-DD format
+                        today_date = datetime.today().strftime('%Y-%m-%d')
 
-                            line_minus_1 = main_line - increment
-                            line_minus_2 = main_line - increment * 2
-                            line_plus_1 = main_line + increment
-                            line_plus_2 = main_line + increment * 2
+                        # Create an empty DataFrame with 6 rows and specified columns
+                        df_csv = pd.DataFrame(index=range(6), columns=columns)
 
-                            probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
-                            st.write("")
-                            st.write(f'##### Fixtures {day}')
-                            #st.write(probabilities)
+                        # Set the top 6 rows of specific columns
+                        df_csv['EVENT TYPE'].iloc[:6] = 'Special'
+                        df_csv['SPORT'].iloc[:6] = 'Football'
+                        df_csv['CATEGORY'].iloc[:6] = 'Special Offer'
+                        df_csv['COMPETITION'].iloc[:6] = 'Daily League Goals'
+                        df_csv['MARKET TYPE NAME'].iloc[:6] = 'Daily Goals O/U {line}'
+                        df_csv['SELECTION NAME'].iloc[:6] = 'Daily Goals O/U {line}'
 
-                            margin_configured = ((margin_to_apply * 100 - 100) * 0.5) / 100   # maergin to ADD to each side
-                            # update probabiities dict by adding to each item
-                            probabilities_marginated = {key: value + margin_configured for key, value in probabilities.items()}
-                            #st.write(probabilities_marginated)
-                            
-                            st.caption(f"{day} (with margin)")
-                            st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities_marginated[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_2 {line_plus_2}'], 2))
-                            st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2))
-                            st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities_marginated[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities_marginated[f'under_main {main_line}'], 2))
-                            st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2))
-                            st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities_marginated[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_2 {line_minus_2}'], 2))
-                            st.write("")
+                        df_csv.loc[[0, 2, 4], 'SELECTION NAME'] = 'Over {line}'
+                        df_csv.loc[[1, 3, 5], 'SELECTION NAME'] = 'Under {line}'
 
+                        # Assign 'LINE' values
+                        df_csv.loc[[0, 1], 'LINE'] = line_minus_1
+                        df_csv.loc[[2, 3], 'LINE'] = main_line
+                        df_csv.loc[[4, 5], 'LINE'] = line_plus_1
 
-                            # Get today's date in YYYY-MM-DD format
-                            today_date = datetime.today().strftime('%Y-%m-%d')
+                        df_csv['OFFER START TIME'].iloc[:6] = '09:00:00'
+                        df_csv['PUBLISHED'].iloc[:6] = 'NO'
+                        df_csv['START DATE'] = today_date  # Today's date
+                        df_csv['OFFER END DATE'] = day  
+                        df_csv['START TIME'] = time
+                        df_csv['OFFER END TIME'] = time
 
-                            # Create an empty DataFrame with 6 rows and specified columns
-                            df_csv = pd.DataFrame(index=range(6), columns=columns)
+                        # Assign 'PRICE' values (rounded to 2 decimal places)
+                        df_csv.loc[0, 'PRICE'] = round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2)
+                        df_csv.loc[1, 'PRICE'] = round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2)
+                        df_csv.loc[2, 'PRICE'] = round(1 / probabilities_marginated[f'over_main {main_line}'], 2)
+                        df_csv.loc[3, 'PRICE'] = round(1 / probabilities_marginated[f'under_main {main_line}'], 2)
+                        df_csv.loc[4, 'PRICE'] = round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2)
+                        df_csv.loc[5, 'PRICE'] = round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2)
 
-                            # Set the top 6 rows of specific columns
-                            df_csv['EVENT TYPE'].iloc[:6] = 'Special'
-                            df_csv['SPORT'].iloc[:6] = 'Football'
-                            df_csv['CATEGORY'].iloc[:6] = 'Special Offer'
-                            df_csv['COMPETITION'].iloc[:6] = 'Daily League Goals'
-                            df_csv['MARKET TYPE NAME'].iloc[:6] = 'Daily Goals O/U {line}'
-                            df_csv['SELECTION NAME'].iloc[:6] = 'Daily Goals O/U {line}'
+                        # Generate the event name using selected_league, match count, and date
+                        selected_league_revised = dict_api_to_bk_league_names.get(selected_league, selected_league) # if api league name different from BK league name
+                        event_name = f"{selected_league_revised} ({row['Match_Count']} matches {day})"
+                        df_csv['EVENT NAME'].iloc[:6] = event_name
 
-                            df_csv.loc[[0, 2, 4], 'SELECTION NAME'] = 'Over {line}'
-                            df_csv.loc[[1, 3, 5], 'SELECTION NAME'] = 'Under {line}'
+                        # Converting multiple columns to string format
+                        columns_to_convert = ['START DATE', 'START TIME', 'OFFER END DATE', 'OFFER END TIME']
+                        df_csv[columns_to_convert] = df_csv[columns_to_convert].astype(str)
 
-                            # Assign 'LINE' values
-                            df_csv.loc[[0, 1], 'LINE'] = line_minus_1
-                            df_csv.loc[[2, 3], 'LINE'] = main_line
-                            df_csv.loc[[4, 5], 'LINE'] = line_plus_1
+                        df_csv = df_csv.reset_index(drop=True)
 
-                            df_csv['OFFER START TIME'].iloc[:6] = '09:00:00'
-                            df_csv['PUBLISHED'].iloc[:6] = 'NO'
-                            df_csv['START DATE'] = today_date  # Today's date
-                            df_csv['OFFER END DATE'] = day  
-                            df_csv['START TIME'] = time
-                            df_csv['OFFER END TIME'] = time
+                        # Store the dataframe for this date
+                        # df_csv_list.append(df_csv)
 
-                            # Assign 'PRICE' values (rounded to 2 decimal places)
-                            df_csv.loc[0, 'PRICE'] = round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2)
-                            df_csv.loc[1, 'PRICE'] = round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2)
-                            df_csv.loc[2, 'PRICE'] = round(1 / probabilities_marginated[f'over_main {main_line}'], 2)
-                            df_csv.loc[3, 'PRICE'] = round(1 / probabilities_marginated[f'under_main {main_line}'], 2)
-                            df_csv.loc[4, 'PRICE'] = round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2)
-                            df_csv.loc[5, 'PRICE'] = round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2)
+                        st.write("")
+                        st.write('Downloadable FMH upload file')
 
-                            # Generate the event name using selected_league, match count, and date
-                            selected_league_revised = dict_api_to_bk_league_names.get(selected_league, selected_league) # if api league name different from BK league name
-                            event_name = f"{selected_league_revised} ({row['Match_Count']} matches {day})"
-                            df_csv['EVENT NAME'].iloc[:6] = event_name
-
-                            # Converting multiple columns to string format
-                            columns_to_convert = ['START DATE', 'START TIME', 'OFFER END DATE', 'OFFER END TIME']
-                            df_csv[columns_to_convert] = df_csv[columns_to_convert].astype(str)
-
-                            df_csv = df_csv.reset_index(drop=True)
-
-                            # Store the dataframe for this date
-                            # df_csv_list.append(df_csv)
-
-                            st.write("")
-                            st.write('Downloadable FMH upload file')
-
-                            df_csv.set_index('EVENT TYPE', inplace=True)
-                            st.write(df_csv)
+                        df_csv.set_index('EVENT TYPE', inplace=True)
+                        st.write(df_csv)
 
 
 
@@ -1135,104 +1136,105 @@ def main():
                     st.subheader("", divider='blue')
                     st.subheader('Daily Shots on Target')
                     st.write("")
-                    if df_result_sot.shape[0] < 2:
-                        st.caption('Less than two matches')
-
-                    else:
-                        st.write(df_result_sot)
-
-                        # Get poisson odds and lines for each day returned for Daily SOT
-                        for _, row in df_result_sot.iterrows():
-                            exp = row['TST'] * 1/OVERS_BOOST * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
-                            day = row['Day']
-                            main_line = np.floor(exp) + 0.5
-
-                            increment = calculate_increment(main_line)
-
-                            line_minus_1 = main_line - increment
-                            line_minus_2 = main_line - increment * 2
-                            line_plus_1 = main_line + increment
-                            line_plus_2 = main_line + increment * 2
-
-                            probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
-
-                            margin_configured = ((margin_to_apply * 100 - 100) * 0.5) / 100   # maergin to ADD to each side
-                            # update probabiities dict by adding to each item
-                            probabilities_marginated = {key: value + margin_configured for key, value in probabilities.items()}    
-
-                            st.write(f'##### Fixtures {day}')
-
-                            st.caption(f"{day} (with margin)")
-                            st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities_marginated[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_2 {line_plus_2}'], 2))
-                            st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2))
-                            st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities_marginated[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities_marginated[f'under_main {main_line}'], 2))
-                            st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2))
-                            st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities_marginated[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_2 {line_minus_2}'], 2))
-                            st.write("")
-
-                            columns = [
-                                'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
-                                'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
-                                'START TIME', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
-                                'PUBLISHED'
-                            ]
+                    # if df_result_sot.shape[0] < 2:
+                    #     st.caption('Less than two matches')
 
 
-                            # Create an empty DataFrame with 6 rows and specified columns
-                            df_csv = pd.DataFrame(index=range(6), columns=columns)
+                    st.write(df_result_sot)
+                    st.write("")
 
-                            # Set the top 6 rows of specific columns
-                            df_csv['EVENT TYPE'].iloc[:6] = 'Special'
-                            df_csv['SPORT'].iloc[:6] = 'Football'
-                            df_csv['CATEGORY'].iloc[:6] = 'Special Offer'
-                            df_csv['COMPETITION'].iloc[:6] = 'Daily League Shots on Target'
-                            df_csv['MARKET TYPE NAME'].iloc[:6] = 'Daily Shots on Target O/U {line}'
-                            # df_csv['SELECTION NAME'].iloc[:6] = 'Daily Shots on Target O/U {line}'
+                    # Get poisson odds and lines for each day returned for Daily SOT
+                    for _, row in df_result_sot.iterrows():
+                        exp = row['TST'] * 1/OVERS_BOOST * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
+                        day = row['Day']
+                        main_line = np.floor(exp) + 0.5
 
-                            df_csv.loc[[0, 2, 4], 'SELECTION NAME'] = 'Over {line}'
-                            df_csv.loc[[1, 3, 5], 'SELECTION NAME'] = 'Under {line}'
+                        increment = calculate_increment(main_line)
 
-                            # Assign 'LINE' values
-                            df_csv.loc[[0, 1], 'LINE'] = line_minus_1
-                            df_csv.loc[[2, 3], 'LINE'] = main_line
-                            df_csv.loc[[4, 5], 'LINE'] = line_plus_1
+                        line_minus_1 = main_line - increment
+                        line_minus_2 = main_line - increment * 2
+                        line_plus_1 = main_line + increment
+                        line_plus_2 = main_line + increment * 2
 
-                            df_csv['OFFER START TIME'].iloc[:6] = '09:00:00'
-                            df_csv['PUBLISHED'].iloc[:6] = 'NO'
-                            df_csv['START DATE'] = today_date  # Today's date
-                            df_csv['OFFER END DATE'] = day  
-                            df_csv['START TIME'] = time
-                            df_csv['OFFER END TIME'] = time
+                        probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
 
-                            # Assign 'PRICE' values (rounded to 2 decimal places)
-                            df_csv.loc[0, 'PRICE'] = round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2)
-                            df_csv.loc[1, 'PRICE'] = round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2)
-                            df_csv.loc[2, 'PRICE'] = round(1 / probabilities_marginated[f'over_main {main_line}'], 2)
-                            df_csv.loc[3, 'PRICE'] = round(1 / probabilities_marginated[f'under_main {main_line}'], 2)
-                            df_csv.loc[4, 'PRICE'] = round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2)
-                            df_csv.loc[5, 'PRICE'] = round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2)
+                        margin_configured = ((margin_to_apply * 100 - 100) * 0.5) / 100   # maergin to ADD to each side
+                        # update probabiities dict by adding to each item
+                        probabilities_marginated = {key: value + margin_configured for key, value in probabilities.items()}    
 
-                            # Generate the event name using selected_league, match count, and date
-                            selected_league_revised = dict_api_to_bk_league_names.get(selected_league, selected_league) # if api league name different from BK league name
-                            event_name = f"{selected_league_revised} ({row['Match_Count']} matches {day})"
-                            df_csv['EVENT NAME'].iloc[:6] = event_name
+                        st.write(f'##### Fixtures {day}')
 
-                            # Converting multiple columns to string format
-                            columns_to_convert = ['START DATE', 'START TIME', 'OFFER END DATE', 'OFFER END TIME']
-                            df_csv[columns_to_convert] = df_csv[columns_to_convert].astype(str)
+                        st.caption(f"{day} (with margin)")
+                        st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities_marginated[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_2 {line_plus_2}'], 2))
+                        st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2))
+                        st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities_marginated[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities_marginated[f'under_main {main_line}'], 2))
+                        st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2))
+                        st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities_marginated[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_2 {line_minus_2}'], 2))
+                        st.write("")
 
-                            df_csv = df_csv.reset_index(drop=True)
+                        columns = [
+                            'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
+                            'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
+                            'START TIME', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
+                            'PUBLISHED'
+                        ]
 
-                            # Store the dataframe for this date
-                            # df_csv_list.append(df_csv)
 
-                            st.write("")
-                            st.write('Downloadable FMH upload file')
+                        # Create an empty DataFrame with 6 rows and specified columns
+                        df_csv = pd.DataFrame(index=range(6), columns=columns)
 
-                            df_csv.set_index('EVENT TYPE', inplace=True)
-                            st.write(df_csv)
+                        # Set the top 6 rows of specific columns
+                        df_csv['EVENT TYPE'].iloc[:6] = 'Special'
+                        df_csv['SPORT'].iloc[:6] = 'Football'
+                        df_csv['CATEGORY'].iloc[:6] = 'Special Offer'
+                        df_csv['COMPETITION'].iloc[:6] = 'Daily League Shots on Target'
+                        df_csv['MARKET TYPE NAME'].iloc[:6] = 'Daily Shots on Target O/U {line}'
+                        # df_csv['SELECTION NAME'].iloc[:6] = 'Daily Shots on Target O/U {line}'
 
-                            st.write("---")
+                        df_csv.loc[[0, 2, 4], 'SELECTION NAME'] = 'Over {line}'
+                        df_csv.loc[[1, 3, 5], 'SELECTION NAME'] = 'Under {line}'
+
+                        # Assign 'LINE' values
+                        df_csv.loc[[0, 1], 'LINE'] = line_minus_1
+                        df_csv.loc[[2, 3], 'LINE'] = main_line
+                        df_csv.loc[[4, 5], 'LINE'] = line_plus_1
+
+                        df_csv['OFFER START TIME'].iloc[:6] = '09:00:00'
+                        df_csv['PUBLISHED'].iloc[:6] = 'NO'
+                        df_csv['START DATE'] = today_date  # Today's date
+                        df_csv['OFFER END DATE'] = day  
+                        df_csv['START TIME'] = time
+                        df_csv['OFFER END TIME'] = time
+
+                        # Assign 'PRICE' values (rounded to 2 decimal places)
+                        df_csv.loc[0, 'PRICE'] = round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2)
+                        df_csv.loc[1, 'PRICE'] = round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2)
+                        df_csv.loc[2, 'PRICE'] = round(1 / probabilities_marginated[f'over_main {main_line}'], 2)
+                        df_csv.loc[3, 'PRICE'] = round(1 / probabilities_marginated[f'under_main {main_line}'], 2)
+                        df_csv.loc[4, 'PRICE'] = round(1 / probabilities_marginated[f'over_plus_1 {line_plus_1}'], 2)
+                        df_csv.loc[5, 'PRICE'] = round(1 / probabilities_marginated[f'under_plus_1 {line_plus_1}'], 2)
+
+                        # Generate the event name using selected_league, match count, and date
+                        selected_league_revised = dict_api_to_bk_league_names.get(selected_league, selected_league) # if api league name different from BK league name
+                        event_name = f"{selected_league_revised} ({row['Match_Count']} matches {day})"
+                        df_csv['EVENT NAME'].iloc[:6] = event_name
+
+                        # Converting multiple columns to string format
+                        columns_to_convert = ['START DATE', 'START TIME', 'OFFER END DATE', 'OFFER END TIME']
+                        df_csv[columns_to_convert] = df_csv[columns_to_convert].astype(str)
+
+                        df_csv = df_csv.reset_index(drop=True)
+
+                        # Store the dataframe for this date
+                        # df_csv_list.append(df_csv)
+
+                        st.write("")
+                        st.write('Downloadable FMH upload file')
+
+                        df_csv.set_index('EVENT TYPE', inplace=True)
+                        st.write(df_csv)
+
+                        st.write("---")
                         
             except Exception as e:
                 st.write(f'An error has occurred whilst compiling: {e}')     
