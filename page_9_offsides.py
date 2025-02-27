@@ -964,7 +964,7 @@ def main():
                     # Check if 'a_-1_line' exists and contains negative values
                     if 'h_-1_line' in df_simple_only_overs_home.columns:
                         if (df_simple_only_overs_home['h_-1_line'] < 0).any():
-                            st.error('Negative line detected. Remove prior to publishing.')
+                            st.error('A negative line detected! Remove prior to publishing.')
 
                     st.write("")
                     st.write("##### Overs only - Away")
@@ -972,7 +972,7 @@ def main():
                     # Check if 'h_-1_line' exists and contains negative values
                     if 'a_-1_line' in df_simple_only_overs_away.columns:
                         if (df_simple_only_overs_away['a_-1_line'] < 0).any():
-                            st.error('Negative line detected. Remove prior to publishing.')
+                            st.error('A negative line detected! Remove prior to publishing.')
 
 
                     st.subheader("", divider='blue')
