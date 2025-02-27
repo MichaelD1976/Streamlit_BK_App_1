@@ -1164,6 +1164,24 @@ def main():
                         else:
                             df_final = df_final.assign(**{f'{col}_w.%': df_final[col].apply(lambda x: round(x / margin_to_apply, 2))})  # covers the H_Most / A_most
 
+
+                    # Rescale margins back to original 'margin_to_apply'
+                    for base_col in set(c.rsplit('_', 1)[0] for c in cols_to_add_margin):
+                        un_col = f"{base_col}_un_w.%"
+                        ov_col = f"{base_col}_ov_w.%"
+                        
+                        if un_col in df_final.columns and ov_col in df_final.columns:
+                            # Compute the inverse sum of both adjusted values
+                            inverse_sum = (1 / df_final[un_col]) + (1 / df_final[ov_col])
+                            
+                            # Compute scaling factor to make inverse sum equal to margin_to_apply
+                            scale_factor = margin_to_apply / inverse_sum
+
+                            # Apply scaling factor to both columns
+                            df_final[un_col] = (df_final[un_col] / scale_factor).round(2)
+                            df_final[ov_col] = (df_final[ov_col] / scale_factor).round(2)
+
+
                     del cols_to_add_margin
                     gc.collect()
 

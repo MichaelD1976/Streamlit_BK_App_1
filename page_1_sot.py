@@ -952,6 +952,24 @@ def main():
                         elif col.endswith('_un'):  # For '_un' columns, multiply by bias_to_apply
                             df_final = df_final.assign(**{f'{col}_w.%': df_final[col].apply(lambda x: round(x / margin_to_apply * bias_to_apply, 2))})
 
+
+                    # Rescale margins back to original 'margin_to_apply'
+                    for base_col in set(c.rsplit('_', 1)[0] for c in cols_to_add_margin):
+                        un_col = f"{base_col}_un_w.%"
+                        ov_col = f"{base_col}_ov_w.%"
+                        
+                        if un_col in df_final.columns and ov_col in df_final.columns:
+                            # Compute the inverse sum of both adjusted values
+                            inverse_sum = (1 / df_final[un_col]) + (1 / df_final[ov_col])
+                            
+                            # Compute scaling factor to make inverse sum equal to margin_to_apply
+                            scale_factor = margin_to_apply / inverse_sum
+
+                            # Apply scaling factor to both columns
+                            df_final[un_col] = (df_final[un_col] / scale_factor).round(2)
+                            df_final[ov_col] = (df_final[ov_col] / scale_factor).round(2)
+
+
                     # Create a copy of the DataFrame with the new columns added
                     df_final_wm = df_final.copy()
 
@@ -973,8 +991,24 @@ def main():
                                             'T_+2_line',  'T_+2_ov_w.%',                                          
                                             ]]
                     
+                    df_simple_only_overs_home = df_final_wm[['Date', 'Home Team', 'Away Team',
+                                            'h_main_line', 'h_main_ov_w.%',
+                                            'h_-1_line', 'h_-1_ov_w.%',
+                                            'h_+1_line', 'h_+1_ov_w.%',                                         
+                                            ]]
+                    
+                    df_simple_only_overs_away = df_final_wm[['Date', 'Home Team', 'Away Team',
+                                            'a_main_line', 'a_main_ov_w.%',
+                                            'a_-1_line', 'a_-1_ov_w.%',
+                                            'a_+1_line', 'a_+1_ov_w.%',                                         
+                                            ]]
+
+                    
                     df_simple_o_and_u = df_final_wm[['Date', 'Home Team', 'Away Team', 'T_-1_line','T_-1_ov_w.%', 'T_-1_un_w.%', ]]
-        
+
+                    df_simple_o_and_u_home = df_final_wm[['Date', 'Home Team', 'Away Team', 'h_-1_line','h_-1_ov_w.%', 'h_-1_un_w.%', ]]
+                    df_simple_o_and_u_away = df_final_wm[['Date', 'Home Team', 'Away Team', 'a_-1_line','a_-1_ov_w.%', 'a_-1_un_w.%', ]]
+
                     #  ----- Calculate Daily Total SOT and GOALS --------
 
                     # Convert to datetime
@@ -1013,13 +1047,29 @@ def main():
 
                     st.write("---")
                     st.subheader("Lines to Publish")
-                    st.write("##### Over and Under")
                     st.write("")
+                    st.write("##### Over & Under - Total")
                     st.write(df_simple_o_and_u)
 
-                    st.write("##### Overs only")
                     st.write("")
+                    st.write("##### Over & Under - Home")
+                    st.write(df_simple_o_and_u_home)
+
+                    st.write("")
+                    st.write("##### Over & Under - Away")
+                    st.write(df_simple_o_and_u_away)
+
+                    st.write("")
+                    st.write("##### Overs only - Total")
                     st.write(df_simple_only_overs)
+
+                    st.write("")
+                    st.write("##### Overs only - Home")
+                    st.write(df_simple_only_overs_home)
+
+                    st.write("")
+                    st.write("##### Overs only - Away")
+                    st.write(df_simple_only_overs_away)
 
                     st.subheader("", divider='blue')
                     st.subheader('Daily Goals')
@@ -1031,13 +1081,14 @@ def main():
                     columns = [
                         'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
                         'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
-                        'START TIME', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
+                        'START TIME', 'OFFER START DATE', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
                         'PUBLISHED'
                     ]
                     # Iterate through each row in df_result_fl (each date)
                     # df_csv_list = []
 
                     st.write(df_result_gl)
+                    st.warning('Check correct number of fixtures have been logged for each day', icon="⚠️")
                     st.write("")
 
                     # Get poisson odds and lines for each day returned for Daly Goals
@@ -1095,12 +1146,14 @@ def main():
                         df_csv.loc[[2, 3], 'LINE'] = main_line
                         df_csv.loc[[4, 5], 'LINE'] = line_plus_1
 
-                        df_csv['OFFER START TIME'].iloc[:6] = '09:00:00'
-                        df_csv['PUBLISHED'].iloc[:6] = 'NO'
-                        df_csv['START DATE'] = today_date  # Today's date
-                        df_csv['OFFER END DATE'] = day  
-                        df_csv['START TIME'] = time
-                        df_csv['OFFER END TIME'] = time
+                        df_csv['START DATE'] = day #1
+                        df_csv['START TIME'] = time #2
+                        df_csv['OFFER START DATE'] = today_date #3
+                        df_csv['OFFER START TIME'].iloc[:6] = '09:00:00' #4
+                        df_csv['OFFER END DATE'] = day  #5
+                        df_csv['OFFER END TIME'] = time #6
+                        df_csv['PUBLISHED'].iloc[:6] = 'NO' #7
+                        
 
                         # Assign 'PRICE' values (rounded to 2 decimal places)
                         df_csv.loc[0, 'PRICE'] = round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2)
@@ -1116,7 +1169,7 @@ def main():
                         df_csv['EVENT NAME'].iloc[:6] = event_name
 
                         # Converting multiple columns to string format
-                        columns_to_convert = ['START DATE', 'START TIME', 'OFFER END DATE', 'OFFER END TIME']
+                        columns_to_convert = ['START DATE', 'START TIME', 'OFFER START DATE', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME']
                         df_csv[columns_to_convert] = df_csv[columns_to_convert].astype(str)
 
                         df_csv = df_csv.reset_index(drop=True)
@@ -1141,6 +1194,7 @@ def main():
 
 
                     st.write(df_result_sot)
+                    st.warning('Check correct number of fixtures have been logged for each day', icon="⚠️")
                     st.write("")
 
                     # Get poisson odds and lines for each day returned for Daily SOT
@@ -1199,12 +1253,13 @@ def main():
                         df_csv.loc[[2, 3], 'LINE'] = main_line
                         df_csv.loc[[4, 5], 'LINE'] = line_plus_1
 
-                        df_csv['OFFER START TIME'].iloc[:6] = '09:00:00'
-                        df_csv['PUBLISHED'].iloc[:6] = 'NO'
-                        df_csv['START DATE'] = today_date  # Today's date
-                        df_csv['OFFER END DATE'] = day  
-                        df_csv['START TIME'] = time
-                        df_csv['OFFER END TIME'] = time
+                        df_csv['START DATE'] = day #1
+                        df_csv['START TIME'] = time #2
+                        df_csv['OFFER START DATE'] = today_date #3
+                        df_csv['OFFER START TIME'].iloc[:6] = '09:00:00' #4
+                        df_csv['OFFER END DATE'] = day  #5
+                        df_csv['OFFER END TIME'] = time #6
+                        df_csv['PUBLISHED'].iloc[:6] = 'NO' #7
 
                         # Assign 'PRICE' values (rounded to 2 decimal places)
                         df_csv.loc[0, 'PRICE'] = round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2)
@@ -1234,7 +1289,7 @@ def main():
                         df_csv.set_index('EVENT TYPE', inplace=True)
                         st.write(df_csv)
 
-                        st.write("---")
+                        st.write("")
                         
             except Exception as e:
                 st.write(f'An error has occurred whilst compiling: {e}')     

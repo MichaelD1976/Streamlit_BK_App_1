@@ -852,6 +852,24 @@ def main():
                         else:
                             df_final = df_final.assign(**{f'{col}_w.%': df_final[col].apply(lambda x: round(x / margin_to_apply, 2))})  # covers the H_Most / A_most
 
+
+                    # Rescale margins back to original 'margin_to_apply'
+                    for base_col in set(c.rsplit('_', 1)[0] for c in cols_to_add_margin):
+                        un_col = f"{base_col}_un_w.%"
+                        ov_col = f"{base_col}_ov_w.%"
+                        
+                        if un_col in df_final.columns and ov_col in df_final.columns:
+                            # Compute the inverse sum of both adjusted values
+                            inverse_sum = (1 / df_final[un_col]) + (1 / df_final[ov_col])
+                            
+                            # Compute scaling factor to make inverse sum equal to margin_to_apply
+                            scale_factor = margin_to_apply / inverse_sum
+
+                            # Apply scaling factor to both columns
+                            df_final[un_col] = (df_final[un_col] / scale_factor).round(2)
+                            df_final[ov_col] = (df_final[ov_col] / scale_factor).round(2)
+
+
                     del cols_to_add_margin
                     gc.collect()
 
@@ -863,11 +881,36 @@ def main():
 
                     # warning if not all match  retrieved from API call matches the final df
                     if len(df) != len(fixt_id_list):
-                        st.warning('Odds for 1 or more matches not currently available - use single match pricing option above')
+                        st.warning('Odds for 1 or more matches not currently available')
 
 
                     # ---------  show simplified odds - just main lines  ---------
-                    df_simple = df_final_wm[['Date', 'Home Team', 'Away Team', 'T_main_line', 'T_main_un_w.%', 'T_main_ov_w.%','h_main_line', 'h_main_un_w.%', 'h_main_ov_w.%', 'a_main_line', 'a_main_un_w.%', 'a_main_ov_w.%']]
+                    df_simple_only_overs = df_final_wm[['Date', 'Home Team', 'Away Team',
+                                            'T_main_line', 'T_main_ov_w.%',
+                                            'T_-1_line', 'T_-1_ov_w.%',
+                                            'T_-2_line',  'T_-2_ov_w.%',
+                                            'T_+1_line', 'T_+1_ov_w.%',
+                                            'T_+2_line',  'T_+2_ov_w.%',                                          
+                                            ]]
+                    
+                    df_simple_only_overs_home = df_final_wm[['Date', 'Home Team', 'Away Team',
+                                            'h_main_line', 'h_main_ov_w.%',
+                                            'h_-1_line', 'h_-1_ov_w.%',
+                                            'h_+1_line', 'h_+1_ov_w.%',                                         
+                                            ]]
+                    
+                    df_simple_only_overs_away = df_final_wm[['Date', 'Home Team', 'Away Team',
+                                            'a_main_line', 'a_main_ov_w.%',
+                                            'a_-1_line', 'a_-1_ov_w.%',
+                                            'a_+1_line', 'a_+1_ov_w.%',                                         
+                                            ]]
+                    
+                    df_simple_o_and_u = df_final_wm[['Date', 'Home Team', 'Away Team',
+                                'T_main_line', 'T_main_ov_w.%', 'T_main_un_w.%',                                        
+                                ]]
+                    
+                    df_simple_o_and_u_home = df_final_wm[['Date', 'Home Team', 'Away Team', 'h_main_line','h_main_ov_w.%', 'h_main_un_w.%', ]]
+                    df_simple_o_and_u_away = df_final_wm[['Date', 'Home Team', 'Away Team', 'a_main_line','a_main_ov_w.%', 'a_main_un_w.%', ]]
             
                     #  ----- Calculate Daily Total OFFSIDES --------
 
@@ -898,40 +941,71 @@ def main():
                     # -------  Display Simple DF   --------------
 
                     st.write("---")
-
-                    st.subheader('Main Lines')
+                    st.subheader("Lines to Publish")
                     st.write("")
-                    st.write(df_simple)
+                    st.write("##### Over & Under - Total")
+                    st.write(df_simple_o_and_u)
+
+                    st.write("")
+                    st.write("##### Over & Under - Home")
+                    st.write(df_simple_o_and_u_home)
+
+                    st.write("")
+                    st.write("##### Over & Under - Away")
+                    st.write(df_simple_o_and_u_away)
+
+                    st.write("")
+                    st.write("##### Overs only - Total")
+                    st.write(df_simple_only_overs)
+
+                    st.write("")
+                    st.write("##### Overs only - Home")
+                    st.write(df_simple_only_overs_home)
+                    # Check if 'a_-1_line' exists and contains negative values
+                    if 'h_-1_line' in df_simple_only_overs_home.columns:
+                        if (df_simple_only_overs_home['h_-1_line'] < 0).any():
+                            st.error('Negative line detected. Remove prior to publishing.')
+
+                    st.write("")
+                    st.write("##### Overs only - Away")
+                    st.write(df_simple_only_overs_away)
+                    # Check if 'h_-1_line' exists and contains negative values
+                    if 'a_-1_line' in df_simple_only_overs_away.columns:
+                        if (df_simple_only_overs_away['a_-1_line'] < 0).any():
+                            st.error('Negative line detected. Remove prior to publishing.')
+
 
                     st.subheader("", divider='blue')
                     st.subheader('Total Daily Offsides')
                     st.write("")
-                    if df_result_offs.shape[0] < 2:
-                        st.caption('Less than two matches')
-                    else:
-                        st.write(df_result_offs)
-                        # Get poisson odds and lines for each day returned for Daily SOT
-                        for _, row in df_result_offs.iterrows():
-                            exp = row['TO'] * 1/OVERS_BOOST * TOTALS_BOOST
-                            day = row['Day']
-                            main_line = np.floor(exp) + 0.5
+                    # if df_result_offs.shape[0] < 2:
+                    #     st.caption('Less than two matches')
 
-                            increment = calculate_increment(main_line)
+                    st.write(df_result_offs)
+                    st.warning('Check correct number of fixtures have been logged for each day', icon="⚠️")
 
-                            line_minus_1 = main_line - increment
-                            line_minus_2 = main_line - increment * 2
-                            line_plus_1 = main_line + increment
-                            line_plus_2 = main_line + increment * 2
+                    # Get poisson odds and lines for each day returned for Daily SOT
+                    for _, row in df_result_offs.iterrows():
+                        exp = row['TO'] * 1/OVERS_BOOST * TOTALS_BOOST
+                        day = row['Day']
+                        main_line = np.floor(exp) + 0.5
 
-                            probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
+                        increment = calculate_increment(main_line)
 
-                            st.caption(f"{day} (100% Prices)")
-                            st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
-                            st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
-                            st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
-                            st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
-                            st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
-                            st.write("")
+                        line_minus_1 = main_line - increment
+                        line_minus_2 = main_line - increment * 2
+                        line_plus_1 = main_line + increment
+                        line_plus_2 = main_line + increment * 2
+
+                        probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
+
+                        st.caption(f"{day} (100% Prices)")
+                        st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
+                        st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
+                        st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
+                        st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
+                        st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
+                        st.write("")
 
             except Exception as e:
                 st.write(f'An error has occurred whilst compiling: {e}')
