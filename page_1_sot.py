@@ -1225,11 +1225,12 @@ def main():
                         st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities_marginated[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_1 {line_minus_1}'], 2))
                         st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities_marginated[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_2 {line_minus_2}'], 2))
                         st.write("")
-
+                        
+                        
                         columns = [
                             'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
                             'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
-                            'START TIME', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
+                            'START TIME', 'OFFER START DATE', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
                             'PUBLISHED'
                         ]
 
