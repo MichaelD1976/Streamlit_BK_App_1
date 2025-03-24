@@ -48,6 +48,7 @@ page_options = [
             #    'Daily Totals',
             #    'Goalscorer Matchbets',
             #    'League Matchbets',
+                 'Outright Simulator',
                  'Odds Calculators',
                  'Team News',
                 ]
@@ -72,10 +73,11 @@ def main():
             st.write("")
             st.image("images/KM_Logo-bgr.png", width=700)
             st.write("")
-            st.write("""
-                     **Updates**:
-                     - South Africa Data added
-                     - Shots and Fouls tested and fine to use. Reconfig of outputs to allign with FMH upload in development.
+            with st.expander('Updates Log'):
+                st.write("""
+                       **Updates Log**:
+                     - 24/3/25 Outright simulator added
+                     - 26/2/25 SA Data added
                      """)
         c1,c2,c3 = st.columns([1,11,1])
         with c2:
@@ -126,6 +128,10 @@ def main():
     elif selected_page == 'Team News':
         import page_7_team_news
         page_7_team_news.main()
+
+    elif selected_page == 'Outright Simulator':
+        import page_11_simulator
+        page_11_simulator.main() 
 
     # elif selected_page == 'Offsides':
     #     import page_9_offsides
