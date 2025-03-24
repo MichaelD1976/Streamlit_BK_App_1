@@ -129,7 +129,7 @@ def main():
         import page_7_team_news
         page_7_team_news.main()
 
-    elif selected_page == 'Outright Simulator':
+    elif selected_page == 'Outright Sim':
         import page_11_simulator
         page_11_simulator.main() 
 
