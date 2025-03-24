@@ -48,7 +48,7 @@ page_options = [
             #    'Daily Totals',
             #    'Goalscorer Matchbets',
             #    'League Matchbets',
-                 'Outright Simulator',
+                 'Outright Sim',
                  'Odds Calculators',
                  'Team News',
                 ]
