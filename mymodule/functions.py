@@ -89,6 +89,7 @@ team_names_api_to_t1x2_dict = {
     'SV Darmstadt 98': 'Darmstadt'
 }
 
+
 # ---------------------------------------------------
 
 
@@ -369,3 +370,72 @@ def calculate_true_from_true_raw(h_pc_true_raw , d_pc_true_raw , a_pc_true_raw, 
     a_pc_true = round(a_pc_true, 2)
 
     return (float(h_pc_true), float(d_pc_true), float(a_pc_true))
+
+# ---------------------------------------------------------------------
+
+@st.cache_data
+def get_odds(fixture_id, market_id, bookmakers):
+
+    if not st.secrets:
+        load_dotenv()
+        API_KEY = os.getenv("API_KEY_FOOTBALL_API")
+
+    else:
+        # Use Streamlit secrets in production
+        API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
+
+
+    url = "https://api-football-v1.p.rapidapi.com/v3/odds"
+    headers = {
+        "X-RapidAPI-Key": API_KEY,
+        "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+    }
+    querystring = {
+        "fixture": fixture_id,
+        "bet": market_id,
+        "timezone": "Europe/London"
+    }
+
+    response = requests.get(url, headers=headers, params=querystring)
+    data = response.json()
+
+    if 'response' in data and data['response']:
+        odds_dict = {
+            'Fixture ID': fixture_id,
+            'Home Win': None,
+            'Draw': None,
+            'Away Win': None,
+            # 'Over 2.5': None,                 # goals not needed in ml model for corners. v.big odds on might not have 2.5
+            # 'Under 2.5': None,                # line which will cause the whole match to be dropped in later script
+        }
+
+        # Loop through bookmakers
+        for bookmaker_data in data['response'][0].get('bookmakers', []):
+            if str(bookmaker_data['id']) in bookmakers:
+                # Loop through each market (bet) offered by the bookmaker
+                for bet_data in bookmaker_data['bets']:
+                    if bet_data['id'] == int(market_id):  # Ensure it's the selected market
+                        # Extract the outcomes (selections) and their corresponding odds
+                        for value in bet_data['values']:
+                            selection = value['value']
+                            odd = value['odd']
+                            
+                            # Assign the odds based on the selection type
+                            if selection == 'Home':
+                                odds_dict['Home Win'] = odd
+                            elif selection == 'Draw':
+                                odds_dict['Draw'] = odd
+                            elif selection == 'Away':
+                                odds_dict['Away Win'] = odd
+                            # elif selection == 'Over 2.5':     
+                            #     odds_dict['Over 2.5'] = odd     
+                            # elif selection == 'Under 2.5':
+                            #     odds_dict['Under 2.5'] = odd
+
+
+        # Create a DataFrame with a single row containing all the odds
+        odds_df = pd.DataFrame([odds_dict])
+        return odds_df
+        
+    # Return empty DataFrame if no data is found
+    return pd.DataFrame()

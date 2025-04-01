@@ -51,6 +51,7 @@ page_options = [
                  'Outright Sim',
                  'Odds Calculators',
                  'Team News',
+            #     'Popular Matches'
                 ]
 
 
@@ -132,6 +133,10 @@ def main():
     elif selected_page == 'Outright Sim':
         import page_11_simulator
         page_11_simulator.main() 
+
+    elif selected_page == 'Popular Matches':
+        import page_12_popular_matches
+        page_12_popular_matches.main() 
 
     # elif selected_page == 'Offsides':
     #     import page_9_offsides
