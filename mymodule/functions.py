@@ -8,6 +8,7 @@ import requests
 from unidecode import unidecode
 from dotenv import load_dotenv
 import os
+import math
 from scipy.optimize import minimize_scalar
 
 # dic to standardize api-football team names to t1x2 team names
@@ -463,7 +464,7 @@ def calc_prob_matrix(supremacy, goals_exp, max_goals):
             for j in range(max_goals + 1):
                 s = 0
                 for m in range(0, min(i, j) + 1):
-                    term = (lam0**m) * (lam1**(i-m)) * (lam2**(j-m)) / (np.math.factorial(m) * np.math.factorial(i-m) * np.math.factorial(j-m))
+                    term = (lam0**m) * (lam1**(i-m)) * (lam2**(j-m)) / (math.factorial(m) * math.factorial(i-m) * math.factorial(j-m))
                     s += term
                 matrix[i, j] = np.exp(-(lam0 + lam1 + lam2)) * s
         matrix /= matrix.sum()  # Normalize
