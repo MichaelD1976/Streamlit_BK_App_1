@@ -52,6 +52,7 @@ page_options = [
                  'Odds Calculators',
                  'Team News',
             #     'Popular Matches'
+                 'Derivatives',
                 ]
 
 
@@ -76,7 +77,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'):
                 st.write("""
-                       **Updates Log**:
+                     - 28/4/25 Derivatives added
                      - 24/3/25 Outright simulator added
                      - 26/2/25 SA Data added
                      """)
@@ -137,6 +138,10 @@ def main():
     elif selected_page == 'Popular Matches':
         import page_12_popular_matches
         page_12_popular_matches.main() 
+
+    elif selected_page == 'Derivatives':
+        import page_13_derivatives
+        page_13_derivatives.main() 
 
     # elif selected_page == 'Offsides':
     #     import page_9_offsides

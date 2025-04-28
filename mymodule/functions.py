@@ -439,3 +439,64 @@ def get_odds(fixture_id, market_id, bookmakers):
         
     # Return empty DataFrame if no data is found
     return pd.DataFrame()
+
+# ---------------------------------------------------
+
+def calc_prob_matrix(supremacy, goals_exp, max_goals):
+
+    # Calculate Home and Away Goals Expected Full Time
+    hg = round(goals_exp / 2 + (0.5 * supremacy), 2)
+    ag = round(goals_exp / 2 - (0.5 * supremacy), 2)
+
+    # Calculate Home and Away Goals Expected 1H
+    hg1h = round((hg / 100) * 44, 2)
+    ag1h = round((ag / 100) * 44, 2)
+
+    # Calculate Home and Away Goals Expected 2H
+    hg2h = round((hg / 100) * 56, 2)
+    ag2h = round((ag / 100) * 56, 2)
+
+    # Function to calculate Bivariate Poisson probability matrix
+    def bivariate_poisson(lam0, lam1, lam2, max_goals):
+        matrix = np.zeros((max_goals + 1, max_goals + 1))
+        for i in range(max_goals + 1):
+            for j in range(max_goals + 1):
+                s = 0
+                for m in range(0, min(i, j) + 1):
+                    term = (lam0**m) * (lam1**(i-m)) * (lam2**(j-m)) / (np.math.factorial(m) * np.math.factorial(i-m) * np.math.factorial(j-m))
+                    s += term
+                matrix[i, j] = np.exp(-(lam0 + lam1 + lam2)) * s
+        matrix /= matrix.sum()  # Normalize
+        return matrix
+
+    # Set shared lambda (lam0) to induce correlation
+    # You can adjust lam0 depending on how correlated you want the teams to be
+    # so to increase draw scoreline percentages (make more likely) - increase lambda values and vice versa 
+    lam0_ft = 0.08
+    lam0_1h = 0.04
+    lam0_2h = 0.04
+
+    # Calculate lambda1 and lambda2 for each period
+    lam1_ft = hg - lam0_ft
+    lam2_ft = ag - lam0_ft
+
+    lam1_1h = hg1h - lam0_1h
+    lam2_1h = ag1h - lam0_1h
+
+    lam1_2h = hg2h - lam0_2h
+    lam2_2h = ag2h - lam0_2h
+
+    # Calculate probability matrices
+    prob_matrix_ft = bivariate_poisson(lam0_ft, lam1_ft, lam2_ft, max_goals)
+    prob_matrix_1h = bivariate_poisson(lam0_1h, lam1_1h, lam2_1h, max_goals)
+    prob_matrix_2h = bivariate_poisson(lam0_2h, lam1_2h, lam2_2h, max_goals)
+
+    # Tiny manual adjustment just on the FT matrix
+    prob_matrix_ft[1,1] *= 1.09  # Boost 1-1 % (decrease odds)
+    prob_matrix_ft[0,0] *= 0.98 # Lower 0-0 
+    prob_matrix_ft[2,2] *= 1.01 # Lower 2-2 
+
+    # Then normalize the matrix again
+    prob_matrix_ft /= prob_matrix_ft.sum()
+
+    return prob_matrix_ft, prob_matrix_1h, prob_matrix_2h, hg, ag
