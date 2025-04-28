@@ -500,3 +500,5 @@ def calc_prob_matrix(supremacy, goals_exp, max_goals):
     prob_matrix_ft /= prob_matrix_ft.sum()
 
     return prob_matrix_ft, prob_matrix_1h, prob_matrix_2h, hg, ag
+
+# --------------------------
