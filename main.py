@@ -77,7 +77,8 @@ def main():
             st.write("")
             with st.expander('Updates Log'):
                 st.write("""
-                     - 28/4/25 Derivatives added
+                     - 07/5/25 Derivatives - draw & 1H split parameters added
+                     - 28/4/25 Derivatives page added
                      - 24/3/25 Outright simulator added
                      - 26/2/25 SA Data added
                      """)

@@ -443,19 +443,22 @@ def get_odds(fixture_id, market_id, bookmakers):
 
 # ---------------------------------------------------
 
-def calc_prob_matrix(supremacy, goals_exp, max_goals):
+# reconfi to pass lam0 and 1H goal split as args after user input
+def calc_prob_matrix(supremacy, goals_exp, max_goals, draw_lambda, f_half_perc): # lam0 adjusts the draw likelihood for higher draw leagues
 
     # Calculate Home and Away Goals Expected Full Time
     hg = round(goals_exp / 2 + (0.5 * supremacy), 2)
     ag = round(goals_exp / 2 - (0.5 * supremacy), 2)
 
     # Calculate Home and Away Goals Expected 1H
-    hg1h = round((hg / 100) * 44, 2)
-    ag1h = round((ag / 100) * 44, 2)
+    hg1h = round((hg / 100) * f_half_perc, 2)
+    ag1h = round((ag / 100) * f_half_perc, 2)
+
+    s_half_perc = 100 - f_half_perc
 
     # Calculate Home and Away Goals Expected 2H
-    hg2h = round((hg / 100) * 56, 2)
-    ag2h = round((ag / 100) * 56, 2)
+    hg2h = round((hg / 100) * s_half_perc , 2)
+    ag2h = round((ag / 100) * s_half_perc , 2)
 
     # Function to calculate Bivariate Poisson probability matrix
     def bivariate_poisson(lam0, lam1, lam2, max_goals):
@@ -473,9 +476,9 @@ def calc_prob_matrix(supremacy, goals_exp, max_goals):
     # Set shared lambda (lam0) to induce correlation
     # You can adjust lam0 depending on how correlated you want the teams to be
     # so to increase draw scoreline percentages (make more likely) - increase lambda values and vice versa 
-    lam0_ft = 0.08
-    lam0_1h = 0.04
-    lam0_2h = 0.04
+    lam0_ft = draw_lambda
+    lam0_1h = lam0_ft / 2
+    lam0_2h = lam0_ft / 2
 
     # Calculate lambda1 and lambda2 for each period
     lam1_ft = hg - lam0_ft

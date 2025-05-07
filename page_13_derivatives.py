@@ -14,15 +14,21 @@ def main():
     # Goals Exp slider in the sidebar # WIDGET
     goals_exp = st.sidebar.slider('**Select Goals Exp**', min_value=1.6, max_value=4.4, value=2.7, step=0.02, label_visibility = 'visible')
 
+    # 1h perc slider in the sidebar # WIDGET
+    f_half_perc = st.sidebar.slider('**First Half Goal %**', min_value=42, max_value=48, value=44, step=1, label_visibility = 'visible')
 
+    # draw lambda in the sidebar # WIDGET
+    draw_lambda = st.sidebar.slider('**Draw Parameter**', min_value=0.00, max_value=0.26, value=0.08, step=0.02, label_visibility = 'visible') 
+
+    s_half_perc = 100 - f_half_perc
     # Calculate 1st Half and 2nd Half Goals Exp
-    f_half_g = round(goals_exp / 100 * 44, 2)
-    s_half_g = round(goals_exp / 100 * 56, 2)
+    f_half_g = round(goals_exp / 100 * f_half_perc, 2)
+    s_half_g = round(goals_exp / 100 * s_half_perc, 2)
 
     max_goals = 9
 
     # call function from functions.py to return match prob matrices and hg/ag exp's
-    prob_matrix_ft, prob_matrix_1h, prob_matrix_2h, hg, ag = calc_prob_matrix(supremacy, goals_exp, max_goals)
+    prob_matrix_ft, prob_matrix_1h, prob_matrix_2h, hg, ag = calc_prob_matrix(supremacy, goals_exp, max_goals, draw_lambda, f_half_perc)
 
 
     # Display 1st Half and 2nd Half Goals Exp in a box
@@ -398,8 +404,9 @@ def main():
     st.write(f'Select Match Supremacy & Goals Expectation to calculate pre-match market odds / probabilities')
     st.caption('''
                Derivative odds are supremacy/totals outputs based on bivariate poisson distributions (not past data). 
-               Individual leagues and countries fit to varying bivariate lambda values. For simplicity, the lambda parameter is set here to 
-               a constant 0.08 (with further adjustments for 1-1 scorelines) allowing for better league generalisability.
+               Individual leagues and countries fit to varying bivariate lambda values for draw calculation. For simplicity, the lambda parameter is set here to 
+               a constant 0.08 (with further adjustments for 1-1 scorelines) allowing for better league generalisability - increase for leagues with higher draw tendencies and vice versa.
+               First Half Goal % is defaulted to multi-league average of 44%.
                ''')
 
     # Create three columns
