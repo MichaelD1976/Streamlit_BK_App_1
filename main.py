@@ -53,6 +53,7 @@ page_options = [
                  'Team News',
             #     'Popular Matches'
                  'Derivatives',
+            #     'Chance Mix Calc'
                 ]
 
 
@@ -143,6 +144,10 @@ def main():
     elif selected_page == 'Derivatives':
         import page_13_derivatives
         page_13_derivatives.main() 
+
+    elif selected_page == 'Chance Mix Calc':
+        import page_14_chance_mix
+        page_14_chance_mix.main() 
 
     # elif selected_page == 'Offsides':
     #     import page_9_offsides
