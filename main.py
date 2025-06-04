@@ -78,10 +78,11 @@ def main():
             st.write("")
             with st.expander('Updates Log'):
                 st.write("""
-                     - 07/5/25 Derivatives - draw & 1H split parameters added
-                     - 28/4/25 Derivatives page added
-                     - 24/3/25 Outright simulator added
-                     - 26/2/25 SA Data added
+                     - 02/06/25 Derivatives - facility to generate team exp goals from market odds added 
+                     - 07/05/25 Derivatives - draw & 1H split parameters added
+                     - 28/04/25 Derivatives page added
+                     - 24/03/25 Outright simulator added
+                     - 26/02/25 SA Data added
                      """)
         c1,c2,c3 = st.columns([1,11,1])
         with c2:

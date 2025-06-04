@@ -2,17 +2,35 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from mymodule.functions import calc_prob_matrix
+from mymodule.functions import calc_prob_matrix, calculate_expected_team_goals_from_1x2
 
 
 def main():
+
+    # ---------------  INITIAL MAIN PAGE HEADER LAYOUT  ------------------------------
+    st.header(f'Derivative Odds Calculator', divider='blue')
+    st.write(f'Select Match Supremacy & Goals Expectation to calculate pre-match market odds / probabilities')
+
+    st.caption('''
+               Derivative odds are supremacy/totals outputs based on bivariate poisson distributions (not past data). 
+               Individual leagues and countries fit to varying bivariate lambda values for draw calculation. For simplicity, the lambda parameter is set here to 
+               a constant 0.08 (with further adjustments for 1-1 scorelines) allowing for better league generalisability - increase for leagues with higher draw tendencies and vice versa.
+               First Half Goal % is defaulted to multi-league average of 44%.
+                ''')
+
+    match_suprem, total_match_gls = 0.0, 2.5 
+
+    # Call function to calculate values
+    with st.expander('Supremacy and Goals Expectation from 1X2 & O/U Market Prices'):
+        match_suprem, total_match_gls = calculate_expected_team_goals_from_1x2()
+
     # ---------------------- Sidebar --------------------
 
     # Supremacy slider in the sidebar # WIDGET
-    supremacy = st.sidebar.slider('**Select Supremacy**', min_value=-2.6, max_value=3.1, value=0.0, step=0.02, label_visibility = 'visible')
+    supremacy = st.sidebar.slider('**Select Supremacy**', min_value=-2.6, max_value=3.1, value=match_suprem, step=0.02, label_visibility = 'visible')
 
     # Goals Exp slider in the sidebar # WIDGET
-    goals_exp = st.sidebar.slider('**Select Goals Exp**', min_value=1.6, max_value=4.4, value=2.7, step=0.02, label_visibility = 'visible')
+    goals_exp = st.sidebar.slider('**Select Goals Exp**', min_value=1.6, max_value=4.4, value=total_match_gls, step=0.02, label_visibility = 'visible')
 
     # 1h perc slider in the sidebar # WIDGET
     f_half_perc = st.sidebar.slider('**First Half Goal %**', min_value=42, max_value=48, value=44, step=1, label_visibility = 'visible')
@@ -399,15 +417,6 @@ def main():
             unsafe_allow_html=True
         )
     # ------------------------------------------------------------------------------------------------
-
-    st.header(f'Derivative Odds Calculator', divider='blue')
-    st.write(f'Select Match Supremacy & Goals Expectation to calculate pre-match market odds / probabilities')
-    st.caption('''
-               Derivative odds are supremacy/totals outputs based on bivariate poisson distributions (not past data). 
-               Individual leagues and countries fit to varying bivariate lambda values for draw calculation. For simplicity, the lambda parameter is set here to 
-               a constant 0.08 (with further adjustments for 1-1 scorelines) allowing for better league generalisability - increase for leagues with higher draw tendencies and vice versa.
-               First Half Goal % is defaulted to multi-league average of 44%.
-               ''')
 
     # Create three columns
     left_column, middle_column, right_column = st.columns([2, 2, 2])

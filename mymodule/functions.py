@@ -4,6 +4,7 @@ import streamlit as st
 from datetime import datetime
 import numpy as np
 from scipy.stats import poisson, nbinom
+from scipy.optimize import minimize
 import requests
 from unidecode import unidecode
 from dotenv import load_dotenv
@@ -506,3 +507,104 @@ def calc_prob_matrix(supremacy, goals_exp, max_goals, draw_lambda, f_half_perc):
     return prob_matrix_ft, prob_matrix_1h, prob_matrix_2h, hg, ag
 
 # --------------------------
+
+def calculate_expected_team_goals_from_1x2():
+
+    def odds_to_probs(odds):
+        raw_probs = np.array([1/o for o in odds])
+        return raw_probs / raw_probs.sum()
+
+    # --- Poisson Matrix Generator ---
+    def poisson_matrix(lam_home, lam_away, max_goals=6):
+        matrix = np.zeros((max_goals+1, max_goals+1))
+        for i in range(max_goals+1):
+            for j in range(max_goals+1):
+                matrix[i, j] = poisson.pmf(i, lam_home) * poisson.pmf(j, lam_away)
+        return matrix
+
+    # --- Outcome Probability Calculator ---
+    def outcome_probs(matrix):
+        home_win = np.sum(np.tril(matrix, -1))
+        draw = np.sum(np.diag(matrix))
+        away_win = np.sum(np.triu(matrix, 1))
+        
+        total_goals = np.add.outer(np.arange(matrix.shape[0]), np.arange(matrix.shape[1]))
+        over_2_5 = matrix[total_goals > 2.5].sum()
+        under_2_5 = matrix[total_goals <= 2.5].sum()
+        
+        return [home_win, draw, away_win, over_2_5, under_2_5]
+
+    # --- Loss Function for Optimization ---
+    def loss(params, target_probs):
+        lam_home, lam_away = params
+        matrix = poisson_matrix(lam_home, lam_away)
+        model_probs = outcome_probs(matrix)
+        return sum((m - t)**2 for m, t in zip(model_probs, target_probs))
+
+    # Initialize session state if not already set
+    if "match_suprem" not in st.session_state:
+        st.session_state.match_suprem = 0.0
+    if "total_match_gls" not in st.session_state:
+        st.session_state.total_match_gls = 2.5
+
+    # --- UI ---
+    st.subheader("Generate Implied Home/Away Goal Expectation from Market Odds")
+
+    st.markdown("Input market odds below:")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.number_input("Home Win Odds", value=st.session_state.get("home_odds", 2.10), key="home_odds")
+        st.number_input("Draw Odds", value=st.session_state.get("draw_odds", 3.20), key="draw_odds")
+        st.number_input("Away Win Odds", value=st.session_state.get("away_odds", 3.60), key="away_odds")
+    with col2:
+        st.number_input("Over 2.5 Odds", value=st.session_state.get("over_2_5_odds", 1.90), key="over_2_5_odds")
+        st.number_input("Under 2.5 Odds", value=st.session_state.get("under_2_5_odds", 1.90), key="under_2_5_odds")
+
+
+    # --- Run Estimation ---
+    if st.button("Estimate Goals", key="estimate_btn_1x2"):
+        # Step 1: Implied probabilities from odds
+        prob_1x2 = odds_to_probs([
+            st.session_state.home_odds,
+            st.session_state.draw_odds,
+            st.session_state.away_odds
+        ])
+        prob_ou = odds_to_probs([
+            st.session_state.over_2_5_odds,
+            st.session_state.under_2_5_odds
+        ])
+        target_probs = list(prob_1x2) + list(prob_ou)
+
+        # Step 2: Optimize
+        initial_guess = [1.2, 1.2]
+        bounds = [(0.1, 5), (0.1, 5)]
+        res = minimize(loss, initial_guess, args=(target_probs,), bounds=bounds)
+        lam_home, lam_away = res.x
+
+        match_suprem = round(lam_home - lam_away, 2)
+        total_match_gls = round(lam_home + lam_away, 2)
+
+        # Store results in session state
+        st.session_state.match_suprem = match_suprem
+        st.session_state.total_match_gls = total_match_gls
+
+        # st.session_state.expander_open = True  # Ensure expander stays open
+
+        # Step 3: Display results
+        # with st.expander('Expected Goals Estimator from 1X2', expanded=True):
+        st.subheader("🎯 Estimated Expected Goals")
+        st.write(f"**Home Team Expected Goals:** `{lam_home:.2f}`")
+        st.write(f"**Away Team Expected Goals:** `{lam_away:.2f}`")
+        st.write(f"**Match Supremacy:** `{match_suprem:.2f}`")
+        st.write(f"**Total Goals:** `{total_match_gls:.2f}`")
+
+    # Always return something (even if button not clicked)
+    return st.session_state.get("match_suprem", 0.0), st.session_state.get("total_match_gls", 2.5)
+
+        # # Optional: Show matrix
+        # st.subheader("📊 Score Probability Matrix")
+        # matrix = poisson_matrix(lam_home, lam_away)
+        # df = pd.DataFrame(matrix, index=[f"{i} goals" for i in range(matrix.shape[0])],
+        #                 columns=[f"{j} goals" for j in range(matrix.shape[1])])
+        # st.dataframe(df.style.format("{:.3f}"))
