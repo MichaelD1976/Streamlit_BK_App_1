@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from scipy.stats import poisson
 from mymodule.functions import calc_prob_matrix, calculate_expected_team_goals_from_1x2
 
 
@@ -397,6 +398,143 @@ def main():
         return prob_away_score_both_halves
     
 
+    # -----------  1 Up Functions ------------------------------
+
+    def calculate_win_given_one_nil(hg, ag, minute_of_goal=29):
+        """
+        Estimate P(Win | 1-0 lead at a given minute) for both home and away teams.
+
+        Parameters:
+        - hg: Expected goals for the home team (full match)
+        - ag: Expected goals for the away team (full match)
+        - minute_of_goal: The minute at which the 1-0 lead is taken (default: 29)
+
+        Returns:
+        - (P(Home wins | 1-0), P(Away wins | 0-1))
+        """
+
+        minutes_remaining = 93 - minute_of_goal
+
+        home_rate = hg / 93
+        away_rate = ag / 93
+
+        rem_home_xg = home_rate * minutes_remaining
+        rem_away_xg = away_rate * minutes_remaining
+
+        # Adjust for 1-0 scenario
+        adj_home_xg_lead = rem_home_xg * 0.95
+        adj_away_xg_trail = rem_away_xg * 1.05
+
+        # Adjust for 0-1 scenario
+        adj_home_xg_trail = rem_home_xg * 1.05
+        adj_away_xg_lead = rem_away_xg * 0.95
+
+        max_goals = 7
+
+        win_prob_home = 0.0
+        win_prob_away = 0.0
+
+        for i in range(max_goals + 1):  # goals after lead
+            for j in range(max_goals + 1):
+
+                # Home leads 1-0
+                final_home_1_0 = 1 + i
+                final_away_1_0 = j
+                prob_home_lead = poisson.pmf(i, adj_home_xg_lead) * poisson.pmf(j, adj_away_xg_trail)
+                if final_home_1_0 > final_away_1_0:
+                    win_prob_home += prob_home_lead
+
+                # Away leads 0-1
+                final_home_0_1 = i
+                final_away_0_1 = 1 + j
+                prob_away_lead = poisson.pmf(i, adj_home_xg_trail) * poisson.pmf(j, adj_away_xg_lead)
+                if final_away_0_1 > final_home_0_1:
+                    win_prob_away += prob_away_lead
+
+        return win_prob_home, win_prob_away
+    
+
+    w_pb_given_1_up_h, w_pb_given_1_up_a = calculate_win_given_one_nil(hg, ag, minute_of_goal=29)
+   
+
+    # 1 Up - Main Calculation
+    # Prob (bet wins) = P(1-0 at anytime) + [ Prob(Home win - P(1-0 and HW) ]
+    def calculate_one_up(home_next_goal, home_win_prob, w_pb_given_1_up_h, away_next_goal, away_win_prob, w_pb_given_1_up_a):
+        home_1_up = home_next_goal + home_win_prob - (home_next_goal * w_pb_given_1_up_h)
+        away_1_up = away_next_goal + away_win_prob - (away_next_goal * w_pb_given_1_up_a)
+
+        return home_1_up, away_1_up
+    
+    
+    # ------------------  2 UP FUNCTIONS  --------------------
+    
+    def calculate_win_given_two_nil(hg, ag, minute_of_second_goal=42):
+        """
+        Estimate P(Win | 2-0 lead at a given minute) for both home and away teams
+        using adjusted Poisson models.
+
+        Parameters:
+        - hg: Expected goals for the home team (full match)
+        - ag: Expected goals for the away team (full match)
+        - minute_of_second_goal: Minute at which team takes a 2-0 lead (default: 42)
+
+        Returns:
+        - Tuple: (home_win_given_2_0, away_win_given_0_2)
+        """
+        minutes_remaining = 93 - minute_of_second_goal
+
+        home_rate = hg / 93
+        away_rate = ag / 93
+
+        rem_home_xg = home_rate * minutes_remaining
+        rem_away_xg = away_rate * minutes_remaining
+
+        # Game state adjustments: more defensive when 2-0 up
+        adj_home_xg = rem_home_xg * 0.90
+        adj_away_xg = rem_away_xg * 1.10
+
+        adj_away_lead_home_xg = rem_home_xg * 1.10
+        adj_away_lead_away_xg = rem_away_xg * 0.90
+
+        max_goals = 7
+        home_win_prob_given_2_0 = 0.0
+        away_win_prob_given_0_2 = 0.0
+
+        # Home team leading 2–0
+        for i in range(max_goals + 1):  # home goals after 2-0
+            for j in range(max_goals + 1):  # away goals
+                prob = poisson.pmf(i, adj_home_xg) * poisson.pmf(j, adj_away_xg)
+                final_home = 2 + i
+                final_away = j
+                if final_home > final_away:
+                    home_win_prob_given_2_0 += prob
+
+        # Away team leading 0–2
+        for i in range(max_goals + 1):  # home goals after 0-2
+            for j in range(max_goals + 1):  # away goals
+                prob = poisson.pmf(i, adj_away_lead_home_xg) * poisson.pmf(j, adj_away_lead_away_xg)
+                final_home = i
+                final_away = 2 + j
+                if final_away > final_home:
+                    away_win_prob_given_0_2 += prob
+
+        return home_win_prob_given_2_0, away_win_prob_given_0_2
+    
+
+    w_pb_given_2_up_h, w_pb_given_2_up_a = calculate_win_given_two_nil(hg, ag, minute_of_second_goal=42)
+
+
+    # 2 Up - Main Calculation
+    # Prob (bet wins) = P(2-0 at anytime) + [ Prob(Home win - P(2-0 and HW) ]
+    def calculate_two_up(home_next_goal, home_win_prob, w_pb_given_2_up_h, away_next_goal, away_win_prob, w_pb_given_2_up_a):
+        # calc initial going 2-0 up
+        home_2_0_initial = home_next_goal * home_next_goal * 0.95
+        away_2_0_initial = away_next_goal * away_next_goal * 0.95
+
+        home_2_up = home_2_0_initial + home_win_prob - (home_2_0_initial * w_pb_given_2_up_h)
+        away_2_up = away_2_0_initial + away_win_prob - (away_2_0_initial * w_pb_given_2_up_a)
+
+        return home_2_up, away_2_up
 
 
     # ------------------------ Layout ---------------------------------
@@ -493,6 +631,23 @@ def main():
         display_odds_with_percentage("Away Next Goal", 1/away_next_goal, away_next_goal) 
         display_odds_with_percentage("No Next Goal", 1/no_next_goal, no_next_goal)  
 
+        # 1 Up
+        st.markdown(f"<h4 style='color:{market_name_color};'>1 Up Early Payout</h4>", unsafe_allow_html=True)
+        st.caption("Keep draw price as 1x2 market. Reduce outsider more heavily from 100% (eg 9.0 > 7.5; 4.2 > 3.5; 2.8 > 2.4)")
+        home_1_up, away_1_up = calculate_one_up(home_next_goal, home_win_prob, w_pb_given_1_up_h, away_next_goal, away_win_prob, w_pb_given_1_up_a)
+        # st.write(home_next_goal, home_win_prob, w_pb_given_1_up_h, away_next_goal, away_win_prob, w_pb_given_1_up_a)
+        display_odds_with_percentage("Home 1 Up", 1/home_1_up, home_1_up)
+        display_odds_with_percentage("Away 1 Up", 1/away_1_up, away_1_up)
+
+
+        calculate_two_up(home_next_goal, home_win_prob, w_pb_given_2_up_h, away_next_goal, away_win_prob, w_pb_given_2_up_a)
+        # 2 Up
+        st.markdown(f"<h4 style='color:{market_name_color};'>2 Up Early Payout</h4>", unsafe_allow_html=True)
+        st.caption("Keep draw price as 1x2 market. Reduce outsider more heavily from 100% (eg 9.0 > 7.5; 4.2 > 3.5; 2.8 > 2.4)")
+        home_2_up, away_2_up = calculate_two_up(home_next_goal, home_win_prob, w_pb_given_2_up_h, away_next_goal, away_win_prob, w_pb_given_2_up_a)
+        # st.write(home_next_goal, home_win_prob, w_pb_given_1_up_h, away_next_goal, away_win_prob, w_pb_given_1_up_a)
+        display_odds_with_percentage("Home 2 Up", 1/home_2_up, home_2_up)
+        display_odds_with_percentage("Away 2 Up", 1/away_2_up, away_2_up)
 
     with right_column:
         # Correct Score Grid
