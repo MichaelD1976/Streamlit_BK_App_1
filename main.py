@@ -41,7 +41,7 @@ page_options = [
                  'Home', 
                  'Models',
                  'Derivatives',
-                 'Players',
+            #      'Players',
             #     'Shots on Target',
             #     'Fouls',
              #    'Corners',
@@ -77,9 +77,8 @@ def main():
             st.write("")
             st.image("images/KM_Logo-bgr.png", width=700)
             st.write("")
-            with st.expander('Updates Log'):
-                st.write("""
-                     - 18/06/25 Player page added
+            with st.expander('Updates Log'): # # - 18/06/25 Player page added
+                st.write("""                   
                      - 11/06/25 Derivatives - 1 Up & 2 Up Markets added
                      - 02/06/25 Derivatives - facility to generate team exp goals from market odds added 
                      - 07/05/25 Derivatives - draw & 1H split parameters added
