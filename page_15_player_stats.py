@@ -38,7 +38,8 @@ def main():
         'France Ligue 1', 'Netherlands Eredivisie', 'Belgium Jupiler', 'Portugal Liga I',
         'Scotland Premier', 'England Championship', 'England League One', 'England League Two'
     ]
-    league_options_with_all = league_options + ['**All Leagues**']
+    # To add 'ALL LEAGUES functionality
+    league_options_with_all = league_options # + ['**All Leagues**']
 
 
     # Default league selection
@@ -136,13 +137,13 @@ def main():
     # Display filtered data and charts
     st.header(f'{selected_team} - Player {selected_heatmap_metric} {selected_year}', divider='blue')
     if per_90_toggle:
-        st.write('Player data based on per 90 mins. Minimum of 180 minutes played for inclusion. Source: API-Football')
+        st.write('Player data based on per 90 mins. Minimum of 180 minutes played for inclusion')
     else:
-        st.write('All player data. Minimum of 180 minutes played for inclusion. Source: API-Football')
+        st.write('All player data. Minimum of 180 minutes played for inclusion')
 
 
     # Checkbox to show or hide the raw data # WIDGET
-    if st.checkbox('Show raw player data', label_visibility = 'visible'):
+    if st.checkbox('Show raw player data', value=True, label_visibility = 'visible'):
         if per_90_toggle:
             st.write(f"Player Stats (per 90) for {selected_team} {selected_year}")
             st.dataframe(filtered_df)
@@ -166,24 +167,24 @@ def main():
 
 
     # # ----------------------------------------------------------------------------------------
-    # # Function to plot the heatmap (chart 1)
-    # def plot_heatmap(df, metric):
-    #     heatmap_chart = alt.Chart(df).mark_rect().encode(
-    #         x=alt.X('Player:N', title='Player', sort=None),
-    #         y=alt.Y(f'{metric}:Q', title=metric),
-    #         color=alt.Color(f'{metric}:Q', scale=alt.Scale(scheme='redyellowgreen', domain=[df[metric].min(), df[metric].max()]), title='Value'),
-    #         tooltip=['Player:N', f'{metric}:Q']
-    #     ).properties(
-    #         width=800,
-    #         height=600,
-    #         title=f'Player {metric}'
-    #     ).configure_axis(
-    #         labelFontSize=12,
-    #         titleFontSize=14,
-    #         labelPadding=10,
-    #         titlePadding=15,
-    #     )
-    #     return heatmap_chart
+    # Function to plot the heatmap (chart 1)
+    def plot_heatmap(df, metric):
+        heatmap_chart = alt.Chart(df).mark_rect().encode(
+            x=alt.X('Player:N', title='Player', sort=None),
+            y=alt.Y(f'{metric}:Q', title=metric),
+            color=alt.Color(f'{metric}:Q', scale=alt.Scale(scheme='redyellowgreen', domain=[df[metric].min(), df[metric].max()]), title='Value'),
+            tooltip=['Player:N', f'{metric}:Q']
+        ).properties(
+            width=700,
+            height=500,
+            title=f'Player {metric}'
+        ).configure_axis(
+            labelFontSize=12,
+            titleFontSize=14,
+            labelPadding=10,
+            titlePadding=15,
+        )
+        return heatmap_chart
     
 
     # # Function to plot the bar chart (Chart 2)
@@ -207,14 +208,14 @@ def main():
     #     return bar_chart
     
     
-    # # Display heatmap and bar chart
-    # #st.subheader(f"Bar Charts showing {selected_team} {selected_heatmap_metric}")
-    # if selected_heatmap_metric in heatmap_metrics:
-    #     st.altair_chart(plot_heatmap(filtered_df, selected_heatmap_metric), use_container_width=False)
-    #     st.write("----")
-    #     st.altair_chart(plot_bar_chart(filtered_df, selected_heatmap_metric))
-    # else:
-    #     st.write("Select a valid metric for analysis.")
+    # Display heatmap and bar chart
+    #st.subheader(f"Bar Charts showing {selected_team} {selected_heatmap_metric}")
+    if selected_heatmap_metric in heatmap_metrics:
+        st.altair_chart(plot_heatmap(filtered_df, selected_heatmap_metric), use_container_width=False)
+        st.write("----")
+        # st.altair_chart(plot_bar_chart(filtered_df, selected_heatmap_metric))
+    else:
+        st.write("Select a valid metric for analysis.")
 
     # # -----------------------------------
     # st.write("---")

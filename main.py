@@ -40,7 +40,8 @@ st.markdown(
 page_options = [
                  'Home', 
                  'Models',
-            #     'Players',
+                 'Derivatives',
+                 'Players',
             #     'Shots on Target',
             #     'Fouls',
              #    'Corners',
@@ -49,11 +50,10 @@ page_options = [
             #    'Daily Totals',
             #    'Goalscorer Matchbets',
             #    'League Matchbets',
-                 'Outright Sim',
                  'Team News',
             #     'Popular Matches'
-                 'Derivatives',
             #     'Chance Mix Calc'
+                 'Outright Sim',
                  'Odds Calculators',
                 ]
 
@@ -79,6 +79,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'):
                 st.write("""
+                     - 18/06/25 Player page added
                      - 11/06/25 Derivatives - 1 Up & 2 Up Markets added
                      - 02/06/25 Derivatives - facility to generate team exp goals from market odds added 
                      - 07/05/25 Derivatives - draw & 1H split parameters added
