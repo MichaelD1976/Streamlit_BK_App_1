@@ -41,7 +41,7 @@ page_options = [
                  'Home', 
                  'Models',
                  'Derivatives',
-            #      'Players',
+                  'Player Stats',
             #     'Shots on Target',
             #     'Fouls',
              #    'Corners',
@@ -77,7 +77,7 @@ def main():
             st.write("")
             st.image("images/KM_Logo-bgr.png", width=700)
             st.write("")
-            with st.expander('Updates Log'): # # - 18/06/25 Player page added
+            with st.expander('Updates Log'): # # - 18/06/25 Player Stats page added
                 st.write("""                   
                      - 11/06/25 Derivatives - 1 Up & 2 Up Markets added
                      - 02/06/25 Derivatives - facility to generate team exp goals from market odds added 
@@ -152,7 +152,7 @@ def main():
         import page_14_chance_mix
         page_14_chance_mix.main() 
     
-    elif selected_page == 'Players':
+    elif selected_page == 'Player Stats':
         import page_15_player_stats
         page_15_player_stats.main() 
 

@@ -8,7 +8,7 @@ import altair as alt
 # import plotly.express as px
 import time
 import gc
-import plotly.graph_objects as go
+# import plotly.graph_objects as go
 
 
 # Load the CSV file
