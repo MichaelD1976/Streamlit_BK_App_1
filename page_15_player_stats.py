@@ -90,7 +90,7 @@ def main():
             'Passes Key', 'Dribbles Attempted', 'Dribbles Success', 'Minutes', 'Age',
             'Interceptions', 'Attacking Carries', 'Attacking Passes', 'Attacking Receives',
             'Non_Pen_XG', 'X_Assists', 'Yellow Cards', 'Red Cards', 'Duels Total',
-            'Duels Won', 'Height', #'Weekly Wages $'
+            'Duels Won', 'Height', 'Weekly Wages $'
         ]
     else:
         heatmap_metrics = [
