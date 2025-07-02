@@ -39,7 +39,7 @@ def main():
         'Scotland Premier', 'England Championship', 'England League One', 'England League Two'
     ]
     # To add 'ALL LEAGUES functionality
-    league_options_with_all = league_options # + ['**All Leagues**']
+    league_options_with_all = league_options + ['**All Leagues**']
 
 
     # Default league selection

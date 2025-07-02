@@ -79,6 +79,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 02/07/25 Player Stats - option to filter by 'All Leagues' added
                      - 18/06/25 Player Stats page added                  
                      - 11/06/25 Derivatives - 1 Up & 2 Up Markets added
                      - 02/06/25 Derivatives - facility to generate team exp goals from market odds added 
