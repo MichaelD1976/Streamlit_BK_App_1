@@ -79,6 +79,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 09/07/25 Derivatives - HT Early Payout added
                      - 02/07/25 Player Stats - option to filter by 'All Leagues' added
                      - 18/06/25 Player Stats page added                  
                      - 11/06/25 Derivatives - 1 Up & 2 Up Markets added

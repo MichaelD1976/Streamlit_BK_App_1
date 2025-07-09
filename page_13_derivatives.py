@@ -44,7 +44,7 @@ def main():
     f_half_g = round(goals_exp / 100 * f_half_perc, 2)
     s_half_g = round(goals_exp / 100 * s_half_perc, 2)
 
-    max_goals = 9
+    max_goals = 10
 
     # call function from functions.py to return match prob matrices and hg/ag exp's
     prob_matrix_ft, prob_matrix_1h, prob_matrix_2h, hg, ag = calc_prob_matrix(supremacy, goals_exp, max_goals, draw_lambda, f_half_perc)
@@ -148,7 +148,7 @@ def main():
     # Calculate HT-FT market
 
     # Away wins 2nd half probability
-    away_win_2h = (prob_matrix_2h[0,1] + prob_matrix_2h[0,2] + prob_matrix_2h[0,3] + prob_matrix_2h[0,4] + prob_matrix_2h[0,5] + prob_matrix_2h[0,6] + prob_matrix_2h[0,7] +
+    away_win_2h = (prob_matrix_2h[0,1] + prob_matrix_2h[0,2] + prob_matrix_2h[0,3] + prob_matrix_2h[0,4] + prob_matrix_2h[0,5] + prob_matrix_2h[0,6] + prob_matrix_2h[0,7] + prob_matrix_2h[0,8] + prob_matrix_2h[0,9] + prob_matrix_2h[0,10] +
                 prob_matrix_2h[1,2] + prob_matrix_2h[1,3] + prob_matrix_2h[1,4] + prob_matrix_2h[1,5] + prob_matrix_2h[1,6] + prob_matrix_2h[1,7] + prob_matrix_2h[1,8] +
                 prob_matrix_2h[2,3] + prob_matrix_2h[2,4] + prob_matrix_2h[2,5] + prob_matrix_2h[2,6] + prob_matrix_2h[2,7] +
                 prob_matrix_2h[3,4] + prob_matrix_2h[3,5] + prob_matrix_2h[3,6] + prob_matrix_2h[3,7] +
@@ -160,9 +160,9 @@ def main():
     draw_2h = prob_matrix_2h[0,0] + prob_matrix_2h[1,1] + prob_matrix_2h[2,2] + prob_matrix_2h[3,3] + prob_matrix_2h[4,4] + prob_matrix_2h[5,5]
 
     # Home 2h probability
-    home_win_2h = (prob_matrix_2h[1,0] + prob_matrix_2h[2,0] + prob_matrix_2h[3,0] + prob_matrix_2h[4,0] + prob_matrix_2h[5,0] + prob_matrix_2h[6,0] + prob_matrix_2h[7,0] +
-                    prob_matrix_2h[2,1] + prob_matrix_2h[3,1] + prob_matrix_2h[4,1] + prob_matrix_2h[5,1] + prob_matrix_2h[6,1] + prob_matrix_2h[7,1] + prob_matrix_2h[8,1] +
-                    prob_matrix_2h[3,2] + prob_matrix_2h[4,2] + prob_matrix_2h[5,2] + prob_matrix_2h[6,2] + prob_matrix_2h[7,2] +
+    home_win_2h = (prob_matrix_2h[1,0] + prob_matrix_2h[2,0] + prob_matrix_2h[3,0] + prob_matrix_2h[4,0] + prob_matrix_2h[5,0] + prob_matrix_2h[6,0] + prob_matrix_2h[7,0] + prob_matrix_2h[8,0] + prob_matrix_2h[9,0] + prob_matrix_2h[10,0] +
+                    prob_matrix_2h[2,1] + prob_matrix_2h[3,1] + prob_matrix_2h[4,1] + prob_matrix_2h[5,1] + prob_matrix_2h[6,1] + prob_matrix_2h[7,1] + prob_matrix_2h[8,1] + prob_matrix_2h[9,1] +
+                    prob_matrix_2h[3,2] + prob_matrix_2h[4,2] + prob_matrix_2h[5,2] + prob_matrix_2h[6,2] + prob_matrix_2h[7,2] + prob_matrix_2h[8,2] +
                     prob_matrix_2h[4,3] + prob_matrix_2h[5,3] + prob_matrix_2h[6,3] + prob_matrix_2h[7,3] +
                     prob_matrix_2h[5,4] + prob_matrix_2h[6,4] + prob_matrix_2h[7,4] +
                     prob_matrix_2h[6,5] + prob_matrix_2h[7,5])
@@ -192,19 +192,19 @@ def main():
 
     # Probabilities for each HT-FT outcome
 
-    HHp = 1 / (1 / home_win_prob_fh * (1 / (draw_2h + home_win_2h))) * 1.03
+    HHp = 1 / (1 / home_win_prob_fh * (1 / (draw_2h + home_win_2h))) * 1.02
     DHp = draw_prob_fh * home_win_2h
     AHp = home_win_prob - HHp - DHp
 
     HDp =  (1/(1/home_win_1h_by_1 * 1/away_win_2h_by_1) + 
            1/(1/home_win_1h_by_2 * 1/away_win_2h_by_2) +
            1/(1/home_win_1h_by_3 * 1/away_win_2h_by_3) +
-           1/(1/home_win_1h_by_4 * 1/away_win_2h_by_4)) * 1.12
+           1/(1/home_win_1h_by_4 * 1/away_win_2h_by_4)) * 1.10
 
     ADp =  (1/(1/away_win_1h_by_1 * 1/home_win_2h_by_1) + 
            1/(1/away_win_1h_by_2 * 1/home_win_2h_by_2) +
            1/(1/away_win_1h_by_3 * 1/home_win_2h_by_3) +
-           1/(1/away_win_1h_by_4 * 1/home_win_2h_by_4)) * 1.12
+           1/(1/away_win_1h_by_4 * 1/home_win_2h_by_4)) * 1.10
     DDp = draw_prob - HDp - ADp
     
     AAp = 1 / (1 / away_win_prob_fh * (1 / (draw_2h + away_win_2h))) * 1.03
@@ -536,6 +536,12 @@ def main():
 
         return home_2_up, away_2_up
 
+    
+    # HTEP (Half time early payout)
+    htep_h = home_win_prob + HDp + HAp
+    htep_a = away_win_prob + ADp + AHp
+    htep_x = draw_prob + DHp + DAp
+
 
     # ------------------------ Layout ---------------------------------
 
@@ -596,6 +602,12 @@ def main():
         display_odds_with_percentage("Home or Draw", 1/home_or_draw, home_or_draw)
         display_odds_with_percentage("Away or Draw", 1/away_or_draw, away_or_draw)
         display_odds_with_percentage("Home or Away", 1/home_or_away, home_or_away)
+
+        # HTEP (Half Time Early Payout)
+        st.markdown(f"<h4 style='color:{market_name_color};'>HT Early Payout</h4>", unsafe_allow_html=True)
+        display_odds_with_percentage("Home HTEP", 1/htep_h, htep_h)
+        display_odds_with_percentage("Draw HTEP", 1/htep_x, htep_x)
+        display_odds_with_percentage("Away HTEP", 1/htep_a, htep_a)
 
     with middle_column:
         st.markdown(f"<h4 style='color:{market_name_color};'>Draw No Bet</h4>", unsafe_allow_html=True)
