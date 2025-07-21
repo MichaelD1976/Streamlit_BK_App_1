@@ -33,16 +33,16 @@ fouls_model_a = joblib.load('models/fouls/fouls_away_neg_binom_4.pkl')
 game_week_decay_dict = {
     1: 1,
     2: 0.95,
-    3: 0.87,
-    4: 0.77,
-    5: 0.67,
-    6: 0.57,
-    7: 0.47,
-    8: 0.38,
-    9: 0.31,
-    10: 0.25,
-    11: 0.20,
-    12: 0.17,
+    3: 0.88,
+    4: 0.78,
+    5: 0.68,
+    6: 0.58,
+    7: 0.48,
+    8: 0.40,
+    9: 0.33,
+    10: 0.27,
+    11: 0.22,
+    12: 0.18,
     13: 0.15,
     14: 0.13,
     15: 0.11,
@@ -1177,7 +1177,252 @@ def main():
                         st.write("")
 
             except Exception as e:
-                st.write(f'An error has occurred whilst compiling: {e}')       
+                st.write(f'An error has occurred whilst compiling: {e}')  
+
+        # -------------------------------------------------------------------------------
+    # Compile any match / competition  
+
+    st.write("---")
+    with st.expander('Single match pricer (any competition)'):
+        
+        st.write("")
+        st.write('Enter Match & Over/Under Odds:')
+        c1,c2,c3,c4, c5 = st.columns([1,1,1,1,5])
+        with c1:
+            try:
+                h_odds = float(st.text_input('Home Odds', value = 2.10, label_visibility = 'visible'))  # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+                    return
+        with c2:
+            try:
+                d_odds = float(st.text_input('Draw Odds', value = 3.40, label_visibility = 'visible'))  # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+                    return
+        with c3:
+            try:
+                a_odds = float(st.text_input('Away Odds', value = 3.50, label_visibility = 'visible'))  # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+                    return
+        
+        with c4:
+            st.write("")
+            st.write("")
+            margin = round(1/h_odds + 1/d_odds + 1/a_odds, 2)
+            st.write('Margin:', margin)
+
+
+        h_pc_true_raw = 1/(h_odds * margin)
+        d_pc_true_raw = 1/(d_odds * margin)
+        a_pc_true_raw = 1/(a_odds * margin)
+
+
+        # Error message if < 100 %
+        if margin < 1:
+            st.warning('Margin must be > 1.00 !')
+
+     
+
+        h_pc_true, d_pc_true, a_pc_true = calculate_true_from_true_raw(h_pc_true_raw, d_pc_true_raw, a_pc_true_raw, margin)
+
+        # st.write('h_pc_true, d_pc_true, a_pc_true', h_pc_true, d_pc_true, a_pc_true)
+
+        cls1, _, cls3 = st.columns([7,1,7])
+        with cls1:
+            st.subheader('Home')
+            ht_h_for = st.number_input('Avg home team home Fouls - for')
+            ht_a_for = st.number_input('Avg home team away Fouls - for')
+            ht_a_ag = st.number_input('Avg home team home Fouls - against')
+            ht_h_ag = st.number_input('Avg home team away Fouls - against')
+
+            st.write("---")
+
+        with cls3:
+            st.subheader('Away')
+            at_a_for = st.number_input('Avg away team away Fouls - for')
+            at_h_for = st.number_input('Avg away team home Fouls - for')
+            at_a_ag = st.number_input('Avg away team away Fouls - against')
+            at_h_ag = st.number_input('Avg away team home Fouls - against')
+
+            st.write("---")
+
+  
+
+        # Creating a 2D array where each row is a sample, and each column is a feature
+        ml_inputs_array_single = np.array([[
+            h_pc_true, 
+            a_pc_true,
+            ht_h_for,
+            ht_h_ag, 
+            ht_a_for,
+            ht_a_ag, 
+            at_h_for, 
+            at_h_ag, 
+            at_a_for, 
+            at_a_ag, 
+        ]])
+
+        # Model Home
+        poly_array = PolynomialFeatures(degree=2, include_bias=True)
+
+        # Check if there are NaN values in ml_inputs_array_h
+        if np.any(np.isnan(ml_inputs_array_single)):
+            raise ValueError("Input data contains NaN values, skipping prediction.")
+
+        # Transform the input features
+        X_poly_input = poly_array.fit_transform(ml_inputs_array_single)  # Transform the input features
+
+        # Predict using the HOME FOULS model
+        fouls_model_h_prediction = fouls_model_h.predict(X_poly_input) * OVERS_BOOST
+        fouls_model_a_prediction = fouls_model_a.predict(X_poly_input) * OVERS_BOOST
+
+        # st.write(fouls_model_h_prediction, fouls_model_a_prediction)
+
+
+        # -------------  Additional factors  ---------
+        with cls1:
+            is_neutral = st.selectbox('Is this on a neutral pitch?', ['No', 'Yes'])
+            is_extra_time = st.selectbox('Is extra-time possible?', ['No', 'Yes'])
+            is_big_cup = st.selectbox('Is this a high stakes match?', ['No - Average', 'Yes - Above average', 'Yes - Very high', 'No - Below average'])
+            is_derby = st.selectbox('Is this a derby?', ['No - Standard match', 'Yes - Above average', 'Yes - Very high', 'No - Sub-average (friendly)'])
+
+        # home teams have 0.49 of total SOT, away team have 0.51
+        # apply below factors if match is on a neutral 
+        is_neutral_factor_home = 1.02 if is_neutral=='Yes' else 1 
+        is_neutral_factor_away = 0.98 if is_neutral=='Yes' else 1  
+
+        # Is extra time possible 
+        if is_extra_time == 'Yes':
+            extra_time_factor = d_pc_true * 0.34 * 1.05 + 1     # (extra time is 31/93 (0.33) of total SOT, increase by 1.05 for more space/tired legs)
+        else:
+            extra_time_factor = 1
+
+
+        if is_big_cup == 'Yes - Very high':
+            big_cup_factor = 1.03
+        elif is_big_cup == 'Yes - Above average':
+            big_cup_factor = 1.02
+        elif is_big_cup == 'No - Average':
+            big_cup_factor = 1
+        else:
+            big_cup_factor = 0.98   
+
+
+        if is_derby == 'Yes - Very high':
+            derby_factor = 1.04
+        elif is_derby == 'Yes - Above average':
+            derby_factor = 1.02
+        elif is_derby == 'No - Standard match':
+            derby_factor = 1
+        else:
+            derby_factor = 0.96  
+
+        # ----------------------------
+
+        # Add additional factors
+        home_prediction = fouls_model_h_prediction * extra_time_factor * is_neutral_factor_home * big_cup_factor * derby_factor
+        home_prediction = round(float(home_prediction), 2)
+        
+        with cls1:
+            st.success(f'Home Prediction: {home_prediction}')
+            show_mult_home = st.checkbox('Show home multiples')
+            if show_mult_home:
+                st.write('ET mult', extra_time_factor, 'Neutral mult', is_neutral_factor_home, 'High Stakes mult', big_cup_factor, 'Derby mult', derby_factor)
+
+
+        # Add additional factors
+        away_prediction = fouls_model_a_prediction * extra_time_factor * is_neutral_factor_away * big_cup_factor * derby_factor
+        away_prediction = round(float(away_prediction), 2)
+        total_prediction = home_prediction + away_prediction
+
+        with cls3:
+            for i in range(21):
+                st.write("")
+
+            st.success(f'Away Prediction: {away_prediction}')
+            show_mult_away = st.checkbox('Show away multiples')
+            if show_mult_away:
+                st.write('ET mult', extra_time_factor, 'Neutral mult', is_neutral_factor_away, 'High Stakes mult', big_cup_factor, 'Derby mult', derby_factor)
+
+
+        df_single = pd.DataFrame([{
+            'HF_Exp': home_prediction,
+            'AF_Exp': away_prediction,
+            'TF_Exp': total_prediction,
+        }])
+
+        # st.write(df_single)
+
+        # calculate_sot_lines_and_odds(prediction) - HOME
+        df_single[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 'h_-1_under_%', 'h_-1_over_%', 'h_+1_under_%', 'h_+1_over_%']] = df_single.apply(
+            lambda row: calculate_home_away_lines_and_odds(row['HF_Exp'], selected_metric), 
+            axis=1, result_type='expand')
+        
+        # calculate_corners_lines_and_odds(prediction) - AWAY
+        df_single[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = df_single.apply(
+            lambda row: calculate_home_away_lines_and_odds(row['AF_Exp'], selected_metric), 
+            axis=1, result_type='expand')
+        
+        # st.write(df_single)
+
+        df_single['h_main_un'] = round(1 / df_single['h_main_under_%'], 2)
+        df_single['h_main_ov'] = round(1 / df_single['h_main_over_%'], 2)
+        df_single['h_-1_un'] = round(1 / df_single['h_-1_under_%'], 2)
+        df_single['h_-1_ov'] = round(1 / df_single['h_-1_over_%'], 2)
+        df_single['h_+1_un'] = round(1 / df_single['h_+1_under_%'], 2)
+        df_single['h_+1_ov'] = round(1 / df_single['h_+1_over_%'], 2)
+
+
+        df_single['a_main_un'] = round(1 / df_single['a_main_under_%'], 2)
+        df_single['a_main_ov'] = round(1 / df_single['a_main_over_%'], 2)
+        df_single['a_-1_un'] = round(1 / df_single['a_-1_under_%'], 2)
+        df_single['a_-1_ov'] = round(1 / df_single['a_-1_over_%'], 2)
+        df_single['a_+1_un'] = round(1 / df_single['a_+1_under_%'], 2)
+        df_single['a_+1_ov'] = round(1 / df_single['a_+1_over_%'], 2)
+        
+        # st.write(df_single)
+
+
+        # --------  TOTAL ---------------
+
+        df_single[['TF_Exp', 'T_main_line', 'T_-1_line', 'T_+1_line', 'T_-2_line', 'T_+2_line','T_main_under_%', 
+            'T_main_over_%', 'T_-1_under_%', 'T_-1_over_%', 'T_+1_under_%', 
+            'T_+1_over_%', 'T_-2_under_%', 'T_-2_over_%', 'T_+2_under_%', 
+            'T_+2_over_%',]] = df_single.apply(
+            lambda row: calculate_totals_lines_and_odds(
+                row['HF_Exp'], 
+                row['AF_Exp'], 
+                total_metrics_df=calculate_probability_grid_hc_vs_ac(row['HF_Exp'], row['AF_Exp'])[1]
+            ),
+            axis=1, 
+            result_type='expand'
+        )
+
+        df_single['T_main_un'] = round(1 / df_single['T_main_under_%'], 2)
+        df_single['T_main_ov'] = round(1 / df_single['T_main_over_%'], 2)
+        df_single['T_-1_un'] = round(1 / df_single['T_-1_under_%'], 2)
+        df_single['T_-1_ov'] = round(1 / df_single['T_-1_over_%'], 2)
+        df_single['T_+1_un'] = round(1 / df_single['T_+1_under_%'], 2)
+        df_single['T_+1_ov'] = round(1 / df_single['T_+1_over_%'], 2)
+
+        # Sub-select final columns
+        df_single_final = df_single[[
+                    'HF_Exp', 'h_main_line', 'h_main_un', 'h_main_ov', 
+                    'h_-1_line', 'h_-1_un', 'h_-1_ov',
+                    'h_+1_line', 'h_+1_un', 'h_+1_ov',
+                    'AF_Exp', 'a_main_line', 'a_main_un', 'a_main_ov',
+                    'a_-1_line', 'a_-1_un', 'a_-1_ov',
+                    'a_+1_line', 'a_+1_un', 'a_+1_ov',
+                    'TF_Exp', 'T_main_line', 'T_main_un', 'T_main_ov', 
+                    'T_-1_line', 'T_-1_un', 'T_-1_ov',
+                    'T_+1_line', 'T_+1_un', 'T_+1_ov',
+                    ]].copy()
+
+        
+        st.subheader('Lines & Odds (100%)')
+        st.write(df_single_final)     
 
 
                     

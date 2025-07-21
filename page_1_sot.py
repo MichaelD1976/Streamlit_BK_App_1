@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import poisson, nbinom
 from sklearn.preprocessing import PolynomialFeatures
 import joblib
-from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities
+from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities, calculate_true_from_true_raw
 import requests
 import os
 from dotenv import load_dotenv
@@ -36,16 +36,16 @@ PERC_ML_MODEL = 0.5
 game_week_decay_dict = {
     1: 1,
     2: 0.95,
-    3: 0.87,
-    4: 0.77,
-    5: 0.67,
-    6: 0.57,
-    7: 0.47,
-    8: 0.38,
-    9: 0.31,
-    10: 0.25,
-    11: 0.20,
-    12: 0.17,
+    3: 0.88,
+    4: 0.78,
+    5: 0.68,
+    6: 0.58,
+    7: 0.48,
+    8: 0.40,
+    9: 0.33,
+    10: 0.27,
+    11: 0.22,
+    12: 0.18,
     13: 0.15,
     14: 0.13,
     15: 0.11,
@@ -1293,7 +1293,262 @@ def main():
                         st.write("")
                         
             except Exception as e:
-                st.write(f'An error has occurred whilst compiling: {e}')     
+                st.write(f'An error has occurred whilst compiling: {e}')   
+
+
+    # -------------------------------------------------------------------------------
+    # Compile any match / competition  
+
+    st.write("---")
+    with st.expander('Single match pricer (any competition)'):
+        
+        st.write("")
+        st.write('Enter Match & Over/Under Odds:')
+        c1,c2,c3,c4, c5 = st.columns([1,1,1,1,5])
+        with c1:
+            try:
+                h_odds = float(st.text_input('Home Odds', value = 2.10, label_visibility = 'visible'))  # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+                    return
+        with c2:
+            try:
+                d_odds = float(st.text_input('Draw Odds', value = 3.40, label_visibility = 'visible'))  # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+                    return
+        with c3:
+            try:
+                a_odds = float(st.text_input('Away Odds', value = 3.50, label_visibility = 'visible'))  # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+                    return
+        
+        with c4:
+            st.write("")
+            st.write("")
+            margin = round(1/h_odds + 1/d_odds + 1/a_odds, 2)
+            st.write('Margin:', margin)
+
+
+        h_pc_true_raw = 1/(h_odds * margin)
+        d_pc_true_raw = 1/(d_odds * margin)
+        a_pc_true_raw = 1/(a_odds * margin)
+
+
+        # Error message if < 100 %
+        if margin < 1:
+            st.warning('Margin must be > 1.00 !')
+
+
+        #  -----------   Ov/Und Odds and HG/AG Expectation calculation  -----------------
+        col1,col2,col3,col4,col5 = st.columns([1,1,1,1,5])
+        with col1:
+            try:
+                ov_odds = float(st.text_input('Over 2.5 Odds', value = 1.9, label_visibility = 'visible')) # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+        with col2:
+            try:
+                un_odds = float(st.text_input('Under 2.5 Odds', value = 1.9, label_visibility = 'visible')) # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+
+        margin_ou = round(1/ov_odds + 1/un_odds, 2)
+
+        ov_pc_true_raw = 1/(ov_odds * margin_ou)
+        # un_pc_true_raw = 1/(un_odds * margin_ou)
+
+        with col3:
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write('Margin:', margin_ou)
+
+        # Error message if < 100 %
+        if margin_ou < 1:
+            st.warning('Margin must be > 1.00 !')
+
+
+        ov_pc_true_raw = round(ov_pc_true_raw, 2)
+        # find ov_pc_true_raw in df_ou & extract exp
+        exp_value = df_ou.loc[df_ou['Ov2.5_%'] == ov_pc_true_raw, 'Exp1']
+        gl_exp = exp_value.iloc[0] if not exp_value.empty else None 
+
+        h_pc_true, d_pc_true, a_pc_true = calculate_true_from_true_raw(h_pc_true_raw, d_pc_true_raw, a_pc_true_raw, margin)
+
+        # st.write('h_pc_true, d_pc_true, a_pc_true', h_pc_true, d_pc_true, a_pc_true)
+
+        cls1, _, cls3 = st.columns([7,1,7])
+        with cls1:
+            st.subheader('Home')
+            ht_h_for = st.number_input('Avg home team home SoT - for')
+            ht_a_for = st.number_input('Avg home team away SoT - for')
+            at_a_ag = st.number_input('Avg away team away SoT - against')
+            at_h_ag = st.number_input('Avg away team home SoT - against')
+            h_lg_avg = st.number_input('League avg (all teams) of home team')
+            st.write("---")
+
+        with cls3:
+            st.subheader('Away')
+            at_a_for = st.number_input('Avg away team away SoT - for')
+            at_h_for = st.number_input('Avg away team home SoT - for')
+            ht_a_ag = st.number_input('Avg home team home SoT - against')
+            ht_h_ag = st.number_input('Avg home team away SoT - against')
+            a_lg_avg = st.number_input('League avg (all teams) of away team')
+            st.write("---")
+
+        h_sot_exp_s_mod, a_sot_exp_s_mod =  calculate_sup_model_h_a_sot(h_pc_true, a_pc_true, gl_exp, df_dnb, selected_league=None)
+
+        inputs_array_h = np.array([[h_pc_true, ht_h_for, ht_a_for, at_a_ag, at_h_ag, h_lg_avg]])
+        inputs_array_a = np.array([[a_pc_true, at_a_for, at_h_for, ht_a_ag, ht_h_ag, a_lg_avg]])
+
+
+        # Model Home
+        poly_h = PolynomialFeatures(degree=2, include_bias=True)
+        X_poly_input_h = poly_h.fit_transform(inputs_array_h)
+        sot_model_h_prediction = sot_model_h.predict(X_poly_input_h)
+        home_prediction_ml = round(sot_model_h_prediction[0], 2)
+
+
+
+        # -------------  Additional factors  ---------
+        with cls1:
+            is_neutral = st.selectbox('Is this on a neutral pitch?', ['No', 'Yes'])
+            is_extra_time = st.selectbox('Is extra-time possible?', ['No', 'Yes'])
+            is_big_cup = st.selectbox('Is this a high stakes match?', ['Average', 'Above Average', 'Very high', 'Below Average'])
+
+        # home teams have 0.545 of total SOT, away team have 0.455
+        # apply below factors if match is on a neutral (0.5 / 0.545) ()
+        is_neutral_factor_home = 0.96 if is_neutral=='Yes' else 1 # 0.917
+        is_neutral_factor_away = 1.05 if is_neutral=='Yes' else 1  # 1.099
+
+        # Is extra time possible 
+        if is_extra_time == 'Yes':
+            extra_time_factor = d_pc_true * 0.34 + 1     # (extra time is 31/93 (0.33) of total SOT, increase by 1.02 for more space/tired legs)
+        else:
+            extra_time_factor = 1
+
+
+        if is_big_cup == 'Very high':
+            big_cup_factor = 0.97
+        elif is_big_cup == 'Above Average':
+            big_cup_factor = 0.99
+        elif is_big_cup == 'Average':
+            big_cup_factor = 1
+        else:
+            big_cup_factor = 1.02    
+
+        # ----------------------------
+
+        # mix with sup_model & additional factors
+        home_prediction = round((home_prediction_ml * PERC_ML_MODEL) + (h_sot_exp_s_mod * PERC_SUP_MODEL), 2)
+        home_prediction = round(home_prediction * extra_time_factor * is_neutral_factor_home * big_cup_factor, 2)
+        
+        with cls1:
+            st.success(f'Home Prediction: {home_prediction}')
+            show_mult_home = st.checkbox('Show home multiples')
+            if show_mult_home:
+                st.write('ET mult', extra_time_factor, 'Neutral mult', is_neutral_factor_home, 'High Stakes mult', big_cup_factor)
+
+        # Model Away
+        poly_a = PolynomialFeatures(degree=2, include_bias=True)
+        X_poly_input_a = poly_a.fit_transform(inputs_array_a)
+        sot_model_a_prediction = sot_model_a.predict(X_poly_input_a)   
+        away_prediction_ml = round(sot_model_a_prediction[0], 2)
+
+        # mix with sup_model
+        away_prediction = round((away_prediction_ml * PERC_ML_MODEL) + (a_sot_exp_s_mod * PERC_SUP_MODEL), 2)
+        away_prediction = round(away_prediction * extra_time_factor * is_neutral_factor_away * big_cup_factor, 2)
+
+        with cls3:
+            for i in range(16):
+                st.write("")
+
+            st.success(f'Away Prediction: {away_prediction}')
+            show_mult_away = st.checkbox('Show away multiples')
+            if show_mult_away:
+                st.write('ET mult', extra_time_factor, 'Neutral mult', is_neutral_factor_away, 'High Stakes mult', big_cup_factor)
+
+
+
+        df_single = pd.DataFrame([{
+            'HST_Exp': home_prediction,
+            'AST_Exp': away_prediction
+        }])
+
+        # st.write(df_single)
+
+        # calculate_sot_lines_and_odds(prediction) - HOME
+        df_single[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 'h_-1_under_%', 'h_-1_over_%', 'h_+1_under_%', 'h_+1_over_%']] = df_single.apply(
+            lambda row: calculate_home_away_lines_and_odds(row['HST_Exp'], selected_metric), 
+            axis=1, result_type='expand')
+        
+        # calculate_corners_lines_and_odds(prediction) - AWAY
+        df_single[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = df_single.apply(
+            lambda row: calculate_home_away_lines_and_odds(row['AST_Exp'], selected_metric), 
+            axis=1, result_type='expand')
+        
+        # st.write(df_single)
+
+        df_single['h_main_un'] = round(1 / df_single['h_main_under_%'], 2)
+        df_single['h_main_ov'] = round(1 / df_single['h_main_over_%'], 2)
+        df_single['h_-1_un'] = round(1 / df_single['h_-1_under_%'], 2)
+        df_single['h_-1_ov'] = round(1 / df_single['h_-1_over_%'], 2)
+        df_single['h_+1_un'] = round(1 / df_single['h_+1_under_%'], 2)
+        df_single['h_+1_ov'] = round(1 / df_single['h_+1_over_%'], 2)
+
+
+        df_single['a_main_un'] = round(1 / df_single['a_main_under_%'], 2)
+        df_single['a_main_ov'] = round(1 / df_single['a_main_over_%'], 2)
+        df_single['a_-1_un'] = round(1 / df_single['a_-1_under_%'], 2)
+        df_single['a_-1_ov'] = round(1 / df_single['a_-1_over_%'], 2)
+        df_single['a_+1_un'] = round(1 / df_single['a_+1_under_%'], 2)
+        df_single['a_+1_ov'] = round(1 / df_single['a_+1_over_%'], 2)
+        
+        # st.write(df_single)
+
+
+        # --------  TOTAL ---------------
+
+        df_single[['TST_Exp', 'T_main_line', 'T_-1_line', 'T_+1_line', 'T_-2_line', 'T_+2_line','T_main_under_%', 
+            'T_main_over_%', 'T_-1_under_%', 'T_-1_over_%', 'T_+1_under_%', 
+            'T_+1_over_%', 'T_-2_under_%', 'T_-2_over_%', 'T_+2_under_%', 
+            'T_+2_over_%',]] = df_single.apply(
+            lambda row: calculate_totals_lines_and_odds(
+                row['HST_Exp'], 
+                row['AST_Exp'], 
+                total_metrics_df=calculate_probability_grid_hst_vs_ast(row['HST_Exp'], row['AST_Exp'])[1]
+            ),
+            axis=1, 
+            result_type='expand'
+        )
+
+        df_single['T_main_un'] = round(1 / df_single['T_main_under_%'], 2)
+        df_single['T_main_ov'] = round(1 / df_single['T_main_over_%'], 2)
+        df_single['T_-1_un'] = round(1 / df_single['T_-1_under_%'], 2)
+        df_single['T_-1_ov'] = round(1 / df_single['T_-1_over_%'], 2)
+        df_single['T_+1_un'] = round(1 / df_single['T_+1_under_%'], 2)
+        df_single['T_+1_ov'] = round(1 / df_single['T_+1_over_%'], 2)
+
+        # Sub-select final columns
+        df_single_final = df_single[[
+                    'HST_Exp', 'h_main_line', 'h_main_un', 'h_main_ov', 
+                    'h_-1_line', 'h_-1_un', 'h_-1_ov',
+                    'h_+1_line', 'h_+1_un', 'h_+1_ov',
+                    'AST_Exp', 'a_main_line', 'a_main_un', 'a_main_ov',
+                    'a_-1_line', 'a_-1_un', 'a_-1_ov',
+                    'a_+1_line', 'a_+1_un', 'a_+1_ov',
+                    'TST_Exp', 'T_main_line', 'T_main_un', 'T_main_ov', 
+                    'T_-1_line', 'T_-1_un', 'T_-1_ov',
+                    'T_+1_line', 'T_+1_un', 'T_+1_ov',
+                    ]].copy()
+
+        
+        st.subheader('Lines & Odds (100%)')
+        st.write(df_single_final)
+
+
 
 if __name__ == "__main__":
     main()
