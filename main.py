@@ -79,6 +79,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 20/08/25 New season - api params updated, team news & some leagues with stat model outputs
                      - 21/07/25 Models - single match pricing function added (SOT/Fouls/Offsides)
                      - 09/07/25 Derivatives - HT Early Payout added
                      - 02/07/25 Player Stats - option to filter by 'All Leagues' added

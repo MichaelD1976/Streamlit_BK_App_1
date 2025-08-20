@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
-from scipy.stats import poisson
-from scipy.optimize import minimize_scalar
+# from scipy.stats import poisson
+# from scipy.optimize import minimize_scalar
 from mymodule.functions import poisson_expectation, poisson_probabilities
 
 

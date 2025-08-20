@@ -20,8 +20,8 @@ dict_api_to_bk_league_names = {
      'Spain La Liga' : 'Spain LaLiga',
  }
 
-CURRENT_SEASON = '2024-25'
-LAST_SEASON = '2023-24'
+CURRENT_SEASON = '2025-26'
+LAST_SEASON = '2024-25'
 OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 8.5 > 8.67. Odds change outputs also dafaulted on front-end.
 TOTALS_BOOST = 1.02 # increase daily totals by this
 
@@ -60,26 +60,26 @@ game_week_decay_dict = {
 }
 
 lg_ex_h_sot_p_g_dict = {
-    'England Premier' : 3.15,
+    'England Premier' : 3.10,
     'Germany Bundesliga' : 3.06,
-    'France Ligue 1': 3.19,
-    'Spain La Liga': 3.29,
-    'Italy Serie A': 3.23,
-    'South Africa Premier': 3.55
+    'France Ligue 1': 3.11,
+    'Spain La Liga': 3.16,
+    'Italy Serie A': 3.18,
+    'South Africa Premier': 3.45
 }
 
-DEFAULT_H_SOT_P_GL = 3.27 # avg +3%
+DEFAULT_H_SOT_P_GL = 3.18 # avg +2% (5 top leagues averaged)
 
 lg_ex_a_sot_p_g_dict = {
-    'England Premier' : 3.28,
-    'Germany Bundesliga' : 3.21,
-    'France Ligue 1': 3.24,
-    'Spain La Liga': 3.32,
-    'Italy Serie A': 3.16,
-    'South Africa Premier': 3.70
+    'England Premier' : 3.16,
+    'Germany Bundesliga' : 3.07,
+    'France Ligue 1': 3.26,
+    'Spain La Liga': 3.13,
+    'Italy Serie A': 3.11,
+    'South Africa Premier': 3.60
 }
 
-DEFAULT_A_SOT_P_GL = 3.34 # avg +3%
+DEFAULT_A_SOT_P_GL = 3.21 # avg +2% (5 top leagues averaged)
 
 
 # ------------- Load the CSV file -----------------
@@ -388,6 +388,11 @@ def main():
     this_options_df['H_ag'] = H_ag
     this_options_df['A_for'] = A_f
     this_options_df['A_ag'] = A_ag
+
+    # if df is empty or less than 2 matches played in current season stop script
+    if this_options_df.empty or this_options_df['MP'].mean() < 2:
+        st.write(f"{selected_league} currently unavailable")
+        st.stop()
 
     # # Display the resulting DataFrame
     # show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats')

@@ -14,8 +14,8 @@ import gc
 
 
 
-CURRENT_SEASON = '2024-25'
-LAST_SEASON = '2023-24'
+CURRENT_SEASON = '2025-26'
+LAST_SEASON = '2024-25'
 OVERS_BOOST = 1.01
 TOTALS_BOOST = 1.01
 
@@ -206,6 +206,11 @@ def main():
     this_options_df['H_ag'] = H_ag
     this_options_df['A_for'] = A_f
     this_options_df['A_ag'] = A_ag
+
+    # if df is empty or less than 2 matches played in current season stop script
+    if this_options_df.empty or this_options_df['MP'].mean() < 2:
+        st.write(f"{selected_league} currently unavailable")
+        st.stop()
 
     # Display the resulting DataFrame
     # show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats', label_visibility = 'visible')  # WIDGET
@@ -1019,7 +1024,7 @@ def main():
     with st.expander('Single match pricer (any competition)'):
         
         st.write("")
-        st.write('Enter Match & Over/Under Odds:')
+        st.write('Enter Match Odds:')
         c1,c2,c3,c4, c5 = st.columns([1,1,1,1,5])
         with c1:
             try:

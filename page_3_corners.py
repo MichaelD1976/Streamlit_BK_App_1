@@ -19,8 +19,8 @@ dict_api_to_bk_league_names = {
      'Spain La Liga' : 'Spain LaLiga',
  }
 
-CURRENT_SEASON = '2024-25'
-LAST_SEASON = '2023-24'
+CURRENT_SEASON = '2025-26'
+LAST_SEASON = '2024-25'
 OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 10.5 > 10.71. Odds change outputs also dafaulted on front-end.
 TOTALS_BOOST = 1.02
 
@@ -200,6 +200,11 @@ def main():
     this_options_df['H_ag'] = H_ag
     this_options_df['A_for'] = A_f
     this_options_df['A_ag'] = A_ag
+
+    # if df is empty or less than 2 matches played in current season stop script
+    if this_options_df.empty or this_options_df['MP'].mean() < 2:
+        st.write(f"{selected_league} currently unavailable")
+        st.stop()
 
 
     # # Display the resulting DataFrame

@@ -545,7 +545,7 @@ def main():
 
     # ------------------------ Layout ---------------------------------
 
-    # --------------------------- CSS format of marlet selections odds/percentage format ----------
+    # --------------------------- CSS format of market selections odds/percentage format ----------
     def display_odds_with_percentage(title, odds, percentage):
         """
         Displays a line with formatted odds and percentage.
