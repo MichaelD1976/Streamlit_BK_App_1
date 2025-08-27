@@ -91,6 +91,99 @@ team_names_api_to_t1x2_dict = {
     'SV Darmstadt 98': 'Darmstadt'
 }
 
+team_names_t1x2_to_BK_dict = {
+    'Chelsea' : 'Chelsea FC',
+    'Fulham' : 'Fulham FC',
+    'Man Utd' : 'Manchester United',
+    'Burnley' : 'Burnley FC',
+    'Tottenham': 'Tottenham Hotspur',
+    'Bournemouth': 'AFC Bournemouth',
+    'Sunderland': 'AFC Sunderland',
+    'Brentford': 'AFC Brentford',
+    'Leeds': 'Leeds United',
+    'Newcastle': 'Newcastle United',
+    'Brighton': 'Brighton & Hove Albion',
+    'Man City': 'Manchester City',
+    'Nottm Forest': 'Nottingham Forest',
+    'West Ham': 'West Ham United',
+    'Liverpool': 'Liverpool FC',
+    'Arsenal': 'Arsenal FC',
+    'Everton': 'Everton FC',
+    'Aston Villa': 'Aston Villa', # no change
+
+    'Girona': 'Girona FC',
+    'Villarreal': 'Villarreal CF',
+    'Mallorca': 'RCD Mallorca',
+    'Valencia': 'Valencia CF',
+    'Alaves': 'Deportivo Alaves',
+    'Celta Vigo': 'RC Celta de Vigo',
+    'Ath Bilbao': 'Athletic Bilbao',
+    'Espanyol': 'Espanyol Barcelona',
+    'Elche': 'Elche CF',
+    'Real Madrid': 'Real Madrid', # no change
+    'Real Betis': 'Real Betis Seville',
+    'Atl Madrid': 'Atletico Madrid',
+    'Levante': 'Levante UD',
+    'Osasuna': 'CA Osasuna',
+    'Sociedad': 'Real Sociedad',
+    'Oviedo': 'Real Oviedo',
+    'Sevilla': 'Sevilla FC',
+    'Vallecano': 'Rayo Vallecano',
+    'Barcelona': 'FC Barcelona',
+    'Getafe': 'Getafe CF',
+    
+    'Rennes': 'Stade Rennes',
+    'Lens': 'RC Lens',
+    'Monaco': 'AS Monaco',
+    'Nice': 'OGC Nice',
+    'Brest': 'Stade Brest 29',
+    'Angers': 'Angers SCO',
+    'Auxerre': 'AJ Auxerre',
+    'Metz': 'FC Metz',
+    'Nantes': 'FC Nantes',
+    'Paris SG': 'Paris Saint Germain',
+    'Marseille': 'Olympique Marseille',
+    'Lyon': 'Olympique Lyon',
+    'Lorient': 'FC Lorient',
+    'Strasbourg': 'Strasbourg Alsace',
+    'Toulouse': 'Toulouse FC',
+    'Le Havre': 'Le Havre AC',
+    'Lille': 'Lille OSC',
+    'Paris FC': 'Paris FC', # no change
+
+    'Augsburg': 'FC Augsburg',
+    'Bayern Munich': 'Bayern Munich', # same
+    'Dortmund': 'Borussia Dortmund',
+    'Ein Frankfurt': 'Eintracht Frankfurt',
+    'Freiburg': 'SC Freiburg',
+    'Heidenheim': '1. FC Heidenheim',
+    'Hoffenheim': 'TSG Hoffenheim',
+    'Leverkusen': 'Bayer Leverkusen',
+    "M'gladbach": 'Borussia Monchengladbach',
+    'Mainz': 'FSV Mainz',
+    'RB Leipzig': 'RB Leipzig', #same
+    'St Pauli': 'FC St. Pauli',
+    'Stuttgart': 'VfB Stuttgart',
+    'Union Berlin': 'Union Berlin', # same
+    'Werder Bremen': 'Werder Bremen', # same
+    'Wolsburg': 'Vfl Wolfsburg',
+    'Hamburg': 'Hamburger SV',
+    'FC Koln': '1. FC Cologne',
+
+    'AC Milan': 'Milan',
+    'Cagliari': 'Cagliari Calcio',
+    'Como': 'Como 1907',
+    'Genoa': 'Genoa CFC',
+    'Lazio': 'Lazio Rome',
+    'Lecce': 'US Lecce',
+    'Napoli': 'SSC Napoli',
+    'Roma': 'AS Roma',
+    'Torino': 'Torino FC',
+    'Verona': 'Hellas Verona',
+    'Cremonese': 'US Cremonese',
+    'Sassuolo': 'Sassuolo Calcio',
+    'Pisa': 'SC Pisa',
+}
 
 # ---------------------------------------------------
 

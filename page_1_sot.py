@@ -4,12 +4,12 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import time
-import statsmodels.api as sm
-import matplotlib.pyplot as plt
+# import statsmodels.api as sm
+# import matplotlib.pyplot as plt
 from scipy.stats import poisson, nbinom
 from sklearn.preprocessing import PolynomialFeatures
 import joblib
-from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities, calculate_true_from_true_raw
+from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities, calculate_true_from_true_raw, team_names_t1x2_to_BK_dict
 import requests
 import os
 from dotenv import load_dotenv
@@ -394,10 +394,10 @@ def main():
         st.write(f"{selected_league} currently unavailable")
         st.stop()
 
-    # # Display the resulting DataFrame
-    # show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats')
-    # if show_this_ssn_stats:
-    #     st.write(this_options_df)
+    # Display the resulting DataFrame
+    show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats')
+    if show_this_ssn_stats:
+        st.write(this_options_df)
 
     # ---- LAST SEASON ------------------
 
@@ -582,13 +582,14 @@ def main():
     # -------------------------------------------- CREATE ODDS FOR ALL UPCOMING FIXTURES --------------------------------------------------------------------
 
     # st.write("---")
-    st.subheader(f'Generate odds for all upcoming {selected_league} matches (Up to 7 days ahead)')
+    st.subheader(f'Generate odds for all upcoming {selected_league} matches (up to 7 days ahead)')
 
     column1,column2 = st.columns([1,2])
 
     with column1:
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.09, min_value=1.01, max_value=1.2, key='margin_to_apply')
-        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.07, min_value=1.00, max_value=1.12, key='bias_to_apply')
+        # over bias initially set to 1.07 pre over only being published
+        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.08, min_value=1.00, max_value=1.12, key='bias_to_apply')
 
 
     generate_odds_all_matches = st.button(f'Click to generate')
@@ -1014,6 +1015,120 @@ def main():
                     df_simple_o_and_u_home = df_final_wm[['Date', 'Home Team', 'Away Team', 'h_-1_line','h_-1_ov_w.%', 'h_-1_un_w.%', ]]
                     df_simple_o_and_u_away = df_final_wm[['Date', 'Home Team', 'Away Team', 'a_-1_line','a_-1_ov_w.%', 'a_-1_un_w.%', ]]
 
+                    # -----------------------------------------------------------------------------------------------------------------
+                    # FORMAT EACH MATCH FOR FMH UPLOAD
+
+                    # firstly allign streamlit team names with BK team names
+                    df_final_wm['Home Team Alligned'] = df_final_wm['Home Team'].map(team_names_t1x2_to_BK_dict).fillna(df_final_wm['Home Team'])
+                    df_final_wm['Away Team Alligned'] = df_final_wm['Away Team'].map(team_names_t1x2_to_BK_dict).fillna(df_final_wm['Away Team'])
+
+                    # CREATE AN INDIVIDUAL DF FOR EACH MATCH
+
+                    today_date = datetime.today().strftime('%Y-%m-%d')
+
+                    columns = [
+                            'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
+                            'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
+                            'START TIME', 'OFFER START DATE', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
+                            'PUBLISHED'
+                        ]
+                    
+                    fmh_comp_dict = {
+                        'Spain La Liga': 'LaLiga',
+                        'England Premier': 'Premier League',
+                        'Italy Serie A': 'Serie A',
+                        'Gemany Bundesliga': 'Bundesliga',
+                        'France Ligue 1': 'Ligue 1',
+                        'South Africa Premier': 'Premier League',
+                        'Scotland Premier': 'Premiership',
+                        'Netherlands Eredivisie': 'Eredivisie',
+                        'Belgium Jupiler': 'Pro League',
+                        'England Championship': 'Championship',
+                        'England League One': 'League One',
+                        'England League Two': 'League Two'
+                    }
+
+                    # --- Preprocess Date column once ---
+                    df_final_wm["Date"] = pd.to_datetime(df_final_wm["Date"], format="%d-%m-%y %H:%M")
+                    df_final_wm["START DATE"] = df_final_wm["Date"].dt.strftime("%Y-%m-%d")
+                    df_final_wm["START TIME"] = df_final_wm["Date"].dt.strftime("%H:%M:%S")
+
+                    rows_list = []  # store each row
+
+                    for idx, row in df_final_wm.iterrows():
+                        # Create an empty DataFrame with 9 rows and specified columns
+                        df_row = pd.DataFrame(index=range(9), columns=columns)
+
+                        # create category_lg variable
+                        if selected_league.startswith("South Africa"):
+                            category_lg = "South Africa"
+                        else:
+                            category_lg = selected_league.split(" ")[0]
+
+                        # create competition variable
+                        competition = fmh_comp_dict.get(selected_league)
+
+                        # create event_name variable
+                        # extract Home Team and Away Team, make BK team name compatible, make as a vs b and store
+                        event_name = row['Home Team Alligned'] + " vs " + row["Away Team Alligned"]
+
+                        # Set the specific columns
+                        df_row['EVENT TYPE'].iloc[:9] = 'Match'
+                        df_row['SPORT'].iloc[:9] = 'Football'
+                        df_row['CATEGORY'].iloc[:9] = category_lg
+                        df_row['COMPETITION'].iloc[:9] = competition
+                        df_row['EVENT NAME'].iloc[:9] = event_name
+
+                        df_row['MARKET TYPE NAME'].iloc[:3] = 'Total shots {line} Over'
+                        df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total shots Over'
+                        df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total shots Over'
+
+                        df_row['LINE'].iloc[0] = row['T_-1_line']
+                        df_row['LINE'].iloc[1] = row['T_main_line']
+                        df_row['LINE'].iloc[2] = row['T_+1_line']
+                        df_row['LINE'].iloc[3] = row['h_-1_line']
+                        df_row['LINE'].iloc[4] = row['h_main_line']
+                        df_row['LINE'].iloc[5] = row['h_+1_line']
+                        df_row['LINE'].iloc[6] = row['a_-1_line']
+                        df_row['LINE'].iloc[7] = row['a_main_line']
+                        df_row['LINE'].iloc[8] = row['a_+1_line']
+
+                        df_row['SELECTION NAME'] = 'over {line}'
+
+                        df_row['PRICE'].iloc[0] = row['T_-1_ov_w.%']
+                        df_row['PRICE'].iloc[1] = row['T_main_ov_w.%']
+                        df_row['PRICE'].iloc[2] = row['T_+1_ov_w.%']
+                        df_row['PRICE'].iloc[3] = row['h_-1_ov_w.%']
+                        df_row['PRICE'].iloc[4] = row['h_main_ov_w.%']
+                        df_row['PRICE'].iloc[5] = row['h_+1_ov_w.%']
+                        df_row['PRICE'].iloc[6] = row['a_-1_ov_w.%']
+                        df_row['PRICE'].iloc[7] = row['a_main_ov_w.%']
+                        df_row['PRICE'].iloc[8] = row['a_+1_ov_w.%']
+
+                        # Dates & Times (already preprocessed)
+                        start_date = row["START DATE"]
+                        start_time = row["START TIME"]
+
+                        df_row['START DATE'] = start_date
+                        df_row['START TIME'] = start_time
+                        df_row['OFFER START DATE'] = today_date #3
+                        df_row['OFFER START TIME'] = '09:00:00' #4
+                        df_row['OFFER END DATE'] = start_date
+                        df_row['OFFER END TIME'] = start_time
+                        df_row['PUBLISHED'] = 'YES' #7
+
+
+                        # Finally, append to list
+                        rows_list.append(df_row)
+
+
+                    # Concatenate all blocks into one DataFrame
+                    df_fmh_format = pd.concat(rows_list, ignore_index=True)
+                    st.subheader('FMH Format')
+                    st.write(df_fmh_format)
+
+                    # ------------------------------------------------------------------------------------------------------------------
+
                     #  ----- Calculate Daily Total SOT and GOALS --------
 
                     # Convert to datetime
@@ -1050,31 +1165,31 @@ def main():
 
                     # -------  Display Simple DFs and Daily Shots   --------------
 
-                    st.write("---")
-                    st.subheader("Lines to Publish")
-                    st.write("")
-                    st.write("##### Over & Under - Total")
-                    st.write(df_simple_o_and_u)
+                    # st.write("---")
+                    # st.subheader("Lines to Publish")
+                    # st.write("")
+                    # st.write("##### Over & Under - Total")
+                    # st.write(df_simple_o_and_u)
 
-                    st.write("")
-                    st.write("##### Over & Under - Home")
-                    st.write(df_simple_o_and_u_home)
+                    # st.write("")
+                    # st.write("##### Over & Under - Home")
+                    # st.write(df_simple_o_and_u_home)
 
-                    st.write("")
-                    st.write("##### Over & Under - Away")
-                    st.write(df_simple_o_and_u_away)
+                    # st.write("")
+                    # st.write("##### Over & Under - Away")
+                    # st.write(df_simple_o_and_u_away)
 
-                    st.write("")
-                    st.write("##### Overs only - Total")
-                    st.write(df_simple_only_overs)
+                    # st.write("")
+                    # st.write("##### Overs only - Total")
+                    # st.write(df_simple_only_overs)
 
-                    st.write("")
-                    st.write("##### Overs only - Home")
-                    st.write(df_simple_only_overs_home)
+                    # st.write("")
+                    # st.write("##### Overs only - Home")
+                    # st.write(df_simple_only_overs_home)
 
-                    st.write("")
-                    st.write("##### Overs only - Away")
-                    st.write(df_simple_only_overs_away)
+                    # st.write("")
+                    # st.write("##### Overs only - Away")
+                    # st.write(df_simple_only_overs_away)
 
                     st.subheader("", divider='blue')
                     st.subheader('Daily Goals')
@@ -1082,15 +1197,6 @@ def main():
                     # if df_result_gl.shape[0] < 2:
                     #     st.caption('Less than two matches')
 
-                    # Define the column structure for csv df
-                    columns = [
-                        'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
-                        'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
-                        'START TIME', 'OFFER START DATE', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
-                        'PUBLISHED'
-                    ]
-                    # Iterate through each row in df_result_fl (each date)
-                    # df_csv_list = []
 
                     st.write(df_result_gl)
                     st.warning('Check correct number of fixtures have been logged for each day', icon="⚠️")
@@ -1231,13 +1337,6 @@ def main():
                         st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities_marginated[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities_marginated[f'under_minus_2 {line_minus_2}'], 2))
                         st.write("")
                         
-                        
-                        columns = [
-                            'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
-                            'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
-                            'START TIME', 'OFFER START DATE', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
-                            'PUBLISHED'
-                        ]
 
 
                         # Create an empty DataFrame with 6 rows and specified columns
