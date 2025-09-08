@@ -207,10 +207,10 @@ def main():
         st.stop()
 
 
-    # # Display the resulting DataFrame
-    # show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats', label_visibility = 'visible')  # WIDGET
-    # if show_this_ssn_stats:
-    #     st.write(this_options_df)
+    # Display the resulting DataFrame
+    show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats', label_visibility = 'visible')  # WIDGET
+    if show_this_ssn_stats:
+        st.write(this_options_df)
 
 
     # ---- LAST SEASON ------------------
@@ -975,6 +975,12 @@ def main():
                     df = df.drop(columns=['Team', 'Team_Away'])
                     df.rename(columns={'H_for':'H_h_for', 'H_ag':'H_h_ag', 'A_for':'H_a_for', 'A_ag': 'H_a_ag', 'H_for_Away': 'A_h_for', 'H_ag_Away':'A_h_ag', 'A_for_Away': 'A_a_for', 'A_ag_Away': 'A_a_ag'}, inplace=True)
 
+                    # if any columns are None (ie havent played a home or away game yet
+                    cols_to_check= ['H_h_for', 'H_h_ag', 'H_a_for', 'H_a_ag', 'A_h_for', 'A_h_ag', 'A_a_for', 'A_a_ag']
+                    for col in cols_to_check:
+                        if df[col].isnull().any():  # check if there are any missing values
+                            df[col] = df[col].fillna(df[col].mean())
+                            
                     # st.write(df)
 
 

@@ -564,10 +564,10 @@ def main():
     column1,column2 = st.columns([1,2])
 
     with column1:
-        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.09, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
+        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
         # over bias set to 1.07 pre overs only being published
-        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.10, min_value=1.00, max_value=1.20, key='bias_to_apply', label_visibility = 'visible')
-
+        bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.15, min_value=1.00, max_value=1.30, key='bias_to_apply', label_visibility = 'visible')
+        is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=True)
 
     generate_odds_all_matches = st.button(f'Click to generate')
 
@@ -576,7 +576,7 @@ def main():
             try:
                 # GET FIXTURES WEEK AHEAD
                 today = datetime.now()
-                to_date = today + timedelta(days=5)
+                to_date = today + timedelta(days=7)
                 from_date_str = today.strftime("%Y-%m-%d")
                 to_date_str = to_date.strftime("%Y-%m-%d")
                 MARKET_IDS = ['1', '5']             # WDW & Ov/Un
@@ -767,6 +767,12 @@ def main():
                     # Drop the extra 'team' columns from both merges
                     df = df.drop(columns=['Team', 'Team_Away'])
                     df.rename(columns={'H_for':'H_h_for', 'H_ag':'H_h_ag', 'A_for':'H_a_for', 'A_ag': 'H_a_ag', 'H_for_Away': 'A_h_for', 'H_ag_Away':'A_h_ag', 'A_for_Away': 'A_a_for', 'A_ag_Away': 'A_a_ag'}, inplace=True)
+
+                    # if any columns are None (ie havent played a home or away game yet
+                    cols_to_check= ['H_h_for', 'H_h_ag', 'H_a_for', 'H_a_ag', 'A_h_for', 'A_h_ag', 'A_a_for', 'A_a_ag']
+                    for col in cols_to_check:
+                        if df[col].isnull().any():  # check if there are any missing values
+                            df[col] = df[col].fillna(df[col].mean())
 
                     # st.write('df 770', df)
 
@@ -981,34 +987,6 @@ def main():
                         st.warning('Odds for 1 or more matches not currently available!')
 
 
-                    # ---------  Simplified odds ----------
-                    df_simple_only_overs = df_final_wm[['Date', 'Home Team', 'Away Team',
-                                            'T_main_line', 'T_main_ov_w.%',
-                                            'T_-1_line', 'T_-1_ov_w.%',
-                                            'T_-2_line',  'T_-2_ov_w.%',
-                                            'T_+1_line', 'T_+1_ov_w.%',
-                                            'T_+2_line',  'T_+2_ov_w.%',                                          
-                                            ]]
-                    
-                    df_simple_only_overs_home = df_final_wm[['Date', 'Home Team', 'Away Team',
-                                            'h_main_line', 'h_main_ov_w.%',
-                                            'h_-1_line', 'h_-1_ov_w.%',
-                                            'h_+1_line', 'h_+1_ov_w.%',                                         
-                                            ]]
-                    
-                    df_simple_only_overs_away = df_final_wm[['Date', 'Home Team', 'Away Team',
-                                            'a_main_line', 'a_main_ov_w.%',
-                                            'a_-1_line', 'a_-1_ov_w.%',
-                                            'a_+1_line', 'a_+1_ov_w.%',                                         
-                                            ]]
-                    
-                    df_simple_o_and_u = df_final_wm[['Date', 'Home Team', 'Away Team',
-                                'T_-1_line', 'T_-1_ov_w.%', 'T_-1_un_w.%',                                        
-                                ]]
-                    
-                    df_simple_o_and_u_home = df_final_wm[['Date', 'Home Team', 'Away Team', 'h_-1_line','h_-1_ov_w.%', 'h_-1_un_w.%', ]]
-                    df_simple_o_and_u_away = df_final_wm[['Date', 'Home Team', 'Away Team', 'a_-1_line','a_-1_ov_w.%', 'a_-1_un_w.%', ]]
-
                     # -----------------------------------------------------------------------------------------------------------------
                     # FORMAT EACH MATCH FOR FMH UPLOAD
 
@@ -1031,7 +1009,7 @@ def main():
                         'Spain La Liga': 'LaLiga',
                         'England Premier': 'Premier League',
                         'Italy Serie A': 'Serie A',
-                        'Gemany Bundesliga': 'Bundesliga',
+                        'Germany Bundesliga': 'Bundesliga',
                         'France Ligue 1': 'Ligue 1',
                         'South Africa Premier': 'Premier League',
                         'Scotland Premier': 'Premiership',
@@ -1045,7 +1023,12 @@ def main():
                     # --- Preprocess Date column once ---
                     df_final_wm["Date"] = pd.to_datetime(df_final_wm["Date"], format="%d-%m-%y %H:%M")
                     df_final_wm["START DATE"] = df_final_wm["Date"].dt.strftime("%Y-%m-%d")
-                    df_final_wm["START TIME"] = df_final_wm["Date"].dt.strftime("%H:%M:%S")
+                
+                    # Adjust START TIME depending on BST toggle (vectorized)
+                    if is_bst:
+                        df_final_wm["START TIME"] = (df_final_wm["Date"] - pd.Timedelta(hours=1)).dt.strftime("%H:%M:%S")
+                    else:
+                        df_final_wm["START TIME"] = df_final_wm["Date"].dt.strftime("%H:%M:%S")
 
                     rows_list = []  # store each row
 
@@ -1304,6 +1287,7 @@ def main():
     with st.expander('Single match pricer (any competition)'):
         
         st.write("")
+        st.caption('Fill in match odds and O/U. Use corner-stats.com to get Home, Away & Competition stats. If early season mix in with previous.')
         st.write('Enter Match Odds:')
         c1,c2,c3,c4, c5 = st.columns([1,1,1,1,5])
         with c1:

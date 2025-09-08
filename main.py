@@ -1,6 +1,4 @@
 import streamlit as st
-import pandas as pd
-import time
 import warnings
 warnings.filterwarnings('ignore')
 import logging
@@ -79,8 +77,9 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 08/09/25 Models - BST/UTC toggle added. Offsides FMH format ready
                      - 27/08/25 Models - sot and fouls outputs amended for FMH upload format
-                     - 20/08/25 New season - api params updated, team news & some leagues with stat model outputs
+                     - 20/08/25 New season - api params updated & new season outputs ready
                      - 21/07/25 Models - single match pricing function added (SOT/Fouls/Offsides)
                      - 09/07/25 Derivatives - HT Early Payout added
                      - 02/07/25 Player Stats - option to filter by 'All Leagues' added
