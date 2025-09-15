@@ -561,7 +561,7 @@ def main():
 
     st.subheader(f'Generate Odds for all upcoming {selected_league} matches (up to 7 days ahead)')
 
-    column1,column2 = st.columns([1,2])
+    column1, _ = st.columns([1,2])
 
     with column1:
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')

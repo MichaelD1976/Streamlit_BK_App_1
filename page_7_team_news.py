@@ -3,8 +3,7 @@ import pandas as pd
 import requests
 import os
 from dotenv import load_dotenv
-import time
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from mymodule.functions import get_fixtures
 
 

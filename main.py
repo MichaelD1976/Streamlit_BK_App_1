@@ -64,7 +64,7 @@ def main():
 
     if selected_page == 'Home':
 
-        col1,col2,col3 = st.columns([1,8,1])
+        _ ,col2, _ = st.columns([1,8,1])
         with col2:
             st.write("")
             st.write("")
@@ -77,6 +77,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 15/09/25 Player Stats 25-26 available
                      - 08/09/25 Models - BST/UTC toggle added. Offsides FMH format ready
                      - 27/08/25 Models - sot and fouls outputs amended for FMH upload format
                      - 20/08/25 New season - api params updated & new season outputs ready
