@@ -825,7 +825,38 @@ def main():
                         fouls_model_h_prediction = fouls_model_h.predict(X_poly_input) * OVERS_BOOST
 
                         # Assign the predictions to the DataFrame
-                        df['HF_Exp'] = np.round(fouls_model_h_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
+                        df['HF_Exp_initial'] = np.round(fouls_model_h_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
+
+                        # ---   Fudge to handle big home fav/dog  -----------------
+
+                        hf_sup_reduce_1 = 0.97  # < 1.15
+                        hf_sup_reduce_2 = 0.98  # 1.15 ≤ x < 1.3
+                        hf_sup_reduce_3 = 0.99  # < 1.55 but >= 1.3
+
+                        hf_dog_boost_1 = 1.03 # > 14
+                        hf_dog_boost_2 = 1.02 # 8 < x <= 14
+                        hf_dog_boost_3 = 1.01 # 4.5 < x <= 8
+
+                        conditions = [
+                            df['Home Win'] < 1.15,                               # strong home favorite
+                            (df['Home Win'] >= 1.15) & (df['Home Win'] < 1.3),   # moderately big home favorite
+                            (df['Home Win'] >= 1.30) & (df['Home Win'] < 1.55),  # medium home favorite
+                            df['Home Win'] > 14,                                 # big home underdog
+                            (df['Home Win'] > 8) & (df['Home Win'] <= 14),       # moderately big home underdog
+                            (df['Home Win'] > 4.5) & (df['Home Win'] <= 8)       # medium home underdog
+                        ]
+
+                        choices = [
+                            hf_sup_reduce_1,
+                            hf_sup_reduce_2,
+                            hf_sup_reduce_3,
+                            hf_dog_boost_1,
+                            hf_dog_boost_2,
+                            hf_dog_boost_3
+                        ]
+
+                        df['HF_Exp'] = round(df['HF_Exp_initial'] * np.select(conditions, choices, default=1.0), 2)
+                        # --------------------------------------------------                        
 
                         # Calculate additional metrics using the prediction
                         df[['h_main_line', 'h_-1_line', 'h_+1_line', 'h_main_under_%', 'h_main_over_%', 
@@ -857,7 +888,38 @@ def main():
                         fouls_model_a_prediction = fouls_model_a.predict(X_poly_input) * OVERS_BOOST
 
                         # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
-                        df['AF_Exp'] = np.round(fouls_model_a_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
+                        df['AF_Exp_initial'] = np.round(fouls_model_a_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
+
+                        # -------- Fudge to handle big away fav/dog ------------
+
+                        af_sup_reduce_1 = 0.97  # < 1.3
+                        af_sup_reduce_2 = 0.98  # 1.30 ≤ x < 1.45
+                        af_sup_reduce_3 = 0.99  # 1.45 ≤ x < 1.65
+
+                        af_dog_boost_1 = 1.03 # > 18
+                        af_dog_boost_2 = 1.02 # 11 < x <= 18
+                        af_dog_boost_3 = 1.01 # 5.9 < x <= 11
+
+                        conditions = [
+                            df['Away Win'] < 1.30,                               # strong away favorite
+                            (df['Away Win'] >= 1.30) & (df['Away Win'] < 1.45),  # moderately big away favorite
+                            (df['Away Win'] >= 1.45) & (df['Away Win'] < 1.65),  # medium away favorite
+                            df['Away Win'] > 18,                                 # big away underdog
+                            (df['Away Win'] > 11) & (df['Away Win'] <= 18),       # moderately big away underdog
+                            (df['Away Win'] > 5.9) & (df['Away Win'] <= 11)       # medium away underdog
+                        ]
+
+                        choices = [
+                            af_sup_reduce_1,
+                            af_sup_reduce_2,
+                            af_sup_reduce_3,
+                            af_dog_boost_1,
+                            af_dog_boost_2,
+                            af_dog_boost_3
+                        ]
+
+                        df['AF_Exp'] = round(df['AF_Exp_initial'] * np.select(conditions, choices, default=1.0), 2)
+                        # -----------------------------------------------------
 
                         # calculate_corners_lines_and_odds(prediction)
                         df[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = df.apply(
