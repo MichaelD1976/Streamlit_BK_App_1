@@ -608,12 +608,12 @@ def main():
                 from_date_str = today.strftime("%Y-%m-%d")
                 to_date_str = to_date.strftime("%Y-%m-%d")
                 MARKET_IDS = ['1', '5']             # WDW & Ov/Un
-                BOOKMAKERS = ['8']                  # Pinnacle = 4, 365 = 8
+                BOOKMAKERS = ['4']                  # Pinnacle = 4, 365 = 8
                 API_SEASON = CURRENT_SEASON[:4]
 
                 
                 df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
-
+                # st.write('616', df_fixtures)
                 if df_fixtures.empty:
                     st.write("No data returned for the specified league and date range.")
                 else:
@@ -688,7 +688,7 @@ def main():
                     # Collect odds for all fixtures
                     all_odds_df = pd.DataFrame()  # DataFrame to collect all odds
 
-                    # st.write(fixt_id_list)
+                    # st.write('691', fixt_id_list)
 
                     # Iterate through each fixture ID and get odds
                     for fixture_id in fixt_id_list:
@@ -699,7 +699,7 @@ def main():
                                 all_odds_df = pd.concat([all_odds_df, odds_df], ignore_index=True)
 
                     # Display the collected odds
-                    # st.write(all_odds_df)
+                    # st.write('702', all_odds_df)
 
                     # Use groupby and fillna to collapse rows and remove None values
                     df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
@@ -709,7 +709,7 @@ def main():
                     # Merge odds df_fixts with df_collapsed
                     df = df_fixts.merge(df_collapsed, on='Fixture ID')
                     df = df.dropna()
-                    # st.write(df)
+                    # st.write('712', df)
 
                     if df.empty:
                         st.write('Odds currently unavailable from API') 

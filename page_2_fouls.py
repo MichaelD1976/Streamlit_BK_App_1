@@ -584,7 +584,7 @@ def main():
                 from_date_str = today.strftime("%Y-%m-%d")
                 to_date_str = to_date.strftime("%Y-%m-%d")
                 MARKET_IDS = ['1', '5']             # WDW & Ov/Un
-                BOOKMAKERS = ['8']                  # Pinnacle = 4, 365 = 8
+                BOOKMAKERS = ['4']                  # Pinnacle = 4, 365 = 8
                 API_SEASON = CURRENT_SEASON[:4]
 
 
