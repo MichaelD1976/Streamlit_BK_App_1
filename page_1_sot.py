@@ -340,6 +340,9 @@ def main():
     this_df = df[(df['Season'] == CURRENT_SEASON)]  # remove all matches that are not current season
     last_df = df[(df['Season'] == LAST_SEASON)] 
 
+    ssn_avg_this = round(this_df['TST'].mean(), 2)
+    ssn_avg_last = round(last_df['TST'].mean(), 2)
+
     # -----------------------------------------------------------------------
 
     st.header(f'{selected_metric} Model', divider='blue')
@@ -398,6 +401,7 @@ def main():
     show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats')
     if show_this_ssn_stats:
         st.write(this_options_df)
+        st.write('Current season avg per match:', ssn_avg_this)
 
     # ---- LAST SEASON ------------------
 
@@ -434,9 +438,10 @@ def main():
     last_options_df['A_ag'] = A_ag
 
     # Display last season DataFrame
-    # show_last_ssn_stats = st.checkbox(f'Show last season {selected_metric} stats')
-    # if show_last_ssn_stats:
-    #     st.write(last_options_df)
+    show_last_ssn_stats = st.checkbox(f'Show last season {selected_metric} stats')
+    if show_last_ssn_stats:
+        st.write(last_options_df)
+        st.write('Last season avg per match:', ssn_avg_last)
 
 
     # ---------  Combine this and last based on current week in the season --------------------
@@ -705,6 +710,9 @@ def main():
                     df = df_fixts.merge(df_collapsed, on='Fixture ID')
                     df = df.dropna()
                     # st.write(df)
+
+                    if df.empty:
+                        st.write('Odds currently unavailable from API') 
 
                     #  ---------------  Create true wdw odds ---------------
 
@@ -1124,8 +1132,8 @@ def main():
                         df_row['EVENT NAME'].iloc[:9] = event_name
 
                         df_row['MARKET TYPE NAME'].iloc[:3] = 'Total shots {line} Over'
-                        df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total shots Over'
-                        df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total shots Over'
+                        df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total shots {line} Over'
+                        df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total shots {line} Over'
 
                         df_row['LINE'].iloc[0] = row['T_-1_line']
                         df_row['LINE'].iloc[1] = row['T_main_line']

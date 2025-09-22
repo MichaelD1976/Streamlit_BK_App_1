@@ -74,9 +74,11 @@ def main():
             st.write("")
             st.write("")
             st.image("images/KM_Logo-bgr.png", width=700)
+            st.write("Please start using this internal link for App access: https://tradingmodel-test.int.kingmakers.tech")
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 22/09/25 Models - current and previous stat averages added for selected league
                      - 15/09/25 Player Stats 25-26 available
                      - 08/09/25 Models - BST/UTC toggle added. Offsides FMH format ready
                      - 27/08/25 Models - sot and fouls outputs amended for FMH upload format
@@ -97,7 +99,7 @@ def main():
             # st.write("")
             st.write("")
             st.write("")
-            # st.markdown("<h1 style='font-size: 80px;'>KingMakers Trading App</h1>", unsafe_allow_html=True)
+            # st.markdown("<h1 style='font-size: 80px;'>KingMakers Trading! App</h1>", unsafe_allow_html=True)
             st.write("")
             st.write("")
 

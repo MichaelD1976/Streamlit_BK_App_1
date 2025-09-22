@@ -163,6 +163,8 @@ def main():
     league_id = leagues_dict.get(selected_league)
 
     # st.write(this_df)
+    ssn_avg_this = round(this_df['TC'].mean(), 2)
+    ssn_avg_last = round(last_df['TC'].mean(), 2)
 
 
     #  -----------  create df with just teams, MP and metric options - CURRENT SEASON  ------------------------
@@ -211,6 +213,7 @@ def main():
     show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats', label_visibility = 'visible')  # WIDGET
     if show_this_ssn_stats:
         st.write(this_options_df)
+        st.write('Current season avg per match:', ssn_avg_this)
 
 
     # ---- LAST SEASON ------------------
@@ -254,9 +257,10 @@ def main():
     last_options_df = last_options_df[last_options_df['MP'] > 10]
 
     # # Display last season DataFrame
-    # show_last_ssn_stats = st.checkbox(f'Show last season {selected_metric} stats', label_visibility = 'visible')  # WIDGET
-    # if show_last_ssn_stats:
-    #     st.write(last_options_df)
+    show_last_ssn_stats = st.checkbox(f'Show last season {selected_metric} stats', label_visibility = 'visible')  # WIDGET
+    if show_last_ssn_stats:
+        st.write(last_options_df)
+        st.write('Last season avg per match:', ssn_avg_last)
 
 
     # ---------  Combine this and last based on current week in the season --------------------
@@ -940,6 +944,8 @@ def main():
                     del df_collapsed
                     gc.collect()
                     # st.write(df)
+                    if df.empty:
+                        st.write('Odds currently unavailable from API') 
 
 
                     #  ---------------  Create true wdw odds ---------------

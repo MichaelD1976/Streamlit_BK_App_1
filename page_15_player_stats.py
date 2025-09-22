@@ -81,7 +81,7 @@ def main():
 
     # Define metrics for heatmap
     advanced_stat_leagues = ['England Premier', 'Germany Bundesliga', 'Spain La Liga', 'Italy Serie A', '**All Leagues**']
-    advanced_stat_seasons = ['2025-26']
+    advanced_stat_seasons = ['2025-26', '2024-25']
 
     if selected_league in advanced_stat_leagues and selected_year in advanced_stat_seasons:
         heatmap_metrics = [

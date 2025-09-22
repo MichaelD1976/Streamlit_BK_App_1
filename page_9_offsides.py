@@ -169,6 +169,8 @@ def main():
     league_id = leagues_dict.get(selected_league)
 
     # st.write(this_df)
+    ssn_avg_this = round(this_df['T_Off'].mean(), 2)
+    ssn_avg_last = round(last_df['T_Off'].mean(), 2)
 
 
     #  -----------  create df with just teams, MP and metric options - CURRENT SEASON  ------------------------
@@ -216,6 +218,7 @@ def main():
     show_this_ssn_stats = st.checkbox(f'Show current season {selected_metric} stats', label_visibility = 'visible')  # WIDGET
     if show_this_ssn_stats:
         st.write(this_options_df)
+        st.write('Current season avg per match:', ssn_avg_this)
 
     # ---- LAST SEASON ------------------
 
@@ -258,9 +261,10 @@ def main():
     last_options_df = last_options_df[last_options_df['MP'] > 10]
 
     # Display last season DataFrame
-    # show_last_ssn_stats = st.checkbox(f'Show last season {selected_metric} stats', label_visibility = 'visible')  # WIDGET
-    # if show_last_ssn_stats:
-    #     st.write(last_options_df)
+    show_last_ssn_stats = st.checkbox(f'Show last season {selected_metric} stats', label_visibility = 'visible')  # WIDGET
+    if show_last_ssn_stats:
+        st.write(last_options_df)
+        st.write('Last season avg per match:', ssn_avg_last)
 
 
     # ---------  Combine this and last based on current week in the season --------------------
@@ -575,7 +579,7 @@ def main():
                     st.write("No data returned for the specified league and date range.")
                 else:
                     df_fixts = df_fixtures[['Fixture ID', 'Date', 'Home Team', 'Away Team']]
-                    # st.write(df_fixts)
+                    # st.write('582',df_fixts)
 
                     fixt_id_list = list(df_fixts['Fixture ID'].unique())
 
@@ -659,13 +663,13 @@ def main():
                             gc.collect()
 
                     # Display the collected odds
-                    # st.write(all_odds_df) 
+                    # st.write('666', all_odds_df) 
 
                     # Use groupby and fillna to collapse rows and remove None values
                     df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
                         all_odds_df.groupby('Fixture ID').last()).reset_index()
 
-                    # st.write(df_collapsed) 
+                    # st.write('672', df_collapsed) 
 
 
                     # Merge odds df_fixts with df_collapsed
@@ -674,7 +678,10 @@ def main():
 
                     del df_collapsed
                     gc.collect()
-                    # st.write(df) 
+                    # st.write('681',df) 
+                    if df.empty:
+                        st.write('Odds currently unavailable from API') 
+
 
 
                     #  ---------------  Create true wdw odds ---------------
@@ -716,7 +723,7 @@ def main():
                         if df[col].isnull().any():  # check if there are any missing values
                             df[col] = df[col].fillna(df[col].mean())
 
-                    # st.write('df:', df) 
+                    # st.write('723:', df) 
 
                     # ------------------------ APPLY MODELS ---------------------------------------
 
@@ -727,12 +734,12 @@ def main():
                     # df['const'] = 1
 
 
-                    df['HO_Exp'] = exp_home_offsides(df['h_pc_true'], df['ht_mix']) * OVERS_BOOST
-                    df['AO_Exp'] = exp_away_offsides(df['a_pc_true'], df['at_mix']) * OVERS_BOOST
+                    df['HO_Exp'] = round(exp_home_offsides(df['h_pc_true'], df['ht_mix']) * OVERS_BOOST, 2)
+                    df['AO_Exp'] = round(exp_away_offsides(df['a_pc_true'], df['at_mix']) * OVERS_BOOST, 2)
                     # st.write(df) 
 
                     df['TO_Exp'] = df['HO_Exp'] + df['AO_Exp']
-                    # st.write(df[['HO_Exp', 'AO_Exp', 'TO_Exp']]) 
+                    # st.write('739', df[['HO_Exp', 'AO_Exp', 'TO_Exp']]) 
 
                     try:
                         # calculate_corners_lines_and_odds(prediction)
@@ -777,7 +784,7 @@ def main():
                         df[['a_main_line', 'a_-1_line', 'a_+1_line', 'a_main_under_%', 'a_main_over_%', 
                             'a_-1_under_%', 'a_-1_over_%', 'a_+1_under_%', 'a_+1_over_%']] = 0
                     
-                    # st.write(df) 
+                    # st.write('784',df) 
                     # --------  TOTAL ---------------
 
                     df[['TO_Exp', 'T_main_line', 'T_-1_line', 'T_+1_line', 'T_-2_line', 'T_+2_line','T_main_under_%', 
@@ -804,7 +811,7 @@ def main():
                     df['T_+2_un'] = round(1 / df['T_+2_under_%'], 2)
                     df['T_+2_ov'] = round(1 / df['T_+2_over_%'], 2)
 
-                    # st.write(df)
+                    # st.write('811', df)
                     df[['H_most_%', 'Tie_%', 'A_most_%']] = df.apply(
                         lambda row: pd.Series(calculate_probability_grid_hc_vs_ac(row['HO_Exp'], row['AO_Exp'])[2:5]), 
                         axis=1, 
@@ -965,8 +972,8 @@ def main():
                         df_row['EVENT NAME'].iloc[:9] = event_name
 
                         df_row['MARKET TYPE NAME'].iloc[:3] = 'Total offsides {line} Over'
-                        df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total offsides Over'
-                        df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total offsides Over'
+                        df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total offsides {line} Over'
+                        df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total offsides {line} Over'
 
                         df_row['LINE'].iloc[0] = row['T_-1_line']
                         df_row['LINE'].iloc[1] = row['T_main_line']
@@ -1075,7 +1082,7 @@ def main():
 
 
             except Exception as e:
-                st.write(f'An error has occurred whilst compiling: {e}')
+                st.write(f'An error occured: {e}')
 
     # -------------------------------------------------------------------------------
 
