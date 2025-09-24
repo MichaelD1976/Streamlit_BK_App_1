@@ -814,28 +814,34 @@ def main():
     st.write("")
     st.subheader(f'Generate odds for all upcoming {selected_league} matches (up to 7 days ahead)')
 
-    column1,column2 = st.columns([1,2])
+    column1,column2, _ = st.columns([1.5,1.5,1])
 
     with column1:
         # WIDGET
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.09, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.06, min_value=0.95, max_value=1.1, key='bias_to_apply', label_visibility = 'visible')
 
+    with column2:
+        # GET FIXTURES UP TO DATE
+        today = datetime.now()
+        max_up_to_date = today + timedelta(days=7)
+        up_to_date = st.date_input(
+            "To Date - return fixtures up to and including selected date (defaulted to 7 days from today)",
+            max_value = max_up_to_date,
+            value = max_up_to_date,
+            label_visibility = 'visible'
+        )
+
     generate_odds_all_matches = st.button(f'Click to generate')
 
     if generate_odds_all_matches:
         with st.spinner("Odds being compiled..."):
             try:
-
-                # GET FIXTURES WEEK AHEAD
-                today = datetime.now()
-                to_date = today + timedelta(days=7)
                 from_date_str = today.strftime("%Y-%m-%d")
-                to_date_str = to_date.strftime("%Y-%m-%d")
+                to_date_str = up_to_date.strftime("%Y-%m-%d")
                 MARKET_IDS = ['1', '5']             # WDW & Ov/Un
                 BOOKMAKERS = ['4']                  # Pinnacle = 4, 365 = 8
                 API_SEASON = CURRENT_SEASON[:4]
-
 
                 df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
 

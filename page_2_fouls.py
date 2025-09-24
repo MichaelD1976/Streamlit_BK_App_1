@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import time
+from scipy.optimize import minimize_scalar
 # import statsmodels.api as sm
 # import matplotlib.pyplot as plt
 from scipy.stats import poisson, nbinom
@@ -565,7 +566,7 @@ def main():
 
     st.subheader(f'Generate Odds for all upcoming {selected_league} matches (up to 7 days ahead)')
 
-    column1, _ = st.columns([1,2])
+    column1,column2, _ = st.columns([1.5,1.5,1])
 
     with column1:
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
@@ -573,20 +574,32 @@ def main():
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.15, min_value=1.00, max_value=1.30, key='bias_to_apply', label_visibility = 'visible')
         is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=True)
 
+    with column2:
+        # GET FIXTURES UP TO DATE
+        today = datetime.now()
+        max_up_to_date = today + timedelta(days=7)
+        up_to_date = st.date_input(
+            "To Date - return fixtures up to and including selected date (defaulted to 7 days from today)",
+            max_value = max_up_to_date,
+            value = max_up_to_date,
+            label_visibility = 'visible'
+        )
+
+        ###########################  FUDGE CODE TO TEST HOW FAR TO PUSH OUT OVERS  - remove once tested ##########
+        over_perc_mults = [1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.4, 1.5]
+        overs_multiple = st.selectbox('[TEST] Select multiple to increase overs expectation - applied to Home/Away exps',over_perc_mults)
+        ###########################################################################################################
+
     generate_odds_all_matches = st.button(f'Click to generate')
 
     if generate_odds_all_matches:    
         with st.spinner("Odds being compiled..."):
             try:
-                # GET FIXTURES WEEK AHEAD
-                today = datetime.now()
-                to_date = today + timedelta(days=7)
                 from_date_str = today.strftime("%Y-%m-%d")
-                to_date_str = to_date.strftime("%Y-%m-%d")
+                to_date_str = up_to_date.strftime("%Y-%m-%d")
                 MARKET_IDS = ['1', '5']             # WDW & Ov/Un
                 BOOKMAKERS = ['4']                  # Pinnacle = 4, 365 = 8
                 API_SEASON = CURRENT_SEASON[:4]
-
 
                 df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
                 if df_fixtures.empty:
@@ -628,7 +641,9 @@ def main():
                                 'Draw': None,
                                 'Away Win': None,
                                 'Over 2.5': None,
-                                'Under 2.5': None
+                                'Under 2.5': None,
+                                'Over 3.5': None,
+                                'Under 3.5': None
                             }
 
                             # Loop through bookmakers
@@ -653,6 +668,10 @@ def main():
                                                     odds_dict['Over 2.5'] = odd
                                                 elif selection == 'Under 2.5':
                                                     odds_dict['Under 2.5'] = odd
+                                                elif selection == 'Over 3.5':
+                                                    odds_dict['Over 3.5'] = odd
+                                                elif selection == 'Under 3.5':
+                                                    odds_dict['Under 3.5'] = odd
 
                             # Create a DataFrame with a single row containing all the odds
                             odds_df = pd.DataFrame([odds_dict])
@@ -677,12 +696,58 @@ def main():
                     # Use groupby and fillna to collapse rows and remove None values
                     df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
                         all_odds_df.groupby('Fixture ID').last()).reset_index()
+                    
+
+                    ########### FILL ANY NONE VALUE ROWS in Over/Under 2.5 Goals columns based on values in the O/U 3.5 columns ###########
+
+                    # first make relevant columns numeric
+                    for col in ["Over 3.5", "Under 3.5", "Over 2.5", "Under 2.5"]:
+                        df_collapsed[col] = pd.to_numeric(df_collapsed[col], errors="coerce")
+
+                    # function to generated implied ou2.5 FROM ou3.5    
+                    def implied_ou_line(o_odds, u_odds, source_line=3.5, target_line=2.5):
+                        """Infer O/U target_line odds given O/U source_line odds using a Poisson model."""
+                        if pd.isna(o_odds) or pd.isna(u_odds):
+                            return None, None
+
+                        # Step 1: Convert odds to normalized probabilities
+                        raw_probs = np.array([1/o_odds, 1/u_odds])
+                        norm_probs = raw_probs / raw_probs.sum()
+                        p_over_source = norm_probs[0]
+
+                        # Step 2: Solve for lambda using the source line
+                        def objective(lmbda):
+                            p_model = 1 - poisson.cdf(int(source_line), lmbda)
+                            return (p_model - p_over_source) ** 2
+
+                        res = minimize_scalar(objective, bounds=(0.2, 6), method="bounded")
+                        lam = res.x
+
+                        # Step 3: Compute probabilities at target line
+                        p_over_target = 1 - poisson.cdf(int(target_line), lam)
+                        p_under_target = 1 - p_over_target
+
+                        return 1/p_over_target, 1/p_under_target
+                    
+                    # Apply above function to each row which might be missing the ou2.5 values
+                    def fill_missing_ou25(df):
+                        for i, row in df.iterrows():
+                            if pd.isna(row["Over 2.5"]) or pd.isna(row["Under 2.5"]):
+                                o25, u25 = implied_ou_line(row["Over 3.5"], row["Under 3.5"],
+                                                        source_line=3.5, target_line=2.5)
+                                df.at[i, "Over 2.5"] = o25
+                                df.at[i, "Under 2.5"] = u25
+                        return df
+                    
+                    df_collapsed = fill_missing_ou25(df_collapsed)
+
+                    ###########################################################################################
 
                     # st.write(df_collapsed)
 
                     # Merge odds df_fixts with df_collapsed
                     df = df_fixts.merge(df_collapsed, on='Fixture ID')
-                    df = df.dropna(subset=['Home Win', 'Draw', 'Away Win', 'Over 2.5', 'Under 2.5'])
+                    df = df.dropna(subset=['Home Win', 'Draw', 'Away Win', 'Over 2.5', 'Under 2.5', 'Over 3.5', 'Under 3.5'])
                     # st.write(df)
                     if df.empty:
                         st.write('Odds currently unavailable from API') 
@@ -862,6 +927,9 @@ def main():
                         ]
 
                         df['HF_Exp'] = round(df['HF_Exp_initial'] * np.select(conditions, choices, default=1.0), 2)
+                        ##############################  TEMP OVERS FUDGE ADJ - remove once tested ##################
+                        df['HF_Exp'] = round(df['HF_Exp'] * overs_multiple,2)
+                        #############################################################################################
                         # --------------------------------------------------                        
 
                         # Calculate additional metrics using the prediction
@@ -925,6 +993,9 @@ def main():
                         ]
 
                         df['AF_Exp'] = round(df['AF_Exp_initial'] * np.select(conditions, choices, default=1.0), 2)
+                        ##############################  TEMP OVERS FUDGE ADJ - remove once tested ##################
+                        df['AF_Exp'] = round(df['AF_Exp'] * overs_multiple,2)
+                        #############################################################################################
                         # -----------------------------------------------------
 
                         # calculate_corners_lines_and_odds(prediction)
