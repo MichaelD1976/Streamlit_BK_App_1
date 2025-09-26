@@ -617,12 +617,12 @@ def main():
                 from_date_str = today.strftime("%Y-%m-%d")
                 to_date_str = up_to_date.strftime("%Y-%m-%d")
                 MARKET_IDS = ['1', '5']             # WDW & Ov/Un
-                BOOKMAKERS = ['4']                  # Pinnacle = 4, 365 = 8
+                BOOKMAKERS = ['4']                  # Pinnacle = 4, 365 = 8, Uni = 16, BF = 3
                 API_SEASON = CURRENT_SEASON[:4]
 
                 
                 df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
-                # st.write('616', df_fixtures)
+                # st.write('625', df_fixtures)
                 if df_fixtures.empty:
                     st.write("No data returned for the specified league and date range.")
                 else:
@@ -703,22 +703,24 @@ def main():
                     # Collect odds for all fixtures
                     all_odds_df = pd.DataFrame()  # DataFrame to collect all odds
 
-                    # st.write('691', fixt_id_list)
+                    # st.write('706', fixt_id_list)
 
                     # Iterate through each fixture ID and get odds
                     for fixture_id in fixt_id_list:
                         for market_id in MARKET_IDS:
                             odds_df = get_odds(fixture_id, market_id, BOOKMAKERS)
-                            # st.write(odds_df)
+                            # st.write('712',odds_df)
                             if not odds_df.empty:
                                 all_odds_df = pd.concat([all_odds_df, odds_df], ignore_index=True)
 
                     # Display the collected odds
-                    # st.write('702', all_odds_df)
+                    # st.write('717', all_odds_df)
 
                     # Use groupby and fillna to collapse rows and remove None values
                     df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
                         all_odds_df.groupby('Fixture ID').last()).reset_index()
+                    
+                    # st.write('723', df_collapsed)
 
                     ########### FILL ANY NONE VALUE ROWS in Over/Under 2.5 Goals columns based on values in the O/U 3.5 columns ###########
 
@@ -762,13 +764,14 @@ def main():
                         return df
                     
                     df_collapsed = fill_missing_ou25(df_collapsed)
+                    # st.write('767', df_collapsed)
 
                     ###########################################################################################
 
+                    # st.write('771', df_fixts)
                     # Merge odds df_fixts with df_collapsed
                     df = df_fixts.merge(df_collapsed, on='Fixture ID')
-                    df = df.dropna()
-                    # st.write('712', df)
+                    # st.write('775', df)
 
                     if df.empty:
                         st.write('Odds currently unavailable from API') 

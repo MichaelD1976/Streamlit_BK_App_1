@@ -747,7 +747,7 @@ def main():
 
                     # Merge odds df_fixts with df_collapsed
                     df = df_fixts.merge(df_collapsed, on='Fixture ID')
-                    df = df.dropna(subset=['Home Win', 'Draw', 'Away Win', 'Over 2.5', 'Under 2.5', 'Over 3.5', 'Under 3.5'])
+
                     # st.write(df)
                     if df.empty:
                         st.write('Odds currently unavailable from API') 

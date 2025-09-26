@@ -738,7 +738,6 @@ def main():
 
                     # Merge odds df_fixts with df_collapsed
                     df = df_fixts.merge(df_collapsed, on='Fixture ID')
-                    df = df.dropna()
 
                     del df_collapsed
                     gc.collect()
