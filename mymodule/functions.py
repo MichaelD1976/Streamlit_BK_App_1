@@ -167,7 +167,7 @@ team_names_t1x2_to_BK_dict = {
     'Union Berlin': 'Union Berlin', # same
     'Werder Bremen': 'Werder Bremen', # same
     'Wolsburg': 'Wolfsburg',
-    'Hamburg': 'Hamburger',
+    'Hamburg': 'Hamburg',
     'FC Koln': 'Cologne',
 
     'AC Milan': 'Milan',
