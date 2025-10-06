@@ -22,17 +22,18 @@ TOTALS_BOOST = 1.01
 
 
 # Functions to calc offsides (more mem efficient than storing joblib files)
+# Taken from OFFSIDES_MODEL_1_Jan_25.ipynb in jupyter 
 
 # x1 = home win %, x2 = HT_mix
 def exp_home_offsides(x1, x2):
-    # Home team (Negative Binomial with Log Link)
+    # Home - uses a Negative Binomial with Log Link
     mu_home = np.exp(0.0979 + 0.1816 * x1 + 0.2003 * x2)
 
     return mu_home
 
 # x1 = away win %, x2 = AT_mix
 def exp_away_offsides(x1, x2):
-    # Home team (Negative Binomial with Log Link)
+    # Away - uses a linear model
     mu_away = 0.4334 + 0.5091 * x1 + 0.6005 * x2
 
     return mu_away
