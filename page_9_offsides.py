@@ -7,7 +7,7 @@ from scipy.stats import poisson, nbinom
 from scipy.optimize import minimize_scalar
 # from sklearn.preprocessing import PolynomialFeatures
 # import joblib
-from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, calculate_true_from_true_raw, poisson_probabilities, team_names_t1x2_to_BK_dict
+from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, calculate_true_from_true_raw, calculate_expected_team_goals_from_1x2_refined, poisson_probabilities, team_names_t1x2_to_BK_dict
 import requests
 import os
 from dotenv import load_dotenv
@@ -22,21 +22,25 @@ TOTALS_BOOST = 1.01
 
 
 # Functions to calc offsides (more mem efficient than storing joblib files)
-# Taken from OFFSIDES_MODEL_1_Jan_25.ipynb in jupyter 
+# Taken from OFFSIDES_MODELLING_PROJECT in github repo
 
-# x1 = home win %, x2 = HT_mix
-def exp_home_offsides(x1, x2):
-    # Home - uses a Negative Binomial with Log Link
-    mu_home = np.exp(0.0979 + 0.1816 * x1 + 0.2003 * x2)
+def predict_home_offsides(HG_Exp, ht_h_r_av_f, at_a_r_av_ag):
+    h_pred_raw = np.exp(-0.2340
+                + 0.0607 * HG_Exp
+                + 0.1257 * ht_h_r_av_f
+                + 0.2692 * at_a_r_av_ag) 
+    correction_adj = -0.0654 * h_pred_raw + 0.1216
+    h_pred = h_pred_raw + correction_adj
+    return h_pred
 
-    return mu_home
-
-# x1 = away win %, x2 = AT_mix
-def exp_away_offsides(x1, x2):
-    # Away - uses a linear model
-    mu_away = 0.4334 + 0.5091 * x1 + 0.6005 * x2
-
-    return mu_away
+def predict_away_offsides(AG_Exp, ht_h_r_av_ag, at_a_r_av_f):
+    a_pred_raw = np.exp(-0.3112
+                + 0.1024 * AG_Exp
+                + 0.2877 * ht_h_r_av_ag
+                + 0.1250 * at_a_r_av_f) 
+    correction_adj = -0.0500 * a_pred_raw + 0.0868
+    a_pred = a_pred_raw + correction_adj   
+    return a_pred
 
 
 # key = current gw, value is perc of last season
@@ -164,7 +168,7 @@ def main():
         st.caption('''
                  Evaluation metrics show non-robust model performance. Likely due to teams alternating tactics depending on oppsition.
                  Not recommended to publish standalone lines unless for marketing purposes or if offering an overs price only with extra margin added.
-                 Fine to use as a reference to position ourselves within an established market.
+                 Fine to use as a reference to position ourselves within an established market or 'overs-only' offering with large margin
                  ''')
 
     # get fixtures
@@ -754,17 +758,13 @@ def main():
                     df['Draw'] = pd.to_numeric(df['Draw'], errors='coerce')
                     df['Away Win'] = pd.to_numeric(df['Away Win'], errors='coerce')
 
-                    df['margin'] = 1/df['Home Win'] + 1/df['Draw'] + 1/df['Away Win']
+                    df['Over 2.5'] = pd.to_numeric(df['Over 2.5'], errors='coerce')
+                    df['Under 2.5'] = pd.to_numeric(df['Under 2.5'], errors='coerce')
 
-                    df['h_pc_true_raw'] = (1 / df['Home Win']) / df['margin']
-                    df['d_pc_true_raw'] = (1 / df['Draw']) / df['margin'] 
-                    df['a_pc_true_raw'] = (1 / df['Away Win']) / df['margin'] 
-
-                    df[['h_pc_true', 'd_pc_true', 'a_pc_true']] = df.apply(
-                        lambda row: calculate_true_from_true_raw(row['h_pc_true_raw'], row['d_pc_true_raw'], row['a_pc_true_raw'], row['margin']), 
-                        axis=1, result_type='expand')
                     
-                
+                    df[['hg_ex', 'ag_ex']] = df.apply(
+                        lambda row: calculate_expected_team_goals_from_1x2_refined(row['Home Win'], row['Draw'], row['Away Win'], row['Over 2.5'], row['Under 2.5']), 
+                        axis=1, result_type='expand')                
 
                     # ------------------  Incorporate into the df stats from df_mix ------------------
                     # Merge for the Home Team
@@ -791,15 +791,10 @@ def main():
 
                     # ------------------------ APPLY MODELS ---------------------------------------
 
-                    df['h_lg_avg'] = h_lg_avg
-                    df['a_lg_avg'] = a_lg_avg
-                    df['ht_mix'] = df['H_h_for'] * 0.35 + df['A_a_ag'] * 0.35 + df['h_lg_avg'] * 0.3
-                    df['at_mix'] = df['A_a_for'] * 0.35 + df['H_h_ag'] * 0.35 + df['a_lg_avg'] * 0.3
-                    # df['const'] = 1
 
-
-                    df['HO_Exp'] = round(exp_home_offsides(df['h_pc_true'], df['ht_mix']) * OVERS_BOOST, 2)
-                    df['AO_Exp'] = round(exp_away_offsides(df['a_pc_true'], df['at_mix']) * OVERS_BOOST, 2)
+                    df['HO_Exp'] = round(predict_home_offsides(df['hg_ex'], df['H_h_for'], df['A_a_ag']), 2)
+                    df['AO_Exp'] = round(predict_away_offsides(df['ag_ex'], df['H_h_ag'], df['A_a_for']), 2)
+                    df['TO_Exp'] = df['HO_Exp'] + df['AO_Exp']
                     # st.write(df) 
 
                     ##############################  TEMP OVERS FUDGE ADJ - remove once tested ##################
@@ -807,7 +802,6 @@ def main():
                     df['AO_Exp'] = round(df['AO_Exp'] * overs_multiple,2)
                     #############################################################################################
 
-                    df['TO_Exp'] = df['HO_Exp'] + df['AO_Exp']
                     # st.write('739', df[['HO_Exp', 'AO_Exp', 'TO_Exp']]) 
 
                     try:
@@ -1199,10 +1193,42 @@ def main():
         if margin < 1:
             st.warning('Margin must be > 1.00 !')
 
+        #  -----------   Ov/Und Odds and HG/AG Expectation calculation  -----------------
+        col1,col2,col3, _ , _ = st.columns([1,1,1,1,5])
+        with col1:
+            try:
+                ov_odds = float(st.text_input('Over 2.5 Odds', value = 1.9, label_visibility = 'visible')) # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+        with col2:
+            try:
+                un_odds = float(st.text_input('Under 2.5 Odds', value = 1.9, label_visibility = 'visible')) # WIDGET
+            except ValueError:
+                    st.error("Please enter a valid number.")
+
+        margin_ou = round(1/ov_odds + 1/un_odds, 2)
+
+        ov_pc_true_raw = 1/(ov_odds * margin_ou)
+        un_pc_true_raw = 1/(un_odds * margin_ou)
+
+        with col3:
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write('Margin:', margin_ou)
 
 
+        # Error message if < 100 %
+        if margin_ou < 1:
+            st.warning('Odds must be > 1.00 !')
 
-        h_pc_true, d_pc_true, a_pc_true = calculate_true_from_true_raw(h_pc_true_raw, d_pc_true_raw, a_pc_true_raw, margin)
+        # --------------------------------------------------------
+
+
+        _ , d_pc_true, _ = calculate_true_from_true_raw(h_pc_true_raw, d_pc_true_raw, a_pc_true_raw, margin)
+
+        # takes match and goals odds as args and returns hg and ag
+        hg_ex, ag_ex = calculate_expected_team_goals_from_1x2_refined(h_pc_true_raw, d_pc_true_raw, a_pc_true_raw, ov_pc_true_raw , un_pc_true_raw)
 
         # st.write('h_pc_true, d_pc_true, a_pc_true', h_pc_true, d_pc_true, a_pc_true)
 
@@ -1210,27 +1236,17 @@ def main():
         with cls1:
             st.subheader('Home')
             ht_h_for = st.number_input('Avg home team home Offsides - for')
-            # ht_a_for = st.number_input('Avg home team away Offsides - for')
             at_a_ag = st.number_input('Avg away team away Offsides - against')
-            # at_h_ag = st.number_input('Avg away team home Offsides - against')
-            h_lg_avg = st.number_input('League avg (all teams) of home team')
             st.write("---")
 
         with cls3:
             st.subheader('Away')
             at_a_for = st.number_input('Avg away team away Offsides - for')
-            # at_h_for = st.number_input('Avg away team home Offsides - for')
-            # ht_a_ag = st.number_input('Avg home team away Offsides - against')
             ht_h_ag = st.number_input('Avg home team home Offsides - against')
-            a_lg_avg = st.number_input('League avg (all teams) of away team')
             st.write("---")
 
-        ht_mix_single = ht_h_for * 0.35 + at_a_ag * 0.35 + h_lg_avg * 0.3
-        at_mix_single = at_a_for * 0.35 + ht_h_ag * 0.35 + a_lg_avg * 0.3
-
-        h_off_exp = exp_home_offsides(h_pc_true, ht_mix_single)
-        a_off_exp = exp_away_offsides(a_pc_true, at_mix_single)
-
+        h_off_exp = predict_home_offsides(hg_ex, ht_h_for, at_a_ag)
+        a_off_exp = predict_away_offsides(ag_ex, ht_h_ag, at_a_for)
 
 
         # -------------  Additional factors  ---------
