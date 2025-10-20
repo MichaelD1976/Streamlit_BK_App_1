@@ -587,7 +587,7 @@ def main():
 
         ###########################  FUDGE CODE TO TEST HOW FAR TO PUSH OUT OVERS  - remove once tested ##########
         over_perc_mults = [1, 1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.4, 1.5]
-        overs_multiple = st.selectbox('[TEST] Select multiple to increase overs expectation - applied to Home/Away exps',over_perc_mults)
+        overs_multiple = st.selectbox('[TEST] Select multiple to increase overs expectation - applied to Home/Away exps. Keep as 1 unless testing.',over_perc_mults)
         ###########################################################################################################
 
     generate_odds_all_matches = st.button(f'Click to generate')

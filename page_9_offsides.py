@@ -42,6 +42,24 @@ def predict_away_offsides(AG_Exp, ht_h_r_av_ag, at_a_r_av_f):
     a_pred = a_pred_raw + correction_adj   
     return a_pred
 
+# -----------------------------------------------------------
+# The model does not react enough to teams that play an agressively high line. Use this dict to multiple opposition offsides prediction
+# Guide team average aginst and multiple to apply: Use t1x2 team graphics (offsides) - Total Avg Match
+# 5+: 1.3
+# 4.5 - 5: 1.25
+# 4 - 4.5: 1.2
+# 3.5 - 4: 1.15
+# 3 - 3.5: + 1.1
+
+outlier_teams_dict = {
+    'Barcelona': 1.25,         # Oct - avg offsides against = 4.87
+    'Ath Bilbao': 1.2,          # Oct - 4.27
+    'Valencia': 1.1,            # Oct - 3.5
+    'Ein Frankfurt': 1.15,     # Oct - 3.84
+    'Nantes': 1.1              # Oct - avg offsides against = 3.4
+}
+
+# ------------------------------------------------------------
 
 # key = current gw, value is perc of last season
 game_week_decay_dict = {
@@ -84,8 +102,6 @@ def load_data():
 
 
 # -------------------------------------------
-
-
 
 def main():
     with st.spinner('Loading Data...'):
@@ -789,11 +805,17 @@ def main():
 
                     # st.write('723:', df) 
 
+                    # outlier_team_dict - fudge to account for aggressive high line teams
+                    df['outlier_mult_h'] = df['Home Team'].map(outlier_teams_dict).fillna(1)
+                    df['outlier_mult_a'] = df['Away Team'].map(outlier_teams_dict).fillna(1)
+
+                    # st.write('1058', df) 
+
                     # ------------------------ APPLY MODELS ---------------------------------------
 
 
-                    df['HO_Exp'] = round(predict_home_offsides(df['hg_ex'], df['H_h_for'], df['A_a_ag']), 2)
-                    df['AO_Exp'] = round(predict_away_offsides(df['ag_ex'], df['H_h_ag'], df['A_a_for']), 2)
+                    df['HO_Exp'] = round(predict_home_offsides(df['hg_ex'], df['H_h_for'], df['A_a_ag']) * df['outlier_mult_a'], 2)
+                    df['AO_Exp'] = round(predict_away_offsides(df['ag_ex'], df['H_h_ag'], df['A_a_for']) * df['outlier_mult_h'], 2)
                     df['TO_Exp'] = df['HO_Exp'] + df['AO_Exp']
                     # st.write(df) 
 
@@ -1012,7 +1034,7 @@ def main():
 
                     for idx, row in df_final_wm.iterrows():
                         # Create an empty DataFrame with 9 rows and specified columns
-                        df_row = pd.DataFrame(index=range(9), columns=columns)
+                        df_row = pd.DataFrame(index=range(3), columns=columns)              # Change to 9 when individual teams added
 
                         # create category_lg variable
                         if selected_league.startswith("South Africa"):
@@ -1028,37 +1050,37 @@ def main():
                         event_name = row['Home Team Alligned'] + " vs " + row["Away Team Alligned"]
 
                         # Set the specific columns
-                        df_row['EVENT TYPE'].iloc[:9] = 'Match'
-                        df_row['SPORT'].iloc[:9] = 'Football'
-                        df_row['CATEGORY'].iloc[:9] = category_lg
-                        df_row['COMPETITION'].iloc[:9] = competition
-                        df_row['EVENT NAME'].iloc[:9] = event_name
+                        df_row['EVENT TYPE'].iloc[:3] = 'Match' # make [:9] when team offsides offered
+                        df_row['SPORT'].iloc[:3] = 'Football'
+                        df_row['CATEGORY'].iloc[:3] = category_lg
+                        df_row['COMPETITION'].iloc[:3] = competition
+                        df_row['EVENT NAME'].iloc[:3] = event_name
 
                         df_row['MARKET TYPE NAME'].iloc[:3] = 'Total offsides {line} Over'
-                        df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total offsides {line} Over'
-                        df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total offsides {line} Over'
+                        # df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total offsides {line} Over'
+                        # df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total offsides {line} Over'
 
                         df_row['LINE'].iloc[0] = row['T_-1_line']
                         df_row['LINE'].iloc[1] = row['T_main_line']
                         df_row['LINE'].iloc[2] = row['T_+1_line']
-                        df_row['LINE'].iloc[3] = row['h_-1_line']
-                        df_row['LINE'].iloc[4] = row['h_main_line']
-                        df_row['LINE'].iloc[5] = row['h_+1_line']
-                        df_row['LINE'].iloc[6] = row['a_-1_line']
-                        df_row['LINE'].iloc[7] = row['a_main_line']
-                        df_row['LINE'].iloc[8] = row['a_+1_line']
+                        # df_row['LINE'].iloc[3] = row['h_-1_line']
+                        # df_row['LINE'].iloc[4] = row['h_main_line']
+                        # df_row['LINE'].iloc[5] = row['h_+1_line']
+                        # df_row['LINE'].iloc[6] = row['a_-1_line']
+                        # df_row['LINE'].iloc[7] = row['a_main_line']
+                        # df_row['LINE'].iloc[8] = row['a_+1_line']
 
-                        df_row['SELECTION NAME'].iloc[:9] = 'over {line}'
+                        df_row['SELECTION NAME'].iloc[:3] = 'over {line}'  # make [:9] when team offsides offered
 
                         df_row['PRICE'].iloc[0] = row['T_-1_ov_w.%']
                         df_row['PRICE'].iloc[1] = row['T_main_ov_w.%']
                         df_row['PRICE'].iloc[2] = row['T_+1_ov_w.%']
-                        df_row['PRICE'].iloc[3] = row['h_-1_ov_w.%']
-                        df_row['PRICE'].iloc[4] = row['h_main_ov_w.%']
-                        df_row['PRICE'].iloc[5] = row['h_+1_ov_w.%']
-                        df_row['PRICE'].iloc[6] = row['a_-1_ov_w.%']
-                        df_row['PRICE'].iloc[7] = row['a_main_ov_w.%']
-                        df_row['PRICE'].iloc[8] = row['a_+1_ov_w.%']
+                        # df_row['PRICE'].iloc[3] = row['h_-1_ov_w.%']
+                        # df_row['PRICE'].iloc[4] = row['h_main_ov_w.%']
+                        # df_row['PRICE'].iloc[5] = row['h_+1_ov_w.%']
+                        # df_row['PRICE'].iloc[6] = row['a_-1_ov_w.%']
+                        # df_row['PRICE'].iloc[7] = row['a_main_ov_w.%']
+                        # df_row['PRICE'].iloc[8] = row['a_+1_ov_w.%']
 
                         # Dates & Times (already preprocessed)
                         start_date = row["START DATE"]
@@ -1081,66 +1103,66 @@ def main():
                     st.write(df_fmh_format)
 
             
-                    #  ----- Calculate Daily Total OFFSIDES --------
+                    # #  ----- Calculate Daily Total OFFSIDES --------
 
-                    # Convert to datetime
-                    df_final_wm['Date'] = pd.to_datetime(df_final_wm['Date'], format="%d-%m-%y %H:%M", errors="coerce")
+                    # # Convert to datetime
+                    # df_final_wm['Date'] = pd.to_datetime(df_final_wm['Date'], format="%d-%m-%y %H:%M", errors="coerce")
 
-                    # Group by the day only (ignoring time)
-                    df_final_wm['Day'] = df_final_wm['Date'].dt.date  # Extract just the date (day)
+                    # # Group by the day only (ignoring time)
+                    # df_final_wm['Day'] = df_final_wm['Date'].dt.date  # Extract just the date (day)
 
-                    aggregated_offs = df_final_wm.groupby('Day').agg(
-                        TO=('TO_Exp', 'sum'), 
-                        Match_Count=('TO_Exp', 'size')
-                    ).reset_index()
+                    # aggregated_offs = df_final_wm.groupby('Day').agg(
+                    #     TO=('TO_Exp', 'sum'), 
+                    #     Match_Count=('TO_Exp', 'size')
+                    # ).reset_index()
 
-                    df_result_offs = aggregated_offs[aggregated_offs['Match_Count'] >= 2]
-
-
-                    # ------- Get increment prior to calling poisson functions for Daily Totals  --------------------------------
-
-                    def calculate_increment(main_line):
-                        """Determine increment based on main_line value."""
-                        if main_line > 35:
-                            return 3
-                        elif main_line > 14:
-                            return 2
-                        return 1
+                    # df_result_offs = aggregated_offs[aggregated_offs['Match_Count'] >= 2]
 
 
-                    # ---------------------------------------------------
+                    # # ------- Get increment prior to calling poisson functions for Daily Totals  --------------------------------
 
-                    st.subheader("", divider='blue')
-                    st.subheader('Total Daily Offsides')
-                    st.write("")
-                    # if df_result_offs.shape[0] < 2:
-                    #     st.caption('Less than two matches')
+                    # def calculate_increment(main_line):
+                    #     """Determine increment based on main_line value."""
+                    #     if main_line > 35:
+                    #         return 3
+                    #     elif main_line > 14:
+                    #         return 2
+                    #     return 1
 
-                    st.write(df_result_offs)
-                    st.warning('Check correct number of fixtures have been logged for each day', icon="⚠️")
 
-                    # Get poisson odds and lines for each day returned for Daily SOT
-                    for _, row in df_result_offs.iterrows():
-                        exp = row['TO'] * 1/OVERS_BOOST * TOTALS_BOOST
-                        day = row['Day']
-                        main_line = np.floor(exp) + 0.5
+                    # # ---------------------------------------------------
 
-                        increment = calculate_increment(main_line)
+            #         st.subheader("", divider='blue')
+            #         st.subheader('Total Daily Offsides')
+            #         st.write("")
+            #         # if df_result_offs.shape[0] < 2:
+            #         #     st.caption('Less than two matches')
 
-                        line_minus_1 = main_line - increment
-                        line_minus_2 = main_line - increment * 2
-                        line_plus_1 = main_line + increment
-                        line_plus_2 = main_line + increment * 2
+            #         st.write(df_result_offs)
+            #         st.warning('Check correct number of fixtures have been logged for each day', icon="⚠️")
 
-                        probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
+            #         # Get poisson odds and lines for each day returned for Daily SOT
+            #         for _, row in df_result_offs.iterrows():
+            #             exp = row['TO'] * 1/OVERS_BOOST * TOTALS_BOOST
+            #             day = row['Day']
+            #             main_line = np.floor(exp) + 0.5
 
-                        st.caption(f"{day} (100% Prices)")
-                        st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
-                        st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
-                        st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
-                        st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
-                        st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
-                        st.write("")
+            #             increment = calculate_increment(main_line)
+
+            #             line_minus_1 = main_line - increment
+            #             line_minus_2 = main_line - increment * 2
+            #             line_plus_1 = main_line + increment
+            #             line_plus_2 = main_line + increment * 2
+
+            #             probabilities = poisson_probabilities(exp, main_line, line_minus_1, line_plus_1, line_minus_2, line_plus_2)
+
+            #             st.caption(f"{day} (100% Prices)")
+            #             st.write(f'(Line {line_plus_2}) - Over', round(1 / probabilities[f'over_plus_2 {line_plus_2}'], 2), f'Under', round(1 / probabilities[f'under_plus_2 {line_plus_2}'], 2))
+            #             st.write(f'(Line {line_plus_1}) - Over', round(1 / probabilities[f'over_plus_1 {line_plus_1}'], 2), f'Under', round(1 / probabilities[f'under_plus_1 {line_plus_1}'], 2))
+            #             st.write(f'**(Main Line {main_line}) - Over**', round(1 / probabilities[f'over_main {main_line}'], 2), f'**Under**', round(1 / probabilities[f'under_main {main_line}'], 2))
+            #             st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
+            #             st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
+            #             st.write("")
 
 
 
