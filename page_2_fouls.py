@@ -572,7 +572,7 @@ def main():
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
         # over bias set to 1.07 pre overs only being published
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.15, min_value=1.00, max_value=1.30, key='bias_to_apply', label_visibility = 'visible')
-        is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=True)
+        is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=False)
 
     with column2:
         # GET FIXTURES UP TO DATE
@@ -618,7 +618,7 @@ def main():
                         # Use Streamlit secrets in production
                         API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
 
-                    @st.cache_data
+                    @st.cache_resource
                     def get_odds(fixture_id, market_id, bookmakers):
                         url = "https://api-football-v1.p.rapidapi.com/v3/odds"
                         headers = {

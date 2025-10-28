@@ -861,7 +861,7 @@ def main():
                         # Use Streamlit secrets in production
                         API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
 
-                    @st.cache_data
+                    @st.cache_resource
                     def get_odds(fixture_id, market_id, bookmakers):
                         url = "https://api-football-v1.p.rapidapi.com/v3/odds"
                         headers = {

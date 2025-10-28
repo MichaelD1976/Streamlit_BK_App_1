@@ -78,6 +78,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 28/10/25 Models - BST toggle default to off. API cache_resource amendment
                      - 13/10/25 Models - new offsides model deployed (improvement in handling outlier teams)
                      - 22/09/25 Models - current and previous stat averages added for selected league
                      - 15/09/25 Player Stats 25-26 available

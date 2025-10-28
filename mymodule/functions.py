@@ -205,7 +205,7 @@ team_names_t1x2_to_BK_dict = {
 
 
 # Function to fetch data from the API for fixtures
-@st.cache_data
+@st.cache_resource
 def get_fixtures(league_id, from_date, to_date, API_SEASON):
 
     if not st.secrets:
@@ -484,7 +484,7 @@ def calculate_true_from_true_raw(h_pc_true_raw , d_pc_true_raw , a_pc_true_raw, 
 
 # ---------------------------------------------------------------------
 
-@st.cache_data
+@st.cache_resource
 def get_odds(fixture_id, market_id, bookmakers):
 
     if not st.secrets:
