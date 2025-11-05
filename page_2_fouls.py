@@ -10,7 +10,7 @@ from scipy.optimize import minimize_scalar
 from scipy.stats import poisson, nbinom
 from sklearn.preprocessing import PolynomialFeatures
 import joblib
-from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities, calculate_true_from_true_raw, team_names_t1x2_to_BK_dict
+from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities, calculate_true_from_true_raw, team_names_t1x2_to_BK_dict, generate_marginated_odds_with_fav_lock
 import requests
 import os
 from dotenv import load_dotenv
@@ -1115,6 +1115,20 @@ def main():
                             df_final[ov_col] = (df_final[ov_col] / scale_factor).round(2)
 
 
+                    # Add margin for most sot using function - home/away/tie
+                    df_final[['H_most_w.%', 'Tie_w.%', 'A_most_w.%']] = df_final.apply(
+                        lambda x: pd.Series(
+                            generate_marginated_odds_with_fav_lock(
+                                [x['H_most'], x['Tie'], x['A_most']], 
+                                margin_to_apply
+                            )
+                        ),
+                        axis=1
+                    )
+
+                    # round to 1 dp so 12.92 -> 12.9 etc
+                    df_final['Tie_w.%'] = df_final['Tie_w.%'].round(1)
+
                     # Create a copy of the DataFrame with the new columns added
                     df_final_wm = df_final.copy()
 
@@ -1233,15 +1247,73 @@ def main():
                         df_row['OFFER END TIME'] = start_time
                         df_row['PUBLISHED'] = 'YES' #7
 
-
                         # Finally, append to list
                         rows_list.append(df_row)
 
 
                     # Concatenate all blocks into one DataFrame
                     df_fmh_format = pd.concat(rows_list, ignore_index=True)
-                    st.subheader('FMH Format')
+                    st.subheader('FMH Format - Over/Under Lines')
                     st.write(df_fmh_format)
+
+
+                    # ----- FORMAT FMH UPLOAD H-H ------------
+
+                    rows_list_hh = []
+
+                    for idx, row in df_final_wm.iterrows():
+                        df_row_hh = pd.DataFrame(index=range(3), columns=columns)
+
+                        # Extract relevant values
+                        event_name = row['Home Team Alligned'] + " vs " + row["Away Team Alligned"]
+
+                        df_row_hh['EVENT TYPE'] = 'Match'
+                        df_row_hh['SPORT'] = 'Football'
+
+                        if selected_league.startswith("South Africa"):
+                            category_lg = "South Africa"
+                        else:
+                            category_lg = selected_league.split(" ")[0]
+
+                        competition = fmh_comp_dict.get(selected_league)
+
+                        df_row_hh['CATEGORY'] = category_lg
+                        df_row_hh['COMPETITION'] = competition
+                        df_row_hh['EVENT NAME'] = event_name
+                        df_row_hh['MARKET TYPE NAME'] = 'Most Fouls'
+                        df_row_hh['LINE'] = 'N'
+
+                        df_row_hh['SELECTION NAME'] = ['home', 'tie', 'away']
+                        df_row_hh['PRICE'] = [row['H_most_w.%'], row['Tie_w.%'], row['A_most_w.%']]
+
+                        df_row_hh['START DATE'] = row['START DATE']
+                        df_row_hh['START TIME'] = row['START TIME']
+                        df_row_hh['OFFER START DATE'] = today_date
+                        df_row_hh['OFFER START TIME'] = '09:00:00'
+                        df_row_hh['OFFER END DATE'] = row['START DATE']
+                        df_row_hh['OFFER END TIME'] = row['START TIME']
+                        df_row_hh['PUBLISHED'] = 'YES'
+
+                        rows_list_hh.append(df_row_hh)
+
+                    df_hh = pd.concat(rows_list_hh, ignore_index=True)
+
+                    # Combine with the base structure — no need for merge unless you have keys
+                    df_fmh_format_hh = df_hh[
+                        [
+                            'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME',
+                            'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE',
+                            'START DATE', 'START TIME',
+                            'OFFER START DATE', 'OFFER START TIME',
+                            'OFFER END DATE', 'OFFER END TIME',
+                            'PUBLISHED'
+                        ]
+                    ]
+
+                    st.subheader('FMH Format - Head to Head')
+                    st.write(df_fmh_format_hh)
+
+                    # ------------------------------------------------------------------------------------------------------------------
 
                     # ------------------------------------------------------------------------------------------------------------------
                     #  ----- Calculate Daily Total FOULS  --------

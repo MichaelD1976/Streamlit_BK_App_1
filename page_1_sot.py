@@ -10,7 +10,7 @@ from scipy.optimize import minimize_scalar
 from scipy.stats import poisson, nbinom
 from sklearn.preprocessing import PolynomialFeatures
 import joblib
-from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities, calculate_true_from_true_raw, team_names_t1x2_to_BK_dict
+from mymodule.functions import get_fixtures,  calculate_home_away_lines_and_odds, poisson_probabilities, calculate_true_from_true_raw, team_names_t1x2_to_BK_dict, generate_marginated_odds_with_fav_lock
 import requests
 import os
 from dotenv import load_dotenv
@@ -1084,7 +1084,7 @@ def main():
                                 'T_+1_un', 'T_+1_ov',
                                 'T_-2_un', 'T_-2_ov',
                                 'T_+2_un', 'T_+2_ov',
-                            # 'H_most', 'Tie', 'A_most'
+                            #    'H_most', 'Tie', 'A_most'
                     ]
 
 
@@ -1112,6 +1112,19 @@ def main():
                             df_final[un_col] = (df_final[un_col] / scale_factor).round(2)
                             df_final[ov_col] = (df_final[ov_col] / scale_factor).round(2)
 
+                    # Add margin for most sot using function - home/away/tie
+                    df_final[['H_most_w.%', 'Tie_w.%', 'A_most_w.%']] = df_final.apply(
+                        lambda x: pd.Series(
+                            generate_marginated_odds_with_fav_lock(
+                                [x['H_most'], x['Tie'], x['A_most']], 
+                                margin_to_apply
+                            )
+                        ),
+                        axis=1
+                    )
+
+                    # round to 1 dp so 7.94 -> 7.9 etc
+                    df_final['Tie_w.%'] = df_final['Tie_w.%'].round(1)
 
                     # Create a copy of the DataFrame with the new columns added
                     df_final_wm = df_final.copy()
@@ -1238,8 +1251,66 @@ def main():
 
                     # Concatenate all blocks into one DataFrame
                     df_fmh_format = pd.concat(rows_list, ignore_index=True)
-                    st.subheader('FMH Format')
+                    st.subheader('FMH Format - Over/Under Lines')
                     st.write(df_fmh_format)
+
+
+                    # ----- FORMAT FMH UPLOAD SOT H-H ------------
+
+                    rows_list_hh = []
+
+                    for idx, row in df_final_wm.iterrows():
+                        df_row_hh = pd.DataFrame(index=range(3), columns=columns)
+
+                        # Extract relevant values
+                        event_name = row['Home Team Alligned'] + " vs " + row["Away Team Alligned"]
+
+                        df_row_hh['EVENT TYPE'] = 'Match'
+                        df_row_hh['SPORT'] = 'Football'
+
+                        if selected_league.startswith("South Africa"):
+                            category_lg = "South Africa"
+                        else:
+                            category_lg = selected_league.split(" ")[0]
+
+                        competition = fmh_comp_dict.get(selected_league)
+
+                        df_row_hh['CATEGORY'] = category_lg
+                        df_row_hh['COMPETITION'] = competition
+                        df_row_hh['EVENT NAME'] = event_name
+                        df_row_hh['MARKET TYPE NAME'] = 'Most Shots on Target'
+                        df_row_hh['LINE'] = 'N'
+
+                        df_row_hh['SELECTION NAME'] = ['home', 'tie', 'away']
+                        df_row_hh['PRICE'] = [row['H_most_w.%'], row['Tie_w.%'], row['A_most_w.%']]
+
+                        df_row_hh['START DATE'] = row['START DATE']
+                        df_row_hh['START TIME'] = row['START TIME']
+                        df_row_hh['OFFER START DATE'] = today_date
+                        df_row_hh['OFFER START TIME'] = '09:00:00'
+                        df_row_hh['OFFER END DATE'] = row['START DATE']
+                        df_row_hh['OFFER END TIME'] = row['START TIME']
+                        df_row_hh['PUBLISHED'] = 'YES'
+
+                        rows_list_hh.append(df_row_hh)
+
+                    df_sot_hh = pd.concat(rows_list_hh, ignore_index=True)
+
+                    # Combine with the base structure — no need for merge unless you have keys
+                    df_fmh_format_shot_hh = df_sot_hh[
+                        [
+                            'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME',
+                            'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE',
+                            'START DATE', 'START TIME',
+                            'OFFER START DATE', 'OFFER START TIME',
+                            'OFFER END DATE', 'OFFER END TIME',
+                            'PUBLISHED'
+                        ]
+                    ]
+
+                    st.subheader('FMH Format - Head to Head')
+                    st.write(df_fmh_format_shot_hh)
+
 
                     # ------------------------------------------------------------------------------------------------------------------
 
@@ -1381,7 +1452,6 @@ def main():
 
                         df_csv.set_index('EVENT TYPE', inplace=True)
                         st.write(df_csv)
-
 
 
 
@@ -1585,8 +1655,8 @@ def main():
             st.subheader('Away')
             at_a_for = st.number_input('Avg away team away SoT - for')
             at_h_for = st.number_input('Avg away team home SoT - for')
-            ht_a_ag = st.number_input('Avg home team home SoT - against')
-            ht_h_ag = st.number_input('Avg home team away SoT - against')
+            ht_a_ag = st.number_input('Avg home team away SoT - against')
+            ht_h_ag = st.number_input('Avg home team home SoT - against')
             a_lg_avg = st.number_input('League avg (all teams) of away team')
             st.write("---")
 
@@ -1635,6 +1705,39 @@ def main():
 
         # mix with sup_model & additional factors
         home_prediction = round((home_prediction_ml * PERC_ML_MODEL) + (h_sot_exp_s_mod * PERC_SUP_MODEL), 2)
+
+
+        # fudge if big fav/dog
+
+        hst_sup_boost_1 = 1.10  # < 1.15
+        hst_sup_boost_2 = 1.06  # 1.15 ≤ x < 1.3
+        hst_sup_boost_3 = 1.03  # < 1.55 but >= 1.3
+
+        hst_dog_reduce_1 = 0.88 # > 14
+        hst_dog_reduce_2 = 0.93 # 8 < x <= 14
+        hst_dog_reduce_3 = 0.97 # 4.5 < x <= 8
+        
+        home_odds = 1/ h_pc_true
+        conditions_h = [
+            home_odds < 1.15,             # strong home favorite
+            (home_odds >= 1.15) & (home_odds < 1.3),  # moderately big home favorite
+            (home_odds >= 1.30) & (home_odds < 1.55),  # medium home favorite
+            home_odds > 14,               # big home underdog
+            (home_odds > 8) & (home_odds <= 14),       # moderately big home underdog
+            (home_odds > 4.5) & (home_odds <= 8)       # medium home underdog
+        ]
+
+        choices = [
+                hst_sup_boost_1,
+                hst_sup_boost_2,
+                hst_sup_boost_3,
+                hst_dog_reduce_1,
+                hst_dog_reduce_2,
+                hst_dog_reduce_3
+            ]
+
+        home_prediction = round(home_prediction * np.select(conditions_h, choices, default=1.0), 2)
+
         home_prediction = round(home_prediction * extra_time_factor * is_neutral_factor_home * big_cup_factor, 2)
         
         with cls1:
@@ -1651,6 +1754,40 @@ def main():
 
         # mix with sup_model
         away_prediction = round((away_prediction_ml * PERC_ML_MODEL) + (a_sot_exp_s_mod * PERC_SUP_MODEL), 2)
+
+
+        # -------- Fudge to handle big away fav/dog ------------
+
+        ast_sup_boost_1 = 1.10  # < 1.3
+        ast_sup_boost_2 = 1.07  # 1.30 ≤ x < 1.45
+        ast_sup_boost_3 = 1.03  # 1.45 ≤ x < 1.65
+
+        ast_dog_reduce_1 = 0.88 # > 18
+        ast_dog_reduce_2 = 0.92 # 11 < x <= 18
+        ast_dog_reduce_3 = 0.95 # 5.9 < x <= 11
+
+        away_odds = 1 / a_pc_true
+        conditions_a = [
+            away_odds < 1.30,             # strong away favorite
+            (away_odds >= 1.30) & (away_odds < 1.45),  # moderately big away favorite
+            (away_odds >= 1.45) & (away_odds < 1.65),  # medium away favorite
+            away_odds > 18,               # big away underdog
+            (away_odds > 11) & (away_odds <= 18),       # moderately big away underdog
+            (away_odds > 5.9) & (away_odds <= 11)       # medium away underdog
+        ]
+
+        choices = [
+            ast_sup_boost_1,
+            ast_sup_boost_2,
+            ast_sup_boost_3,
+            ast_dog_reduce_1,
+            ast_dog_reduce_2,
+            ast_dog_reduce_3
+        ]
+        
+
+        away_prediction = round(away_prediction * np.select(conditions_a, choices, default=1.0), 2)
+
         away_prediction = round(away_prediction * extra_time_factor * is_neutral_factor_away * big_cup_factor, 2)
 
         with cls3:

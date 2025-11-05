@@ -764,3 +764,66 @@ def calculate_expected_team_goals_from_1x2_refined(home_odds, draw_odds, away_od
     lam_home, lam_away = round(lam_home, 2), round(lam_away, 2)
 
     return lam_home, lam_away
+
+
+###################  FUNCTION: GENERATE_MARGINATED_ODDS_WITH_FAV_LOCK()  ############################
+# import numpy as np
+
+'''
+Returns marginated odds given initial true odds and margin (eg 1.2 5.0). Function provides for short price handling conditions where we want less margin
+        ascribed to the shorter price. so short prices, once marginated, are still close to the true - 
+        so true 1.14 > marginated 1.11. remaining outcomes normalized
+Args: 1.true odds - takes any number (eg wdw 2,3.5,3.75 or ou 1.8,1.9). 
+      Input the first arg as an iterable eg - generate_marginated_odds_with_fav_lock([1.5, 3.5, 3.75], 1.08)
+      2. margin - final margin to be offered (eg 1.08)
+Returns: margined odds as numpy array (eg [1.17,4.51]). To unpack: fav, dog = generate_marginated_odds_with_fav_lock([1.2, 5.0], 1.08)
+'''
+
+# function to return marginated odds given initial true odds and margin UI variable (eg 1.08). Function provides for short price handling conditions
+# so short prices, once marginated, are still close to the true - so true 1.14 > marginated 1.11. remaining outcomes normalized.
+# takes any number of true odds outcomes as args eg, match odds (3) and ov/un (2). Input as iterable eg
+# 
+def generate_marginated_odds_with_fav_lock(true_odds, margin):
+    true_odds = np.array(true_odds, dtype=float)
+    true_probs = 1 / true_odds
+    adjusted_probs = true_probs.copy()
+
+    # Rules for adjustments based on short-priced favorite
+    def get_adjustment(odd):
+        if odd < 1.05:
+            return 0.01
+        elif odd < 1.1:
+            return 0.015
+        elif odd < 1.2:
+            return 0.02
+        elif odd < 1.3:
+            return 0.025
+        elif odd <= 1.4:
+            return 0.03
+        return 0.0
+
+    # Identify the lowest odds
+    min_odd_index = np.argmin(true_odds)
+    min_odd = true_odds[min_odd_index]
+    adj = get_adjustment(min_odd)
+
+    if adj > 0:
+        # Lock adjustment on the shortest-priced outcome
+        adjusted_probs[min_odd_index] += adj
+        locked_prob = adjusted_probs[min_odd_index]
+
+        # Distribute remaining margin to other outcomes proportionally
+        other_indices = [i for i in range(len(true_odds)) if i != min_odd_index]
+        remaining_true_probs = true_probs[other_indices]
+        remaining_margin = margin - locked_prob
+
+        scaling_factor = remaining_margin / remaining_true_probs.sum()
+        adjusted_probs[other_indices] = remaining_true_probs * scaling_factor
+    else:
+        # Standard normalization if no short-priced condition is triggered
+        scaling_factor = margin / true_probs.sum()
+        adjusted_probs = true_probs * scaling_factor
+
+    # Convert back to odds
+    margined_odds = 1 / adjusted_probs
+    return margined_odds.round(2)

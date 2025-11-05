@@ -39,6 +39,7 @@ page_options = [
                  'Home', 
                  'Models',
                  'Derivatives',
+                 '1-Up Pricing',
                   'Player Stats',
             #     'Shots on Target',
             #     'Fouls',
@@ -78,6 +79,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 05/11/25 Models - Shots/Fouls head to head fmh format added
                      - 28/10/25 Models - BST toggle default to off. API cache_resource amendment
                      - 13/10/25 Models - new offsides model deployed (improvement in handling outlier teams)
                      - 22/09/25 Models - current and previous stat averages added for selected league
@@ -165,6 +167,10 @@ def main():
     elif selected_page == 'Player Stats':
         import page_15_player_stats
         page_15_player_stats.main() 
+
+    elif selected_page == '1-Up Pricing':
+        import page_16_1up
+        page_16_1up.main() 
 
     # elif selected_page == 'Offsides':
     #     import page_9_offsides
