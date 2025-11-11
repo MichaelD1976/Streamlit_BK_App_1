@@ -80,7 +80,9 @@ def main():
     # st.write(filtered_df)
 
     # Define metrics for heatmap
-    advanced_stat_leagues = ['England Premier', 'Germany Bundesliga', 'Spain La Liga', 'Italy Serie A', '**All Leagues**']
+    # FBREF FORBIDDING SCRAPING AS OF 10/11/25 - ADVANCED PLAYER DATA OPTIONS SUSPENDED
+    # advanced_stat_leagues = ['England Premier', 'Germany Bundesliga', 'Spain La Liga', 'Italy Serie A', '**All Leagues**']
+    advanced_stat_leagues = []
     advanced_stat_seasons = ['2025-26', '2024-25']
 
     if selected_league in advanced_stat_leagues and selected_year in advanced_stat_seasons:
