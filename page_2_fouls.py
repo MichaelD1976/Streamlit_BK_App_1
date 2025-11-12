@@ -1283,7 +1283,7 @@ def main():
                         df_row_hh['MARKET TYPE NAME'] = 'Most Fouls'
                         df_row_hh['LINE'] = 'N'
 
-                        df_row_hh['SELECTION NAME'] = ['home', 'tie', 'away']
+                        df_row_hh['SELECTION NAME'] = ['{competitor1}', 'tie', '{competitor1}']
                         df_row_hh['PRICE'] = [row['H_most_w.%'], row['Tie_w.%'], row['A_most_w.%']]
 
                         df_row_hh['START DATE'] = row['START DATE']

@@ -9,10 +9,10 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 from scipy.stats import poisson
 
-from mymodule.functions import get_fixtures, calculate_true_from_true_raw
+from mymodule.functions import get_fixtures, calculate_true_from_true_raw, calculate_expected_team_goals_from_1x2_refined, team_names_t1x2_to_BK_dict
 
 
-
+# https://dashboard.api-football.com/soccer/ids
 # Dictionary to map league names to their IDs
 leagues_dict = {
     "England Premier": '39',
@@ -29,15 +29,15 @@ leagues_dict = {
     "Portugal Liga I": '94',
     "Scotland Premier": '179',
     "South Africa Premier": "288",
-    # CL
-    # Uefa
-    # 
+    "UEFA Champions League": 2,
+    "UEFA Europa League": 3,
+    "UEFA Conference League": 848
 }
+
+reverse_dict = {v: k for k, v in leagues_dict.items()}
 
 API_SEASON = '2025'
 df_ou = pd.read_csv('data/over_under_exp_conversion.csv')
-df_dnb = pd.read_csv('data/dnb_sup_conversion.csv')
-
 
 def main():
 
@@ -48,14 +48,8 @@ def main():
         list(leagues_dict.keys())
     )
 
-    st.write("You selected:", options)
-
-
     # Extract league IDs for the selected leagues
     leagues_selected_ids = [leagues_dict[league] for league in options]
-
-    st.write("League IDs:", leagues_selected_ids)
-
 
 
     st.subheader(f'Generate odds for all upcoming matches (up to 7 days ahead)')
@@ -63,7 +57,7 @@ def main():
     column1,column2, _ = st.columns([1.5,1.5,1])
 
     with column1:
-        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.05, max_value=1.2, key='margin_to_apply')
+        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.08, min_value=1.05, max_value=1.2, key='margin_to_apply')
         # over bias initially set to 1.07 pre over only being published
         is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=False)
 
@@ -91,8 +85,8 @@ def main():
 
                 all_leagues_dfs = []
 
-                for id in leagues_selected_ids:
-                    df_fixtures = get_fixtures(id, from_date_str, to_date_str, API_SEASON)
+                for league_id in leagues_selected_ids:
+                    df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
                     # st.write('625', df_fixtures)
                     if df_fixtures.empty:
                         st.write("No data returned for the specified league and date range.")
@@ -247,6 +241,18 @@ def main():
                         if df.empty:
                             st.write('Odds currently unavailable from API') 
 
+                        # ------  Add league name column --------
+                        comp_name = reverse_dict.get(league_id, "Unknown")  # id is the current league id in the loop
+                        df['Competition'] = comp_name
+
+                        # # -----  Split Date and Time column ---
+                        # if df['Date'].dtype == 'object' and df['Date'].str.contains(' ').any():
+                        #     df[['Date', 'Time']] = df['Date'].str.split(' ', expand=True)
+
+                        # ------- Extract Country -------
+                        df['Country'] = df['Competition'].str.split(' ', n=1).str[0]
+
+
                         #  ---------------  Create true wdw odds ---------------
 
                         # Convert columns to numeric (if they are strings or objects)
@@ -269,42 +275,24 @@ def main():
                         df['ov_pc_true'] = round((1 / df['O_2.5']) / df['margin_ou'], 2)
                         df['un_pc_true'] = round((1 / df['U_2.5']) / df['margin_ou'], 2)
 
-                        df['dnb_perc_h'] = round(df['h_pc_true_raw'] / (df['h_pc_true_raw'] + df['a_pc_true_raw']), 2)
-
                         df[['h_pc_true', 'd_pc_true', 'a_pc_true']] = df.apply(
                             lambda row: calculate_true_from_true_raw(row['h_pc_true_raw'], row['d_pc_true_raw'], row['a_pc_true_raw'], row['margin_wdw']), 
                             axis=1, result_type='expand')
                         
+                        #    Apply the function row by row and expand the results into two columns
+                        df[['hgx', 'agx']] = df.apply(
+                            lambda row: calculate_expected_team_goals_from_1x2_refined(
+                                row['h_pc_true'],
+                                row['d_pc_true'],
+                                row['a_pc_true'],
+                                row['ov_pc_true'],
+                                row['un_pc_true']
+                            ),
+                            axis=1,
+                            result_type='expand'  # Ensures the tuple is split into two separate columns
+                        )                       
 
-                        # Function to add goal exp column to df
-                        def get_gl_exp_value(row, df_ou):
-                            # Extract the 'ov_pc_true' value from the current row in df
-                            ov_pc_true = row['ov_pc_true']
-  
-                            # Locate the row in df_ou where 'Ov2.5_%' matches the 'ov_pc_true' value
-                            gl_exp_value = df_ou.loc[df_ou['Ov2.5_%'] == ov_pc_true, 'Exp1']
-                            
-                            # If there's no matching row, return NaN or a default value
-                            return gl_exp_value.values[0] if not gl_exp_value.empty else None
-                        
-                        st.write(df_dnb)
-                        #Function to add supremacy to df
-                        def get_match_sup(row, df_dnb):
-                            if pd.isna(row.get('dnb_perc_h')):
-                                return None
-                            dnb_perc_h = row['dnb_perc_h']
-                            if 'dnb %' not in df_dnb.columns or df_dnb.empty:
-                                return None
-                            idx = (df_dnb['dnb %'] - dnb_perc_h).abs().idxmin()
-                            return df_dnb.at[idx, 'Sup']
-
-
-                        # Apply the function to each row in df to create a new column 'gl_exp'
-                        df['Gl_Exp'] = df.apply(lambda row: get_gl_exp_value(row, df_ou), axis=1)
-                        df['Sup'] = df.apply(lambda row: get_match_sup(row, df_dnb), axis=1)
-
-                        df['hgx'] = round(df['Gl_Exp'] / 2 + 0.5 * df['Sup'], 2)
-                        df['agx'] = round(df['Gl_Exp'] / 2 - 0.5 * df['Sup'], 2)
+                        df['Gl_Exp'] = df['hgx'] + df['agx']
 
                         df['0-0'] = poisson.pmf(0, df['hgx']) * poisson.pmf(0, df['agx']) * 1.1
 
@@ -313,7 +301,7 @@ def main():
 
 
                         # Display the updated DataFrame
-                        st.write(df)
+                        # st.write(df)
 
                         all_leagues_dfs.append(df)
 
@@ -325,15 +313,13 @@ def main():
                 if all_leagues_dfs:
                     combined_df = pd.concat(all_leagues_dfs, ignore_index=True)
                     st.write("### ✅ Combined DataFrame for all leagues:")
-                    st.dataframe(combined_df)
+                    # st.dataframe(combined_df)
                 else:
                     st.warning("No data collected from any league.")     
-
 
                 # add next goal odds
                 # combined_df['hgx'] = combined_df['Gl_Exp'] / 2
                 # combined_df['h_next_gl'] = 
-
 
             # ------------ 1-UP FUNCTIONS (top-level) ----------------
 
@@ -458,19 +444,130 @@ def main():
 
                 st.write(combined_df)
 
-                # TODO
-                '''
-                add league column
-                separate out time as own column
-                harmonize team names
-                remove superfluous columns
-                make bst/utc adjustable
+                # ----------------------  FMH Upload Format  ------------------------
 
-                format fmh
-                '''
+                df1= combined_df.copy()
+
+                                    # firstly allign streamlit team names with BK team names
+                df1['Home Team Alligned'] = df1['Home Team'].map(team_names_t1x2_to_BK_dict).fillna(df1['Home Team'])
+                df1['Away Team Alligned'] = df1['Away Team'].map(team_names_t1x2_to_BK_dict).fillna(df1['Away Team'])
+
+                # CREATE AN INDIVIDUAL DF FOR EACH MATCH
+
+                today_date = datetime.today().strftime('%Y-%m-%d')
+
+                columns = [
+                        'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
+                        'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
+                        'START TIME', 'OFFER START DATE', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
+                        'PUBLISHED'
+                    ]
+                    
+                fmh_comp_dict = {
+                    'Spain La Liga': 'LaLiga',
+                    'England Premier': 'Premier League',
+                    'Italy Serie A': 'Serie A',
+                    'Germany Bundesliga': 'Bundesliga',
+                    'France Ligue 1': 'Ligue 1',
+                    'South Africa Premier': 'Premier League',
+                    'Scotland Premier': 'Premiership',
+                    'Netherlands Eredivisie': 'Eredivisie',
+                    'Belgium Jupiler': 'Pro League',
+                    'England Championship': 'Championship',
+                    'England League One': 'League One',
+                    'England League Two': 'League Two',
+                    'UEFA Champions League': 'Champions League',
+                    'UEFA Europa League': 'Europa League',
+                    'UEFA Conference League': 'Conference League'
+                }
+
+                # --- Preprocess Date column once ---
+                df1['Date'] = pd.to_datetime(df1['Date'], format='%d-%m-%y %H:%M', errors='coerce', dayfirst=True)
+                df1["START DATE"] = df1["Date"].dt.strftime("%Y-%m-%d")
+            
+                # Adjust START TIME depending on BST toggle (vectorized)
+                if is_bst:
+                    df1["START TIME"] = (df1["Date"] - pd.Timedelta(hours=1)).dt.strftime("%H:%M:%S")
+                else:
+                    df1["START TIME"] = df1["Date"].dt.strftime("%H:%M:%S")
+
+                rows_list = []  # store each row
+
+                for idx, row in df1.iterrows():
+                    # Create an empty DataFrame with 9 rows and specified columns
+                    df_row = pd.DataFrame(index=range(2), columns=columns)
+
+                    # Extract the competition name from the dataframe row
+                    competition_name = row['Competition']
+
+                    # create category_lg variable
+                    if competition_name.startswith("South Africa"):
+                        category_lg = "South Africa"
+                    else:
+                        category_lg = competition_name.split(" ")[0]
+
+                    # create competition variable
+                    competition_mapped = fmh_comp_dict.get(competition_name)
+
+                    # create event_name variable
+                    # extract Home Team and Away Team, make BK team name compatible, make as a vs b and store
+                    event_name = row['Home Team Alligned'] + " vs " + row["Away Team Alligned"]
+
+                    # Set the specific columns
+                    df_row['EVENT TYPE'].iloc[:2] = 'Match'
+                    df_row['SPORT'].iloc[:2] = 'Football'
+                    df_row['CATEGORY'].iloc[:2] = category_lg
+                    df_row['COMPETITION'].iloc[:2] = competition_mapped
+                    df_row['EVENT NAME'].iloc[:2] = event_name
+
+                    df_row['MARKET TYPE NAME'].iloc[:2] = '1 Up'
+                    # df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total shots {line} Over'
+                    # df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total shots {line} Over'
+
+                    df_row['LINE'].iloc[:2] = 'N'
+                    # df_row['LINE'].iloc[1] = row['T_main_line']
+                    # df_row['LINE'].iloc[2] = row['T_+1_line']
+                    # df_row['LINE'].iloc[3] = row['h_-1_line']
+                    # df_row['LINE'].iloc[4] = row['h_main_line']
+                    # df_row['LINE'].iloc[5] = row['h_+1_line']
+                    # df_row['LINE'].iloc[6] = row['a_-1_line']
+                    # df_row['LINE'].iloc[7] = row['a_main_line']
+                    # df_row['LINE'].iloc[8] = row['a_+1_line']
+
+                    df_row['SELECTION NAME'].iloc[0] = '{competitor1}'
+                    df_row['SELECTION NAME'].iloc[1] = '{competitor2}'
+
+                    df_row['PRICE'].iloc[0] = row['h_1_Up_marg_odds_final']
+                    df_row['PRICE'].iloc[1] = row['h_1_Up_marg_odds_final']
+                    # df_row['PRICE'].iloc[2] = row['T_+1_ov_w.%']
+                    # df_row['PRICE'].iloc[3] = row['h_-1_ov_w.%']
+                    # df_row['PRICE'].iloc[4] = row['h_main_ov_w.%']
+                    # df_row['PRICE'].iloc[5] = row['h_+1_ov_w.%']
+                    # df_row['PRICE'].iloc[6] = row['a_-1_ov_w.%']
+                    # df_row['PRICE'].iloc[7] = row['a_main_ov_w.%']
+                    # df_row['PRICE'].iloc[8] = row['a_+1_ov_w.%']
+
+                    # Dates & Times (already preprocessed)
+                    start_date = row["START DATE"]
+                    start_time = row["START TIME"] # already adjusted for BST/UTC
+
+                    df_row['START DATE'] = start_date
+                    df_row['START TIME'] = start_time
+                    df_row['OFFER START DATE'] = today_date #3
+                    df_row['OFFER START TIME'] = '09:00:00' #4
+                    df_row['OFFER END DATE'] = start_date
+                    df_row['OFFER END TIME'] = start_time
+                    df_row['PUBLISHED'] = 'YES' #7
 
 
+                    # Finally, append to list
+                    rows_list.append(df_row)
 
+                
+                # Concatenate all blocks into one DataFrame
+                df_fmh_format = pd.concat(rows_list, ignore_index=True)
+                st.subheader('FMH Format')
+                st.write(df_fmh_format)
 
                          
                         
