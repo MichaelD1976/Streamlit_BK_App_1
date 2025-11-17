@@ -520,7 +520,7 @@ def main():
                     df_row['COMPETITION'].iloc[:2] = competition_mapped
                     df_row['EVENT NAME'].iloc[:2] = event_name
 
-                    df_row['MARKET TYPE NAME'].iloc[:2] = '1 Up Early Payout'
+                    df_row['MARKET TYPE NAME'].iloc[:2] = '1 Up Early Payout Both'
                     # df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total shots {line} Over'
                     # df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total shots {line} Over'
 
