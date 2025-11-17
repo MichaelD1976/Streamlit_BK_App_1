@@ -520,7 +520,7 @@ def main():
                     df_row['COMPETITION'].iloc[:2] = competition_mapped
                     df_row['EVENT NAME'].iloc[:2] = event_name
 
-                    df_row['MARKET TYPE NAME'].iloc[:2] = '1 Up'
+                    df_row['MARKET TYPE NAME'].iloc[:2] = '1 Up Early Payout'
                     # df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total shots {line} Over'
                     # df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total shots {line} Over'
 
@@ -538,7 +538,7 @@ def main():
                     df_row['SELECTION NAME'].iloc[1] = '{competitor2}'
 
                     df_row['PRICE'].iloc[0] = row['h_1_Up_marg_odds_final']
-                    df_row['PRICE'].iloc[1] = row['h_1_Up_marg_odds_final']
+                    df_row['PRICE'].iloc[1] = row['a_1_Up_marg_odds_final']
                     # df_row['PRICE'].iloc[2] = row['T_+1_ov_w.%']
                     # df_row['PRICE'].iloc[3] = row['h_-1_ov_w.%']
                     # df_row['PRICE'].iloc[4] = row['h_main_ov_w.%']
@@ -566,6 +566,7 @@ def main():
                 
                 # Concatenate all blocks into one DataFrame
                 df_fmh_format = pd.concat(rows_list, ignore_index=True)
+                df_fmh_format = df_fmh_format.set_index('EVENT TYPE')
                 st.subheader('FMH Format')
                 st.write(df_fmh_format)
 

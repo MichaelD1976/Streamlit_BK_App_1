@@ -56,7 +56,8 @@ outlier_teams_dict = {
     'Ath Bilbao': 1.2,          # Oct - 4.27
     'Valencia': 1.1,            # Oct - 3.5
     'Ein Frankfurt': 1.15,     # Oct - 3.84
-    'Nantes': 1.1              # Oct - avg offsides against = 3.4
+    'Nantes': 1.1,              # Oct - avg offsides against = 3.4
+    'Aston Villa': 1.1
 }
 
 # ------------------------------------------------------------

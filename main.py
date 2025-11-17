@@ -79,6 +79,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 17/11/25 1-Up multi-competition pricing added
                      - 05/11/25 Models - Shots/Fouls head to head fmh format added
                      - 28/10/25 Models - BST toggle default to off. API cache_resource amendment
                      - 13/10/25 Models - new offsides model deployed (improvement in handling outlier teams)
