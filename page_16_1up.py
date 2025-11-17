@@ -442,6 +442,10 @@ def main():
 
                 combined_df['a_1_Up_marg_odds_final'] = round(combined_df['a_1_Up_odds_marg_raw'] * np.select(conditions, choices, default=1.0), 2)
 
+                # -------- ensure final odds are never above true -----------
+                combined_df['h_1_Up_marg_odds_final'] = combined_df['h_1_Up_marg_odds_final'].clip(upper=combined_df['h_1_Up_odds_true']) - 0.01
+                combined_df['a_1_Up_marg_odds_final'] = combined_df['a_1_Up_marg_odds_final'].clip(upper=combined_df['a_1_Up_odds_true']) - 0.01
+
                 st.write(combined_df)
 
                 # ----------------------  FMH Upload Format  ------------------------
