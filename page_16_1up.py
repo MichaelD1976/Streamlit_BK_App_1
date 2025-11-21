@@ -282,11 +282,11 @@ def main():
                         #    Apply the function row by row and expand the results into two columns
                         df[['hgx', 'agx']] = df.apply(
                             lambda row: calculate_expected_team_goals_from_1x2_refined(
-                                row['h_pc_true'],
-                                row['d_pc_true'],
-                                row['a_pc_true'],
-                                row['ov_pc_true'],
-                                row['un_pc_true']
+                                1/row['h_pc_true'],
+                                1/row['d_pc_true'],
+                                1/row['a_pc_true'],
+                                1/row['ov_pc_true'],
+                                1/row['un_pc_true']
                             ),
                             axis=1,
                             result_type='expand'  # Ensures the tuple is split into two separate columns

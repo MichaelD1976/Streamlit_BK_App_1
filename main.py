@@ -39,7 +39,9 @@ page_options = [
                  'Home', 
                  'Models',
                  'Derivatives',
+            #     'Specials Pricing',
                  '1-Up Pricing',
+            #     'HTEP Pricing',
                   'Player Stats',
             #     'Shots on Target',
             #     'Fouls',
@@ -172,6 +174,10 @@ def main():
     elif selected_page == '1-Up Pricing':
         import page_16_1up
         page_16_1up.main() 
+    
+    elif selected_page == 'HTEP Pricing':
+        import page_17_htep
+        page_17_htep.main() 
 
     # elif selected_page == 'Offsides':
     #     import page_9_offsides
