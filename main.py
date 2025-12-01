@@ -40,8 +40,8 @@ page_options = [
                  'Models',
                  'Derivatives',
             #     'Specials Pricing',
-                 '1-Up Pricing',
-            #     'HTEP Pricing',
+                 '1Up Pricing',
+            #     'HTUP Pricing',
                   'Player Stats',
             #     'Shots on Target',
             #     'Fouls',
@@ -81,7 +81,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
-                     - 17/11/25 1-Up multi-competition pricing added
+                     - 17/11/25 1Up multi-competition pricing added
                      - 05/11/25 Models - Shots/Fouls head to head fmh format added
                      - 28/10/25 Models - BST toggle default to off. API cache_resource amendment
                      - 13/10/25 Models - new offsides model deployed (improvement in handling outlier teams)
@@ -171,13 +171,13 @@ def main():
         import page_15_player_stats
         page_15_player_stats.main() 
 
-    elif selected_page == '1-Up Pricing':
+    elif selected_page == '1Up Pricing':
         import page_16_1up
         page_16_1up.main() 
     
-    elif selected_page == 'HTEP Pricing':
-        import page_17_htep
-        page_17_htep.main() 
+    elif selected_page == 'HTUP Pricing':
+        import page_17_htup
+        page_17_htup.main() 
 
     # elif selected_page == 'Offsides':
     #     import page_9_offsides

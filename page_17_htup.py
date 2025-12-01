@@ -41,7 +41,7 @@ df_ou = pd.read_csv('data/over_under_exp_conversion.csv')
 
 def main():
 
-    st.header('HTEP Pricing', divider='blue')
+    st.header('HTUP Pricing', divider='blue')
 
     options = st.multiselect(
         "Select competitions to price",
@@ -57,7 +57,7 @@ def main():
     column1,column2, _ = st.columns([1.5,1.5,1])
 
     with column1:
-        margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.08, min_value=1.05, max_value=1.2, key='margin_to_apply')
+        # margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.08, min_value=1.05, max_value=1.2, key='margin_to_apply')
         # over bias initially set to 1.07 pre over only being published
         is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=False)
 
@@ -315,7 +315,7 @@ def main():
                 if all_leagues_dfs:
                     combined_df = pd.concat(all_leagues_dfs, ignore_index=True)
                     st.write("### ✅ Combined DataFrame for all leagues:")
-                    st.dataframe(combined_df)
+                    # st.dataframe(combined_df)
                 else:
                     st.warning("No data collected from any league.")     
 
@@ -333,7 +333,7 @@ def main():
                     draw_prob = np.sum(np.diag(prob_matrix_ft))  # Draw (diagonal of the matrix)
                     away_win_prob = np.sum(np.triu(prob_matrix_ft, 1))  # Away win (upper triangle of the matrix excluding diagonal)
 
-                    st.write('home_win_prob', home_win_prob, 'draw_prob', draw_prob, 'away_win_prob', away_win_prob)
+                    # st.write('home_win_prob', home_win_prob, 'draw_prob', draw_prob, 'away_win_prob', away_win_prob)
                     # Calculate HT/FT probs prep calculations
 
                     # Away wins 2nd half probability
@@ -380,7 +380,7 @@ def main():
                     away_win_prob_fh = np.sum(np.triu(prob_matrix_1h, 1))  # Away win (upper triangle of the matrix excluding diagonal)
                     draw_prob_fh = draw_prob = np.sum(np.diag(prob_matrix_1h))  # Draw (diagonal of the matrix)
 
-                    st.write('home_win_prob_fh', home_win_prob_fh, 'draw_prob_fh', draw_prob_fh, 'away_win_prob_fh', away_win_prob_fh)
+                    # st.write('home_win_prob_fh', home_win_prob_fh, 'draw_prob_fh', draw_prob_fh, 'away_win_prob_fh', away_win_prob_fh)
 
                     # HT/FT probabilities
                     HHp = 1 / (1 / home_win_prob_fh * (1 / (draw_2h + home_win_2h))) * 1.02
@@ -416,171 +416,168 @@ def main():
                     axis=1, result_type='expand'
                 )
 
-                st.write('412', combined_df)
-                combined_df['htep_h_p'] = combined_df['h_pc_true_raw'] + combined_df['HDp'] + combined_df['HAp'] 
-                combined_df['htep_a_p'] = combined_df['a_pc_true_raw'] + combined_df['ADp'] + combined_df['AHp']
-                combined_df['htep_x_p'] = combined_df['d_pc_true_raw'] + combined_df['DHp'] + combined_df['DAp']
+                # st.write('412', combined_df)
+                combined_df['htup_h_p'] = combined_df['h_pc_true_raw'] + combined_df['HDp'] + combined_df['HAp'] 
+                combined_df['htup_a_p'] = combined_df['a_pc_true_raw'] + combined_df['ADp'] + combined_df['AHp']
+                combined_df['htup_x_p'] = combined_df['d_pc_true_raw'] + combined_df['DHp'] + combined_df['DAp']
 
-                combined_df['htep_h_odds_true'] = round(1 / combined_df['htep_h_p'], 2)
-                combined_df['htep_a_odds_true'] = round(1 / combined_df['htep_a_p'], 2)
-                combined_df['htep_x_odds_true'] = round(1 / combined_df['htep_x_p'], 2)
+                combined_df['htup_h_odds_true'] = round(1 / combined_df['htup_h_p'], 2)
+                combined_df['htup_a_odds_true'] = round(1 / combined_df['htup_a_p'], 2)
+                combined_df['htup_x_odds_true'] = round(1 / combined_df['htup_x_p'], 2)
 
-                combined_df['htep_h_odds_marg_raw'] = round(combined_df['htep_h_odds_true'] / margin_to_apply, 2)
-                combined_df['htep_a_odds_marg_raw'] = round(combined_df['htep_a_odds_true'] / margin_to_apply, 2)
-                combined_df['htep_x_odds_marg_raw'] = round(combined_df['htep_x_odds_true'] / margin_to_apply, 2)
+                # combined_df['htep_h_odds_marg_raw'] = round(combined_df['htep_h_odds_true'] / margin_to_apply, 2)
+                # combined_df['htep_a_odds_marg_raw'] = round(combined_df['htep_a_odds_true'] / margin_to_apply, 2)
+                # combined_df['htep_x_odds_marg_raw'] = round(combined_df['htep_x_odds_true'] / margin_to_apply, 2)
 
-                st.write('425', combined_df)
+                # st.write('425', combined_df)
 
 
                 # # ---   Conditions to handle margin distribution fav/dog after initial margin added  -----------------
                 # # HOME
 
-                # mult_1 = 1.08  # < 1.15
-                # mult_2 = 1.06  # 1.15 ≤ x < 1.3
-                # mult_3 = 1.04  # < 1.30 but >= 1.55
-                # mult_4 = 1.02 # < 1.55 but >= 1.70
-                # mult_5 = 0.75 # > 10
-                # mult_6 = 0.82 # 6 < x <= 10
-                # mult_7 = 0.87 # 3.75 < x <= 6
-                # mult_8 = 0.92 # 2.7 < x <= 3.75
+                # Multipliers
+                multipliers = [
+                    1, 0.995, 0.99, 0.97, 0.97, 0.97, 0.90, 0.85, 0.80,
+                    0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.4, 0.3  # add more if needed
+                ]
 
-                # conditions = [
-                #     combined_df['h_1_Up_odds_marg_raw'] < 1.15,             # strong home favorite
-                #     (combined_df['h_1_Up_odds_marg_raw'] >= 1.15) & (combined_df['h_1_Up_odds_marg_raw'] < 1.3),  # moderately big home favorite
-                #     (combined_df['h_1_Up_odds_marg_raw'] >= 1.30) & (combined_df['h_1_Up_odds_marg_raw'] < 1.55),  # medium home favorite
-                #     (combined_df['h_1_Up_odds_marg_raw'] >= 1.55) & (combined_df['h_1_Up_odds_marg_raw'] < 1.70),
-                #     combined_df['h_1_Up_odds_marg_raw'] > 10,               # big home underdog
-                #     (combined_df['h_1_Up_odds_marg_raw'] > 6) & (combined_df['h_1_Up_odds_marg_raw'] <= 10),       # moderately big home underdog
-                #     (combined_df['h_1_Up_odds_marg_raw'] > 3.75) & (combined_df['h_1_Up_odds_marg_raw'] <= 6),       # medium home underdog
-                #     (combined_df['h_1_Up_odds_marg_raw'] > 2.7) & (combined_df['h_1_Up_odds_marg_raw'] <= 3.75)       
-                # ]
+                # Define your ranges as tuples (lower_bound, upper_bound)
+                # Note: np.select checks conditions in order, so ranges should not overlap
+                ranges = [
+                    (0, 1.35),      # 1
+                    (1.35, 1.51),   # 0.995
+                    (1.51, 1.76),   # 0.99
+                    (1.76, 2.01),   # 0.97 
 
-                # choices = [
-                #     mult_1,
-                #     mult_2,
-                #     mult_3,
-                #     mult_4,
-                #     mult_5,
-                #     mult_6,
-                #     mult_7,
-                #     mult_8,
-                # ]
+                    (2.01, 2.51),   # 0.97
+                    (2.51, 3.51),   # 0.97
+                    (3.51, 5.01),   # 0.9
+                    (5.01, 7.01),   # 0.85 
+                    (7.01, 8.51),   # 0.80 
+                    (8.51, 10.01),  # 0.75
+                    (10.01, 12.51),  # 0.70
+                    (12.51, 15.01),  # 0.65
+                    (15.01, 20.01),  # 0.60
+                    (20.01, 30.01),  # 0.55  
+                    (30.01, 50.01), # 0.50 
+                    (50.01, 100.01), # 0.40
+                    (101.01, 99999.01) # 0.30
+                ]
 
-                # combined_df['h_1_Up_marg_odds_final'] = round(combined_df['h_1_Up_odds_marg_raw'] * np.select(conditions, choices, default=1.0), 2)
+                # Columns to check
+                cols = ['htup_h_odds_true', 'htup_a_odds_true', 'htup_x_odds_true']
 
+                # Generate conditions: True if any column value falls in the range
+                conditions = [
+                    (combined_df[cols] >= low).any(axis=1) & (combined_df[cols] < high).any(axis=1)
+                    for (low, high) in ranges
+                ]
 
-                # # ----  AWAY  -----
-                # conditions = [
-                #     combined_df['a_1_Up_odds_marg_raw'] < 1.15,             # strong home favorite
-                #     (combined_df['a_1_Up_odds_marg_raw'] >= 1.15) & (combined_df['a_1_Up_odds_marg_raw'] < 1.3),  # moderately big home favorite
-                #     (combined_df['a_1_Up_odds_marg_raw'] >= 1.30) & (combined_df['a_1_Up_odds_marg_raw'] < 1.55),  # medium home favorite
-                #     (combined_df['a_1_Up_odds_marg_raw'] >= 1.55) & (combined_df['a_1_Up_odds_marg_raw'] < 1.70),
-                #     combined_df['a_1_Up_odds_marg_raw'] > 10,               # big home underdog
-                #     (combined_df['a_1_Up_odds_marg_raw'] > 6) & (combined_df['a_1_Up_odds_marg_raw'] <= 10),       # moderately big home underdog
-                #     (combined_df['a_1_Up_odds_marg_raw'] > 3.75) & (combined_df['a_1_Up_odds_marg_raw'] <= 6),       # medium home underdog
-                #     (combined_df['a_1_Up_odds_marg_raw'] > 2.7) & (combined_df['a_1_Up_odds_marg_raw'] <= 3.75)       
-                # ]
+                # Apply multiplier
+                combined_df['htup_h_odds_marg'] = round(
+                    combined_df['htup_h_odds_true'] * np.select(conditions, multipliers, default=1.0),
+                    2
+                )
 
-                # choices = [
-                #     mult_1,
-                #     mult_2,
-                #     mult_3,
-                #     mult_4,
-                #     mult_5,
-                #     mult_6,
-                #     mult_7,
-                #     mult_8,
-                # ]
+                combined_df['htup_x_odds_marg'] = round(
+                    combined_df['htup_x_odds_true'] * np.select(conditions, multipliers, default=1.0),
+                    2
+                )
 
-                # combined_df['a_1_Up_marg_odds_final'] = round(combined_df['a_1_Up_odds_marg_raw'] * np.select(conditions, choices, default=1.0), 2)
+                combined_df['htup_a_odds_marg'] = round(
+                    combined_df['htup_a_odds_true'] * np.select(conditions, multipliers, default=1.0),
+                    2
+                )
+     
+
 
                 # # -------- ensure final odds are never above true -----------
                 # combined_df['h_1_Up_marg_odds_final'] = combined_df['h_1_Up_marg_odds_final'].clip(upper=combined_df['h_1_Up_odds_true']) - 0.01
                 # combined_df['a_1_Up_marg_odds_final'] = combined_df['a_1_Up_marg_odds_final'].clip(upper=combined_df['a_1_Up_odds_true']) - 0.01
 
-                # st.write(combined_df)
+                st.write(combined_df)
 
                 # # ----------------------  FMH Upload Format  ------------------------
 
-                # df1= combined_df.copy()
+                df1= combined_df.copy()
 
-                #                     # firstly allign streamlit team names with BK team names
-                # df1['Home Team Alligned'] = df1['Home Team'].map(team_names_t1x2_to_BK_dict).fillna(df1['Home Team'])
-                # df1['Away Team Alligned'] = df1['Away Team'].map(team_names_t1x2_to_BK_dict).fillna(df1['Away Team'])
+                                    # firstly allign streamlit team names with BK team names
+                df1['Home Team Alligned'] = df1['Home Team'].map(team_names_t1x2_to_BK_dict).fillna(df1['Home Team'])
+                df1['Away Team Alligned'] = df1['Away Team'].map(team_names_t1x2_to_BK_dict).fillna(df1['Away Team'])
 
-                # # CREATE AN INDIVIDUAL DF FOR EACH MATCH
+                # CREATE AN INDIVIDUAL DF FOR EACH MATCH
 
-                # today_date = datetime.today().strftime('%Y-%m-%d')
+                today_date = datetime.today().strftime('%Y-%m-%d')
 
-                # columns = [
-                #         'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
-                #         'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
-                #         'START TIME', 'OFFER START DATE', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
-                #         'PUBLISHED'
-                #     ]
+                columns = [
+                        'EVENT TYPE', 'SPORT', 'CATEGORY', 'COMPETITION', 'EVENT NAME', 
+                        'MARKET TYPE NAME', 'LINE', 'SELECTION NAME', 'PRICE', 'START DATE', 
+                        'START TIME', 'OFFER START DATE', 'OFFER START TIME', 'OFFER END DATE', 'OFFER END TIME', 
+                        'PUBLISHED'
+                    ]
                     
-                # fmh_comp_dict = {
-                #     'Spain La Liga': 'LaLiga',
-                #     'England Premier': 'Premier League',
-                #     'Italy Serie A': 'Serie A',
-                #     'Germany Bundesliga': 'Bundesliga',
-                #     'France Ligue 1': 'Ligue 1',
-                #     'South Africa Premier': 'Premier League',
-                #     'Scotland Premier': 'Premiership',
-                #     'Netherlands Eredivisie': 'Eredivisie',
-                #     'Belgium Jupiler': 'Pro League',
-                #     'England Championship': 'Championship',
-                #     'England League One': 'League One',
-                #     'England League Two': 'League Two',
-                #     'UEFA Champions League': 'Champions League',
-                #     'UEFA Europa League': 'Europa League',
-                #     'UEFA Conference League': 'Conference League'
-                # }
+                fmh_comp_dict = {
+                    'Spain La Liga': 'LaLiga',
+                    'England Premier': 'Premier League',
+                    'Italy Serie A': 'Serie A',
+                    'Germany Bundesliga': 'Bundesliga',
+                    'France Ligue 1': 'Ligue 1',
+                    'South Africa Premier': 'Premier League',
+                    'Scotland Premier': 'Premiership',
+                    'Netherlands Eredivisie': 'Eredivisie',
+                    'Belgium Jupiler': 'Pro League',
+                    'England Championship': 'Championship',
+                    'England League One': 'League One',
+                    'England League Two': 'League Two',
+                    'UEFA Champions League': 'Champions League',
+                    'UEFA Europa League': 'Europa League',
+                    'UEFA Conference League': 'Conference League'
+                }
 
-                # # --- Preprocess Date column once ---
-                # df1['Date'] = pd.to_datetime(df1['Date'], format='%d-%m-%y %H:%M', errors='coerce', dayfirst=True)
-                # df1["START DATE"] = df1["Date"].dt.strftime("%Y-%m-%d")
+                # --- Preprocess Date column once ---
+                df1['Date'] = pd.to_datetime(df1['Date'], format='%d-%m-%y %H:%M', errors='coerce', dayfirst=True)
+                df1["START DATE"] = df1["Date"].dt.strftime("%Y-%m-%d")
             
-                # # Adjust START TIME depending on BST toggle (vectorized)
-                # if is_bst:
-                #     df1["START TIME"] = (df1["Date"] - pd.Timedelta(hours=1)).dt.strftime("%H:%M:%S")
-                # else:
-                #     df1["START TIME"] = df1["Date"].dt.strftime("%H:%M:%S")
+                # Adjust START TIME depending on BST toggle (vectorized)
+                if is_bst:
+                    df1["START TIME"] = (df1["Date"] - pd.Timedelta(hours=1)).dt.strftime("%H:%M:%S")
+                else:
+                    df1["START TIME"] = df1["Date"].dt.strftime("%H:%M:%S")
 
-                # rows_list = []  # store each row
+                rows_list = []  # store each row
 
-                # for idx, row in df1.iterrows():
-                #     # Create an empty DataFrame with 9 rows and specified columns
-                #     df_row = pd.DataFrame(index=range(2), columns=columns)
+                for idx, row in df1.iterrows():
+                    # Create an empty DataFrame with 9 rows and specified columns
+                    df_row = pd.DataFrame(index=range(3), columns=columns)
 
-                #     # Extract the competition name from the dataframe row
-                #     competition_name = row['Competition']
+                    # Extract the competition name from the dataframe row
+                    competition_name = row['Competition']
 
-                #     # create category_lg variable
-                #     if competition_name.startswith("South Africa"):
-                #         category_lg = "South Africa"
-                #     else:
-                #         category_lg = competition_name.split(" ")[0]
+                    # create category_lg variable
+                    if competition_name.startswith("South Africa"):
+                        category_lg = "South Africa"
+                    else:
+                        category_lg = competition_name.split(" ")[0]
 
-                #     # create competition variable
-                #     competition_mapped = fmh_comp_dict.get(competition_name)
+                    # create competition variable
+                    competition_mapped = fmh_comp_dict.get(competition_name)
 
-                #     # create event_name variable
-                #     # extract Home Team and Away Team, make BK team name compatible, make as a vs b and store
-                #     event_name = row['Home Team Alligned'] + " vs " + row["Away Team Alligned"]
+                    # create event_name variable
+                    # extract Home Team and Away Team, make BK team name compatible, make as a vs b and store
+                    event_name = row['Home Team Alligned'] + " vs " + row["Away Team Alligned"]
 
-                #     # Set the specific columns
-                #     df_row['EVENT TYPE'].iloc[:2] = 'Match'
-                #     df_row['SPORT'].iloc[:2] = 'Football'
-                #     df_row['CATEGORY'].iloc[:2] = category_lg
-                #     df_row['COMPETITION'].iloc[:2] = competition_mapped
-                #     df_row['EVENT NAME'].iloc[:2] = event_name
+                    # Set the specific columns
+                    df_row['EVENT TYPE'].iloc[:3] = 'Match'
+                    df_row['SPORT'].iloc[:3] = 'Football'
+                    df_row['CATEGORY'].iloc[:3] = category_lg
+                    df_row['COMPETITION'].iloc[:3] = competition_mapped
+                    df_row['EVENT NAME'].iloc[:3] = event_name
 
-                #     df_row['MARKET TYPE NAME'].iloc[:2] = '1UP Early Payout Both'
+                    df_row['MARKET TYPE NAME'].iloc[:3] = 'HTUP'
                 #     # df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total shots {line} Over'
                 #     # df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total shots {line} Over'
 
-                #     df_row['LINE'].iloc[:2] = 'N'
+                    df_row['LINE'].iloc[:3] = 'N'
                 #     # df_row['LINE'].iloc[1] = row['T_main_line']
                 #     # df_row['LINE'].iloc[2] = row['T_+1_line']
                 #     # df_row['LINE'].iloc[3] = row['h_-1_line']
@@ -590,12 +587,13 @@ def main():
                 #     # df_row['LINE'].iloc[7] = row['a_main_line']
                 #     # df_row['LINE'].iloc[8] = row['a_+1_line']
 
-                #     df_row['SELECTION NAME'].iloc[0] = '{competitor1}'
-                #     df_row['SELECTION NAME'].iloc[1] = '{competitor2}'
+                    df_row['SELECTION NAME'].iloc[0] = '{competitor1}'
+                    df_row['SELECTION NAME'].iloc[1] = '{competitor2}'
+                    df_row['SELECTION NAME'].iloc[2] = 'draw'
 
-                #     df_row['PRICE'].iloc[0] = row['h_1_Up_marg_odds_final']
-                #     df_row['PRICE'].iloc[1] = row['a_1_Up_marg_odds_final']
-                #     # df_row['PRICE'].iloc[2] = row['T_+1_ov_w.%']
+                    df_row['PRICE'].iloc[0] = row['htup_h_odds_marg']
+                    df_row['PRICE'].iloc[1] = row['htup_a_odds_marg']
+                    df_row['PRICE'].iloc[2] = row['htup_x_odds_marg'] 
                 #     # df_row['PRICE'].iloc[3] = row['h_-1_ov_w.%']
                 #     # df_row['PRICE'].iloc[4] = row['h_main_ov_w.%']
                 #     # df_row['PRICE'].iloc[5] = row['h_+1_ov_w.%']
@@ -603,28 +601,28 @@ def main():
                 #     # df_row['PRICE'].iloc[7] = row['a_main_ov_w.%']
                 #     # df_row['PRICE'].iloc[8] = row['a_+1_ov_w.%']
 
-                #     # Dates & Times (already preprocessed)
-                #     start_date = row["START DATE"]
-                #     start_time = row["START TIME"] # already adjusted for BST/UTC
+                    # Dates & Times (already preprocessed)
+                    start_date = row["START DATE"]
+                    start_time = row["START TIME"] # already adjusted for BST/UTC
 
-                #     df_row['START DATE'] = start_date
-                #     df_row['START TIME'] = start_time
-                #     df_row['OFFER START DATE'] = today_date #3
-                #     df_row['OFFER START TIME'] = '09:00:00' #4
-                #     df_row['OFFER END DATE'] = start_date
-                #     df_row['OFFER END TIME'] = start_time
-                #     df_row['PUBLISHED'] = 'YES' #7
+                    df_row['START DATE'] = start_date
+                    df_row['START TIME'] = start_time
+                    df_row['OFFER START DATE'] = today_date #3
+                    df_row['OFFER START TIME'] = '09:00:00' #4
+                    df_row['OFFER END DATE'] = start_date
+                    df_row['OFFER END TIME'] = start_time
+                    df_row['PUBLISHED'] = 'YES' #7
 
 
-                #     # Finally, append to list
-                #     rows_list.append(df_row)
+                    # Finally, append to list
+                    rows_list.append(df_row)
 
                 
-                # # Concatenate all blocks into one DataFrame
-                # df_fmh_format = pd.concat(rows_list, ignore_index=True)
-                # df_fmh_format = df_fmh_format.set_index('EVENT TYPE')
-                # st.subheader('FMH Format')
-                # st.write(df_fmh_format)
+                # Concatenate all blocks into one DataFrame
+                df_fmh_format = pd.concat(rows_list, ignore_index=True)
+                df_fmh_format = df_fmh_format.set_index('EVENT TYPE')
+                st.subheader('FMH Format')
+                st.write(df_fmh_format)
 
                          
                         
