@@ -15,7 +15,7 @@ from mymodule.functions import get_fixtures, calculate_true_from_true_raw, calcu
 # https://dashboard.api-football.com/soccer/ids
 # Dictionary to map league names to their IDs
 leagues_dict = {
-    "England Premier": '39',
+    "England Premier": '39', # eng premier
     "Spain La Liga": '140',
     "Germany Bundesliga": '78',
     "Italy Serie A": '135',
@@ -29,9 +29,9 @@ leagues_dict = {
     "Portugal Liga I": '94',
     "Scotland Premier": '179',
     "South Africa Premier": "288",
-    "UEFA Champions League": 2,
-    "UEFA Europa League": 3,
-    "UEFA Conference League": 848
+    "UEFA Champions League": "2",
+    "UEFA Europa League": "3",
+    "UEFA Conference League": '848'
 }
 
 reverse_dict = {v: k for k, v in leagues_dict.items()}
