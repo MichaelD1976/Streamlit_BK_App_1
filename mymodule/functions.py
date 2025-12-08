@@ -199,6 +199,30 @@ team_names_t1x2_to_BK_dict = {
     'Stellenbosch' : 'Stellenbosch FC',
     'Magesi' : 'Magesi FC',
     'Polokwane City' : 'Polokwane City',
+
+        # CL/EL Teams
+    'Olympiakos Piraeus': 'Olympiacos',
+    'Sporting CP': 'Sporting',
+    'Slavia Praha': 'Slavia Prague',
+    'St Gilloise': 'Union St.Gilloise',
+    'FC Copenhagen': 'Copenhagen',
+    'Bodo/Glimt': 'Bodoe/Glimt',
+
+    'Ferencvaros': 'Ferencvarosi',
+    'Dinamo Zagreb': 'GNK Dinamo Zagreb',
+    'FC Midtjylland': 'Midtjylland',
+    'FK Crvena Zvezda': 'Crvena Zvezda',
+    'BSC Young Boys': 'Young Boys',
+    'FC Basel 1893': 'Basel',
+    'Red Bull Salzburg': 'Salzburg',
+    'GO Ahead Eagles': 'GA Eagles',
+    'Plzen': 'Viktoria Plzen',
+    'Brann': 'SK Brann',
+
+    # Turkey
+    'Rizespor': 'Caykur Rizespor',
+    'Fatih Karagumruk': 'Karagumruk',
+    'Gaziantepspor': 'Gaziantep',
     
 }
 
