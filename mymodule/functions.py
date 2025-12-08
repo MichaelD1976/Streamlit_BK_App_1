@@ -87,6 +87,7 @@ team_names_api_to_t1x2_dict = {
     'VfL Osnabruck': 'Osnabruck',
     'Hertha BSC': 'Hertha',
     '1.FC Koln': 'FC Koln',
+    '1. FC Koln': 'FC Koln',
     'SSV Ulm 1846': 'Ulm',
     'SV Darmstadt 98': 'Darmstadt'
 }

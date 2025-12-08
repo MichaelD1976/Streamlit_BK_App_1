@@ -94,14 +94,12 @@ def main():
                         # Proceed with the next steps if data is available
                         df_fixts = df_fixtures[['Fixture ID', 'Date', 'Home Team', 'Away Team']]
                         fixt_id_list = list(df_fixts['Fixture ID'].unique())
-                        
-                        if not st.secrets:
+
+                        if "rapidapi" in st.secrets and "API_KEY_FOOTBALL_API" in st.secrets["rapidapi"]:
+                            API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
+                        else:
                             load_dotenv()
                             API_KEY = os.getenv("API_KEY_FOOTBALL_API")
-
-                        else:
-                            # Use Streamlit secrets in production
-                            API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
 
                         @st.cache_resource
                         def get_odds(fixture_id, market_id, bookmakers):
