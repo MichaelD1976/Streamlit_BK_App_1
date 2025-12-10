@@ -207,6 +207,7 @@ team_names_t1x2_to_BK_dict = {
     'St Gilloise': 'Union St.Gilloise',
     'FC Copenhagen': 'Copenhagen',
     'Bodo/Glimt': 'Bodoe/Glimt',
+    'PSV Eindhoven': 'PSV',
 
     'Ferencvaros': 'Ferencvarosi',
     'Dinamo Zagreb': 'GNK Dinamo Zagreb',

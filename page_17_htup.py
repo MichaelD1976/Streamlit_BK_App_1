@@ -280,11 +280,11 @@ def main():
                         #    Apply the function row by row and expand the results into two columns
                         df[['hgx', 'agx']] = df.apply(
                             lambda row: calculate_expected_team_goals_from_1x2_refined(
-                                row['h_pc_true'],
-                                row['d_pc_true'],
-                                row['a_pc_true'],
-                                row['ov_pc_true'],
-                                row['un_pc_true']
+                                1/row['h_pc_true'],
+                                1/row['d_pc_true'],
+                                1/row['a_pc_true'],
+                                1/row['ov_pc_true'],
+                                1/row['un_pc_true']
                             ),
                             axis=1,
                             result_type='expand'  # Ensures the tuple is split into two separate columns
@@ -435,7 +435,7 @@ def main():
 
                 # Multipliers
                 multipliers = [
-                    1, 0.995, 0.99, 0.97, 0.97, 0.97, 0.90, 0.85, 0.80,
+                    1, 1, 1.02, 1.02, 0.96, 0.95, 0.90, 0.85, 0.80,
                     0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.4, 0.3  # add more if needed
                 ]
 
@@ -443,12 +443,11 @@ def main():
                 # Note: np.select checks conditions in order, so ranges should not overlap
                 ranges = [
                     (0, 1.35),      # 1
-                    (1.35, 1.51),   # 0.995
-                    (1.51, 1.76),   # 0.99
-                    (1.76, 2.01),   # 0.97 
-
-                    (2.01, 2.51),   # 0.97
-                    (2.51, 3.51),   # 0.97
+                    (1.35, 1.51),   # 1
+                    (1.51, 1.76),   # 1.02
+                    (1.76, 2.01),   # 1.02 
+                    (2.01, 2.51),   # 0.96
+                    (2.51, 3.51),   # 0.95
                     (3.51, 5.01),   # 0.9
                     (5.01, 7.01),   # 0.85 
                     (7.01, 8.51),   # 0.80 
@@ -462,36 +461,32 @@ def main():
                     (101.01, 99999.01) # 0.30
                 ]
 
-                # Columns to check
-                cols = ['htup_h_odds_true', 'htup_a_odds_true', 'htup_x_odds_true']
+                def get_multiplier(series):
+                    conditions = [
+                        (series >= low) & (series < high)
+                        for (low, high) in ranges
+                    ]
+                    return np.select(conditions, multipliers, default=1.0)
+                
 
-                # Generate conditions: True if any column value falls in the range
-                conditions = [
-                    (combined_df[cols] >= low).any(axis=1) & (combined_df[cols] < high).any(axis=1)
-                    for (low, high) in ranges
-                ]
+                combined_df['htup_h_odds_marg'] = (
+                    combined_df['htup_h_odds_true'] * get_multiplier(combined_df['htup_h_odds_true'])
+                ).round(2)
 
-                # Apply multiplier
-                combined_df['htup_h_odds_marg'] = round(
-                    combined_df['htup_h_odds_true'] * np.select(conditions, multipliers, default=1.0),
-                    2
-                )
+                combined_df['htup_x_odds_marg'] = (
+                    combined_df['htup_x_odds_true'] * get_multiplier(combined_df['htup_x_odds_true'])
+                ).round(2)
 
-                combined_df['htup_x_odds_marg'] = round(
-                    combined_df['htup_x_odds_true'] * np.select(conditions, multipliers, default=1.0),
-                    2
-                )
-
-                combined_df['htup_a_odds_marg'] = round(
-                    combined_df['htup_a_odds_true'] * np.select(conditions, multipliers, default=1.0),
-                    2
-                )
+                combined_df['htup_a_odds_marg'] = (
+                    combined_df['htup_a_odds_true'] * get_multiplier(combined_df['htup_a_odds_true'])
+                ).round(2)
      
 
 
-                # # -------- ensure final odds are never above true -----------
-                # combined_df['h_1_Up_marg_odds_final'] = combined_df['h_1_Up_marg_odds_final'].clip(upper=combined_df['h_1_Up_odds_true']) - 0.01
-                # combined_df['a_1_Up_marg_odds_final'] = combined_df['a_1_Up_marg_odds_final'].clip(upper=combined_df['a_1_Up_odds_true']) - 0.01
+                # -------- ensure final odds are never above true -----------
+                combined_df['htup_h_odds_marg'] = combined_df['htup_h_odds_marg'].clip(upper=combined_df['Home Win']) 
+                combined_df['htup_x_odds_marg'] = combined_df['htup_x_odds_marg'].clip(upper=combined_df['Draw']) 
+                combined_df['htup_a_odds_marg'] = combined_df['htup_a_odds_marg'].clip(upper=combined_df['Away Win']) 
 
                 st.write(combined_df)
 

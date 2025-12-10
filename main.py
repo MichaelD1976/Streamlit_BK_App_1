@@ -41,7 +41,7 @@ page_options = [
                  'Derivatives',
             #     'Specials Pricing',
                  '1Up Pricing',
-            #     'HTUP Pricing',
+                 'HTUP Pricing',
                   'Player Stats',
             #     'Shots on Target',
             #     'Fouls',
