@@ -81,6 +81,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 16/12/25 HTUP pricing page added    
                      - 17/11/25 1Up multi-competition pricing added
                      - 05/11/25 Models - Shots/Fouls head to head fmh format added
                      - 28/10/25 Models - BST toggle default to off. API cache_resource amendment

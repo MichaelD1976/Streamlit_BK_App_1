@@ -61,6 +61,20 @@ def main():
         # over bias initially set to 1.07 pre over only being published
         is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=False)
 
+        margin_selection = st.selectbox(
+            'Select margin to apply to 1.5-2.00 price range:',
+            options=['Standard Negative Margin (-4% EV)',
+                      'Low Negative Margin (-2% EV)', 
+                      'High Negative Margin (-6% EV)',
+                        'True Margin (0% EV)',
+                        'Small Positive Margin (+2% EV)' 
+            ],
+            index=0
+        )
+
+        st.write("")
+
+
     with column2:
         # GET FIXTURES UP TO DATE
         today = datetime.now()
@@ -434,18 +448,39 @@ def main():
                 # # HOME
 
                 # Multipliers
-                multipliers = [
+                if margin_selection == 'Standard Negative Margin (-4% EV)':
+                    multipliers = [
+                    1, 1, 1.04, 1.04, 0.96, 0.95, 0.90, 0.85, 0.80,
+                    0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.4, 0.3  # add more if needed
+                    ]
+                elif margin_selection == 'Low Negative Margin (-2% EV)':
+                    multipliers = [
                     1, 1, 1.02, 1.02, 0.96, 0.95, 0.90, 0.85, 0.80,
                     0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.4, 0.3  # add more if needed
-                ]
+                    ]
+                elif margin_selection == 'High Negative Margin (-6% EV)':
+                    multipliers = [
+                        1, 1, 1.06, 1.06, 0.96, 0.95, 0.90, 0.85, 0.80,
+                        0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.4, 0.3  # add more if needed
+                    ]
+                elif margin_selection == 'True Margin (0% EV)':
+                    multipliers = [
+                        1, 1, 1.00, 1.00, 0.96, 0.95, 0.90, 0.85, 0.80,
+                        0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.4, 0.3  # add more if needed
+                    ]
+                elif margin_selection == 'Small Positive Margin (+2% EV)':
+                    multipliers = [
+                        1, 1, 0.98, 0.98, 0.96, 0.95, 0.90, 0.85, 0.80,
+                        0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.4, 0.3  # add more if needed
+                    ]
 
                 # Define your ranges as tuples (lower_bound, upper_bound)
                 # Note: np.select checks conditions in order, so ranges should not overlap
                 ranges = [
-                    (0, 1.35),      # 1
+                    (0, 1.35),      # 1   
                     (1.35, 1.51),   # 1
-                    (1.51, 1.76),   # 1.02
-                    (1.76, 2.01),   # 1.02 
+                    (1.51, 1.76),   # 1.02  - offering negative EV
+                    (1.76, 2.01),   # 1.02  - offering negative EV
                     (2.01, 2.51),   # 0.96
                     (2.51, 3.51),   # 0.95
                     (3.51, 5.01),   # 0.9
@@ -566,7 +601,7 @@ def main():
                     df_row['COMPETITION'].iloc[:3] = competition_mapped
                     df_row['EVENT NAME'].iloc[:3] = event_name
 
-                    df_row['MARKET TYPE NAME'].iloc[:3] = 'HTUP'
+                    df_row['MARKET TYPE NAME'].iloc[:3] = 'Half Time Early Payout Both'
                 #     # df_row['MARKET TYPE NAME'].iloc[3:6] = '{competitor1} total shots {line} Over'
                 #     # df_row['MARKET TYPE NAME'].iloc[6:9] = '{competitor2} total shots {line} Over'
 
