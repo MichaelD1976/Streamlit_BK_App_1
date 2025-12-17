@@ -616,12 +616,13 @@ def main():
                 #     # df_row['LINE'].iloc[8] = row['a_+1_line']
 
                     df_row['SELECTION NAME'].iloc[0] = '{competitor1}'
-                    df_row['SELECTION NAME'].iloc[1] = '{competitor2}'
-                    df_row['SELECTION NAME'].iloc[2] = 'draw'
+                    df_row['SELECTION NAME'].iloc[1] = 'draw'
+                    df_row['SELECTION NAME'].iloc[2] = '{competitor2}'
 
                     df_row['PRICE'].iloc[0] = row['htup_h_odds_marg']
-                    df_row['PRICE'].iloc[1] = row['htup_a_odds_marg']
-                    df_row['PRICE'].iloc[2] = row['htup_x_odds_marg'] 
+                    df_row['PRICE'].iloc[1] = row['htup_x_odds_marg'] 
+                    df_row['PRICE'].iloc[2] = row['htup_a_odds_marg']
+
                 #     # df_row['PRICE'].iloc[3] = row['h_-1_ov_w.%']
                 #     # df_row['PRICE'].iloc[4] = row['h_main_ov_w.%']
                 #     # df_row['PRICE'].iloc[5] = row['h_+1_ov_w.%']
