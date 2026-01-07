@@ -15,7 +15,7 @@ from mymodule.functions import get_fixtures, calculate_true_from_true_raw, calcu
 # https://dashboard.api-football.com/soccer/ids
 # Dictionary to map league names to their IDs
 leagues_dict = {
-    "England Premier": '39',
+    "England Premier": '39', # eng premier
     "Spain La Liga": '140',
     "Germany Bundesliga": '78',
     "Italy Serie A": '135',
@@ -23,15 +23,26 @@ leagues_dict = {
     'England Championship': '40',
     'England League One': '41',
     'England League Two': '42',
+    'Argentina Liga Profesional': '128',
+    'Brazil Serie A': '71',
     "Germany 2 Bundesliga": '79',
     "Netherlands Eredivisie": "88",
     "Belgium Jupiler": "144",
+    "Croatia HNL": "210",
+    'Czech Liga': '345',
+    'Denmark Superliga': '119',
+    'Finland Veikkausliga': '244',
+    'Norway Eliteserien': '103',
     "Portugal Liga I": '94',
+    'Turkey Super Lig': '203',
+    'Saudi Arabia Pro League': '307',
     "Scotland Premier": '179',
     "South Africa Premier": "288",
-    "UEFA Champions League": 2,
-    "UEFA Europa League": 3,
-    "UEFA Conference League": 848
+    'Sweden Allsvenskan': '113',
+    'USA MLS': '909',
+    "UEFA Champions League": "2",
+    "UEFA Europa League": "3",
+    "UEFA Conference League": '848'
 }
 
 reverse_dict = {v: k for k, v in leagues_dict.items()}
@@ -477,9 +488,12 @@ def main():
                     'Scotland Premier': 'Premiership',
                     'Netherlands Eredivisie': 'Eredivisie',
                     'Belgium Jupiler': 'Pro League',
+                    'Portugal Liga I': 'Primeira Liga',
+                    'Turkey Super Lig': 'Super Lig',
                     'England Championship': 'Championship',
                     'England League One': 'League One',
                     'England League Two': 'League Two',
+                    'Saudi Arabia Pro League': 'Professional League',
                     'UEFA Champions League': 'Champions League',
                     'UEFA Europa League': 'Europa League',
                     'UEFA Conference League': 'Conference League'
@@ -507,6 +521,8 @@ def main():
                     # create category_lg variable
                     if competition_name.startswith("South Africa"):
                         category_lg = "South Africa"
+                    elif competition_name.startswith("Saudi"):
+                        category_lg = "Saudi Arabia"
                     else:
                         category_lg = competition_name.split(" ")[0]
 

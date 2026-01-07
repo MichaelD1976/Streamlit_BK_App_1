@@ -112,6 +112,17 @@ team_names_t1x2_to_BK_dict = {
     'Everton': 'Everton',
     'Aston Villa': 'Aston Villa', 
 
+    'QPR': 'Queens Park Rangers',
+    'Sheffield Weds': 'Sheffield Wed',
+    'Oxford': 'Oxford Utd',
+    'Charlton': 'Charlton Athletic',
+    'Bristol Rvs': 'Bristol Rovers',
+    'Crawley Town': 'Crawley',
+    'Fleetwood Town': 'Fleetwood',
+    'Newport County': 'Newport',
+    'Milton Keynes Dons': 'MK Dons',
+
+
     'Girona': 'Girona',
     'Villarreal': 'Villarreal',
     'Mallorca': 'Mallorca',
@@ -224,6 +235,28 @@ team_names_t1x2_to_BK_dict = {
     'Rizespor': 'Caykur Rizespor',
     'Fatih Karagumruk': 'Karagumruk',
     'Gaziantepspor': 'Gaziantep',
+
+    # Greece
+    'Kifisia': 'AE Kifisia FC',
+    'Larisa': 'AE Larissa FC',
+    'Asteras Atromitos': 'Atromitos Athinon',
+    'Olympiakos': 'Olympiacos',
+    'Panetolikos': 'Panetolikos Agrinio',
+    'Levadiakos': 'APO Levadiakos FC',
+    'Volos NFC': 'Volos NPS',
+    'OFI': 'OFI Crete',
+    'Aris': 'Aris Thessaloniki',
+    'AEK': 'AEK Athens',
+    'Panserraikos': 'Panserraikos FC',
+
+    # Saudi
+    'Al Khaleej Saihat': 'Al Khaleej Saihat FC',
+    'Damac': 'Damac FC',
+    'Al Taawon': 'Al Taawon FC',
+    'Al Shabab': 'Al Shabab FC (KSA)',
+    'Al-Ittihad FC': 'Al Ittihad Jeddah',
+    'Al Riyadh': 'AL Riyadh',
+    'Al-Fayha': 'AL Fayha FC',
     
 }
 

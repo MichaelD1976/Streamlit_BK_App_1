@@ -23,15 +23,27 @@ leagues_dict = {
     'England Championship': '40',
     'England League One': '41',
     'England League Two': '42',
+    'Argentina Liga Profesional': '128',
+    'Brazil Serie A': '71',
     "Germany 2 Bundesliga": '79',
     "Netherlands Eredivisie": "88",
     "Belgium Jupiler": "144",
+    "Croatia HNL": "210",
+    'Czech Liga': '345',
+    'Denmark Superliga': '119', 
+    'Finland Veikkausliga': '244',
+    'Norway Eliteserien': '103',
     "Portugal Liga I": '94',
+    'Turkey Super Lig': '203',
+    'Saudi Arabia Pro League': '307',
     "Scotland Premier": '179',
     "South Africa Premier": "288",
+    'Sweden Allsvenskan': '113',
+    'USA MLS': '909',
     "UEFA Champions League": "2",
     "UEFA Europa League": "3",
     "UEFA Conference League": '848'
+
 }
 
 reverse_dict = {v: k for k, v in leagues_dict.items()}
@@ -101,7 +113,7 @@ def main():
 
                 for league_id in leagues_selected_ids:
                     df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
-                    # st.write('625', df_fixtures)
+                    # st.write('116', df_fixtures)
                     if df_fixtures.empty:
                         st.write("No data returned for the specified league and date range.")
                     else:
@@ -180,18 +192,18 @@ def main():
                         # Collect odds for all fixtures
                         all_odds_df = pd.DataFrame()  # DataFrame to collect all odds
 
-                        # st.write('706', fixt_id_list)
+                        #st.write('195', fixt_id_list)
 
                         # Iterate through each fixture ID and get odds
                         for fixture_id in fixt_id_list:
                             for market_id in MARKET_IDS:
                                 odds_df = get_odds(fixture_id, market_id, BOOKMAKERS)
-                                # st.write('712',odds_df)
+                                #st.write('201',odds_df)
                                 if not odds_df.empty:
                                     all_odds_df = pd.concat([all_odds_df, odds_df], ignore_index=True)
 
                         # Display the collected odds
-                        # st.write('717', all_odds_df)
+                        #st.write('206', all_odds_df)
 
                         # Use groupby and fillna to collapse rows and remove None values
                         df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
@@ -554,9 +566,12 @@ def main():
                     'Scotland Premier': 'Premiership',
                     'Netherlands Eredivisie': 'Eredivisie',
                     'Belgium Jupiler': 'Pro League',
+                    'Portugal Liga I': 'Primeira Liga',
+                    'Turkey Super Lig': 'Super Lig',
                     'England Championship': 'Championship',
                     'England League One': 'League One',
                     'England League Two': 'League Two',
+                    'Saudi Arabia Pro League': 'Professional League',
                     'UEFA Champions League': 'Champions League',
                     'UEFA Europa League': 'Europa League',
                     'UEFA Conference League': 'Conference League'
@@ -584,6 +599,8 @@ def main():
                     # create category_lg variable
                     if competition_name.startswith("South Africa"):
                         category_lg = "South Africa"
+                    elif competition_name.startswith("Saudi Arabia"):
+                        category_lg = "Saudi Arabia"
                     else:
                         category_lg = competition_name.split(" ")[0]
 
