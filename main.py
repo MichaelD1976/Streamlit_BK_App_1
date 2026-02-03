@@ -43,6 +43,7 @@ page_options = [
                  '1Up Pricing',
                  'HTUP Pricing',
                   'Player Stats',
+                  'Squad Data',
             #     'Shots on Target',
             #     'Fouls',
              #    'Corners',
@@ -81,6 +82,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 03/02/26 Squad Data page added
                      - 16/12/25 HTUP pricing page added    
                      - 17/11/25 1Up multi-competition pricing added
                      - 05/11/25 Models - Shots/Fouls head to head fmh format added
@@ -179,6 +181,10 @@ def main():
     elif selected_page == 'HTUP Pricing':
         import page_17_htup
         page_17_htup.main() 
+
+    elif selected_page == 'Squad Data':
+        import page_18_squad_data
+        page_18_squad_data.main() 
 
     # elif selected_page == 'Offsides':
     #     import page_9_offsides

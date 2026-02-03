@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 # import altair as alt
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
 from scipy.stats import poisson, nbinom
 from scipy.optimize import minimize
@@ -259,6 +259,10 @@ team_names_t1x2_to_BK_dict = {
     'Al-Fayha': 'AL Fayha FC',
     
 }
+
+
+CURRENT_SEASON_FST_FORMAT = '2025-26' # for generate_fst downgrades. If not current season, use spring adjustments
+
 
 # ---------------------------------------------------
 
@@ -886,3 +890,346 @@ def generate_marginated_odds_with_fav_lock(true_odds, margin):
     # Convert back to odds
     margined_odds = 1 / adjusted_probs
     return margined_odds.round(2)
+
+
+    # ------------------------ GENERATE FST FROM FILTERED_DF ---------------------------
+@st.cache_data
+def generate_team_fst(filtered_df, selected_year): # added selected_year argument to determine if current season or not for downgrade adjustments
+    
+    # Increase/decrease rating based on: 
+    # The number of minutes played
+    max_mins = filtered_df['Minutes'].max()
+    # Proportion of goals scored
+    total_goals = filtered_df['Goals'].sum()
+    # Proportion of assists created
+    total_assists = filtered_df['Assists'].sum()
+
+    # Define a function to apply rating adjustments row-by-row - GOALKEEPERS
+    def mins_played_rating_boost_goalkeeper(row):
+        if row['Minutes'] > max_mins * 0.95:
+            return row['Rating'] * 1.05
+        elif row['Minutes'] > max_mins * 0.85:
+            return row['Rating'] * 1.03
+        elif row['Minutes'] < max_mins * 0.7:
+            return row['Rating'] * 0.96
+        elif row['Minutes'] < max_mins * 0.6:
+            return row['Rating'] * 0.92
+        else:
+            return row['Rating']
+        
+        # Define a function to apply rating adjustments row-by-row - OUTFIELDERS
+    def mins_played_rating_boost_outfield_def(row):
+        if row['Minutes'] > max_mins * 0.95:
+            return row['Rating'] * 1.03
+        elif row['Minutes'] > max_mins * 0.85:
+            return row['Rating'] * 1.015
+        elif row['Minutes'] > max_mins * 0.7:
+            return row['Rating'] * 0.985
+        elif row['Minutes'] > max_mins * 0.6:
+            return row['Rating'] * 0.97 
+        elif row['Minutes'] > max_mins * 0.5:
+            return row['Rating'] * 0.93 
+        elif row['Minutes'] > max_mins * 0.40:
+            return row['Rating'] * 0.91 
+        elif row['Minutes'] > max_mins * 0.30:
+            return row['Rating'] * 0.89 
+        else:
+            return row['Rating'] * 0.87
+        
+        # Define a function to apply rating adjustments row-by-row - OUTFIELDERS
+    def mins_played_rating_boost_outfield_non_def(row):
+        if row['Minutes'] > max_mins * 0.95:
+            return row['Rating'] * 1.045
+        elif row['Minutes'] > max_mins * 0.85:
+            return row['Rating'] * 1.025
+        elif row['Minutes'] > max_mins * 0.7:
+            return row['Rating'] * 0.985
+        elif row['Minutes'] > max_mins * 0.6:
+            return row['Rating'] * 0.96 
+        elif row['Minutes'] > max_mins * 0.5:
+            return row['Rating'] * 0.93 
+        elif row['Minutes'] > max_mins * 0.40:
+            return row['Rating'] * 0.91 
+        elif row['Minutes'] > max_mins * 0.30:
+            return row['Rating'] * 0.89 
+        else:
+            return row['Rating'] * 0.87
+        
+        
+    # Define a function to apply rating adjustments row-by-row - GOALS SCORED (increase player rating if they score ALOT of the team goals)
+    def goals_scored_rating_boost(row):
+        if row['Goals'] / total_goals > 0.6: # if player scored more than 60% of team goals
+            return row['Rating'] * 1.06
+        elif row['Goals'] / total_goals > 0.5:
+            return row['Rating'] * 1.045
+        elif row['Goals'] / total_goals > 0.4:
+            return row['Rating'] * 1.03
+        elif row['Goals'] / total_goals > 0.3:
+            return row['Rating'] * 1.015
+        else:
+            return row['Rating']
+        
+    # Define a function to apply rating adjustments row-by-row - ASSISTS (increase player rating if they assist ALOT of the team goals)
+    def assists_rating_boost(row):
+        if row['Assists'] / total_assists > 0.6: # if player assists more than 60% of team goals
+            return row['Rating'] * 1.04
+        elif row['Assists'] / total_assists > 0.5:
+            return row['Rating'] * 1.03
+        elif row['Assists'] / total_assists > 0.4:
+            return row['Rating'] * 1.02
+        elif row['Assists'] / total_assists > 0.3:
+            return row['Rating'] * 1.01
+        else:
+            return row['Rating']
+        
+
+    # Apply mins_played_rating_boost functions depending on position. Defenders were being made k+ too easily so outfield
+    # non-defenders function created
+    filtered_df['Rating'] = round(filtered_df.apply(
+        lambda row: (
+            mins_played_rating_boost_goalkeeper(row)
+            if row['Position'] == 'Goalkeeper' else
+            mins_played_rating_boost_outfield_def(row)
+            if row['Position'] == 'Defender' else
+            mins_played_rating_boost_outfield_non_def(row)
+        ), axis=1
+    ), 1)
+
+
+    # goals_scored_rating_boost
+    filtered_df['Rating'] = round(filtered_df.apply(
+        lambda row: goals_scored_rating_boost(row), axis=1),1) 
+    
+    # assists_rating_boost
+    filtered_df['Rating'] = round(filtered_df.apply(
+        lambda row: assists_rating_boost(row), axis=1),1) 
+
+
+    df_r = filtered_df[['Player', 'Rating', 'Position', 'Player_id']]
+
+    # Calculate mean and standard deviation of 'Rating'
+    mean_rating = df_r['Rating'].mean()
+    std_rating = df_r['Rating'].std()
+
+    # Add the 'Rating STD' column
+    df_r = df_r.copy()
+    df_r.loc[:, 'Rating St.Dev'] = (df_r['Rating'] - mean_rating) / std_rating
+
+    # Define a function to classify the value based on 'Rating STD'
+    def classify_rating(std_value):
+        if std_value > 2.2:
+            return 'Key +'
+        elif std_value > 1.6:
+            return 'Key'
+        elif std_value > 1.15:
+            return 'Imp +'
+        elif std_value > 0.8:
+            return 'Imp'
+        elif std_value > 0.4:
+            return 'Reg +'
+        elif std_value > -0.2:
+            return 'Reg'
+        elif std_value > -1.0:
+            return 'Sub +'
+        else:
+            return 'Sub'
+
+    # Apply the classification function to create the 'Value' column
+    df_r = df_r.copy()
+    df_r.loc[:,'Classification'] = df_r['Rating St.Dev'].apply(classify_rating)
+    df_r = df_r.drop(['Rating St.Dev'], axis=1)
+    df_r.index = df_r.index +1
+
+
+    # Assign variable downgrades depending on month, if july to oct, if nov to jan, if feb to june
+
+    # Get the current month
+    month = datetime.now().month
+
+    # Define adjustment sets by season
+    adjustments = {
+        "winter": {  # Oct –January inclusive
+            "Key +": -12, "Key": -9, "Imp +": -6, "Imp": -4, "Reg +": -2, "Reg": -1
+        },
+        "autumn": {  # Aug–Sept inclusive
+            "Key +": -9, "Key": -6, "Imp +": -4, "Imp": -2, "Reg +": -1, "Reg": 0
+        },
+        "spring": {  # February–July inclusive
+            "Key +": -15, "Key": -12, "Imp +": -9, "Imp": -6, "Reg +": -3, "Reg": -1
+        }
+    }
+
+    # Determine which set to use based on month
+    if month in [10, 11, 12, 1]:
+        current_adj_dict = adjustments["winter"]
+    elif month in range(8, 10):     # August–September
+        current_adj_dict = adjustments["autumn"]
+    else:                           # February–July 
+        current_adj_dict = adjustments["spring"]
+
+    # if selected_season is not current_year, then use spring adjustments
+    if selected_year != CURRENT_SEASON_FST_FORMAT:
+        current_adj_dict = adjustments["spring"]
+
+
+    # Define a function to classify the value based on 'Rating STD'
+    def classify_dg(classification):
+        return current_adj_dict.get(classification, 0)   # Return the adjustment if found, otherwise 0
+
+    # st.write('477', df_r)
+    # Apply the classification function to create the 'Downgrade' column
+    df_r = df_r.copy()
+    df_r.loc[:, 'Downgrade'] = df_r['Classification'].apply(classify_dg)
+
+    df_squad = df_r.copy()
+
+    # get the top 1 GK
+    df_goalkeepers = df_r[df_r['Position'] == 'Goalkeeper'].nlargest(1, 'Rating')
+
+    # Get the top 4 Defenders
+    df_defenders = df_r[df_r['Position'] == 'Defender'].nlargest(4, 'Rating')
+
+    # Get the top 5 Midfielders
+    df_midfielders = df_r[df_r['Position'] == 'Midfielder'].nlargest(5, 'Rating')
+
+    # Get the top 3 Attackers
+    df_attackers = df_r[df_r['Position'] == 'Attacker'].nlargest(3, 'Rating')
+
+    # 13 players selected - now concat and filter best 11 - this is so teams with fewer attackers still return 11 players, 10 outfield
+    # Concatenate the three results into a single dataframe
+    df_fst_outfield = pd.concat([df_defenders, df_midfielders, df_attackers])
+    df_fst_outfield = df_fst_outfield.nlargest(10, 'Rating')
+
+    # now tag on gk
+    df_fst = pd.concat([df_fst_outfield, df_goalkeepers], axis = 0)
+                           
+    df_fst['Rating'] = round(df_fst['Rating'], 2)
+
+    # Custom sort order for Position: Defender > Midfielder > Attacker
+    position_order = ['Goalkeeper', 'Defender', 'Midfielder', 'Attacker']
+    # Apply the categorical type to Position for the final dataframe
+    df_fst['Position'] = pd.Categorical(df_fst['Position'], categories=position_order, ordered=True)
+
+    # Now sort by Position according to the custom order
+    df_fst = df_fst[['Player', 'Downgrade', 'Position', 'Rating', 'Classification', 'Player_id']]
+    df_fst = df_fst.sort_values(by=['Position', 'Rating'], ascending=[True, False])
+    # df_fst.loc[:, 'Position'] = pd.Categorical(df_fst['Position'], categories=position_order, ordered=True)
+    df_fst.set_index('Player', inplace=True)
+
+    return df_fst, df_squad
+
+# -----------------------------------------------------------------------------
+
+# Function to return team injuries/absences df for last 2 weeks passing args team 'api_id' and current season
+@st.cache_resource
+def get_injuries_by_team(api_id, current_season):
+
+    load_dotenv()
+    API_KEY = os.getenv('API_KEY_FOOTBALL-API')
+
+    url = "https://api-football-v1.p.rapidapi.com/v3/injuries"
+    querystring = {"season": current_season, "team": api_id}
+
+    headers = {
+        "X-RapidAPI-Key": API_KEY,
+        "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+    }
+
+    response = requests.get(url, headers=headers, params=querystring)
+
+    try:
+        data = response.json()
+    except ValueError:
+        return pd.DataFrame()  # Return empty DataFrame if JSON parsing fails
+    
+    # If response is empty or invalid, return empty DataFrame
+    if not data or "response" not in data or not data["response"]:
+        return pd.DataFrame(columns=["Player Name", "Reason", "Date"])
+
+    # Get the current date and calculate the date two weeks ago
+    two_weeks_ago = datetime.utcnow() - timedelta(weeks=2)
+
+    # Dictionary to store the first occurrence of each player
+    injury_dict = {}
+
+    for injury in data.get('response', []):
+        player_name = injury['player']['name']
+        reason = injury['player']['reason']
+        fixture_date = injury['fixture']['date']  # e.g., '2024-08-16T19:00:00+00:00'
+        
+        # Convert fixture date to datetime
+        fixture_datetime = datetime.strptime(fixture_date, "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=None)
+        
+        # Only include injuries in the last 2 weeks and avoid duplicates
+        if fixture_datetime >= two_weeks_ago and player_name not in injury_dict:
+            injury_dict[player_name] = {"Reason": reason, "Date": fixture_datetime.date()}  # Store date as well
+
+
+    # Convert to DataFrame
+    df_injuries = pd.DataFrame.from_dict(injury_dict, orient="index").reset_index()
+    df_injuries.columns = ["Player Name", "Reason", "Date"]  # Rename columns properly
+
+    return df_injuries
+
+# -------------------------------------------------------------------
+
+# Function to return transfers/loans in the last year
+@st.cache_resource
+def get_transfers_by_team(api_id, current_season):
+
+    load_dotenv()
+    API_KEY = os.getenv('API_KEY_FOOTBALL-API')
+
+    url = "https://api-football-v1.p.rapidapi.com/v3/transfers"
+    querystring = {"team": api_id}  # Replace "33" with your team API_ID if needed
+
+    headers = {
+        "X-RapidAPI-Key": API_KEY,
+        "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+    }
+
+    response = requests.get(url, headers=headers, params=querystring)
+
+    # Convert the response to JSON
+    data = response.json()
+
+    # Check if the response contains transfers data
+    if 'response' in data and data['response']:
+        # Get the current date and calculate the date one year ago and one year in the future
+        one_year_ago = datetime.utcnow() - timedelta(days=365)
+        one_year_in_future = datetime.utcnow() + timedelta(days=365)
+        
+        # List to store filtered transfers
+        transfer_list = []
+        
+        # Iterate over the response and filter transfers by date
+        for player_data in data['response']:
+            player_name = player_data['player']['name']
+            
+            # Iterate over the player's transfers
+            for transfer in player_data['transfers']:
+                transfer_date = transfer['date']
+                
+                try:
+                    # Convert the date string to datetime
+                    transfer_datetime = datetime.strptime(transfer_date, "%Y-%m-%d")
+                    
+                    # Check if the year is within the acceptable range (CURRENT_SEASON ± 1 year)
+                    transfer_year = str(transfer_datetime.year)  # Convert year to string for comparison
+                    if current_season == transfer_year or current_season == str(int(transfer_year) + 1) or current_season == str(int(transfer_year) - 1):
+                        # Filter the transfers that occurred in the last year or future one year window
+                        if one_year_ago <= transfer_datetime <= one_year_in_future:
+                            # Extract the relevant data
+                            transfer_type = transfer['type']
+                            team_in = transfer['teams']['in']['name']
+                            team_out = transfer['teams']['out']['name']
+                            # Add player name to the data
+                            transfer_list.append([player_name, transfer_date, transfer_type, team_in, team_out])
+                except ValueError:
+                    # Handle the case of invalid date format or incorrect date
+                    continue
+        
+        # Create DataFrame from the filtered transfer data
+        df_transfers = pd.DataFrame(transfer_list, columns=["Player Name", "Date", "Type", "Team In", "Team Out"])
+
+        return df_transfers
