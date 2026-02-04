@@ -82,6 +82,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 04/02/26 Squad Data - team best XI's added
                      - 03/02/26 Squad Data page added
                      - 16/12/25 HTUP pricing page added    
                      - 17/11/25 1Up multi-competition pricing added

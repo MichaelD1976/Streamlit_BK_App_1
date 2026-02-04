@@ -150,186 +150,186 @@ def main():
     AgGrid(filtered_df_squad, gridOptions=grid_options, enable_enterprise_modules=False, height=600)
     st.write("---")
 
-    # # ---------- Generate fst via function ------------------------------ 
+    # ---------- Generate fst via function ------------------------------ 
 
-    # # st.write(filtered_df)
-    # # function returns fst & squad player ratings. Not currently utilising squad ratings so returned as '_'
-    # df_r, _ = generate_team_fst(filtered_df, selected_year)
-
-
-    # # # -------- ADD SCALED SHOTS AS ATTACK RATING ------------
-
-    # # Step 1: Find the min and max values in the 'Shots Total' column
-    # if not per_90_toggle:
-    #     min_shots = (filtered_df['Shots Total'] / filtered_df['Minutes']).min()
-    #     max_shots = (filtered_df['Shots Total'] / filtered_df['Minutes']).max()
-
-    #     min_goals = (filtered_df['Goals'] / filtered_df['Minutes']).min()
-    #     max_goals = (filtered_df['Goals'] / filtered_df['Minutes']).max()
-
-    #     min_passes_key = (filtered_df['Passes Key'] / filtered_df['Minutes']).min()
-    #     max_passes_key = (filtered_df['Passes Key'] / filtered_df['Minutes']).max()
-
-    #     min_dribbles_suc = (filtered_df['Dribbles Success'] / filtered_df['Minutes']).min()
-    #     max_dribbles_suc = (filtered_df['Dribbles Success'] / filtered_df['Minutes']).max()
-
-    # else:
-    #     min_shots = filtered_df['Shots Total'].min()
-    #     max_shots = filtered_df['Shots Total'].max()
-
-    #     min_goals = filtered_df['Goals'].min()
-    #     max_goals = filtered_df['Goals'].max()
-
-    #     min_passes_key = filtered_df['Passes Key'].min()
-    #     max_passes_key = filtered_df['Passes Key'].max()
-
-    #     min_dribbles_suc = filtered_df['Dribbles Success'].min()
-    #     max_dribbles_suc = filtered_df['Dribbles Success'].max()
-
-    # if not per_90_toggle:
-    #     # Step 2: Apply Min-Max Scaling
-    #     filtered_df['Shots_Rating'] = (((filtered_df['Shots Total'] / filtered_df['Minutes']) - min_shots) / (max_shots - min_shots)) * 10
-    #     filtered_df['Goals_Rating'] = (((filtered_df['Goals'] / filtered_df['Minutes']) - min_goals) / (max_goals - min_goals)) * 10
-    #     filtered_df['Passes_Key_Rating'] = (((filtered_df['Passes Key'] / filtered_df['Minutes'])- min_passes_key) / (max_passes_key - min_passes_key)) * 10
-    #     filtered_df['Dribbles_Success_Rating'] = (((filtered_df['Dribbles Success'] / filtered_df['Minutes']) - min_dribbles_suc) / (max_dribbles_suc - min_dribbles_suc)) * 10
-
-    # else:
-    #     # Step 2: Apply Min-Max Scaling
-    #     filtered_df['Shots_Rating'] = ((filtered_df['Shots Total']  - min_shots) / (max_shots - min_shots)) * 10
-    #     filtered_df['Goals_Rating'] = ((filtered_df['Goals']  - min_goals) / (max_goals - min_goals)) * 10
-    #     filtered_df['Passes_Key_Rating'] = ((filtered_df['Passes Key'] - min_passes_key) / (max_passes_key - min_passes_key)) * 10
-    #     filtered_df['Dribbles_Success_Rating'] = ((filtered_df['Dribbles Success'] - min_dribbles_suc) / (max_dribbles_suc - min_dribbles_suc)) * 10
-
-    # filtered_df['Attack_Rating_1'] = (filtered_df['Shots_Rating'] * 0.7) + (filtered_df['Goals_Rating'] * 0.1) + (filtered_df['Passes_Key_Rating'] * 0.1) +  (filtered_df['Dribbles_Success_Rating'] * 0.1)
+    # st.write(filtered_df)
+    # function returns fst & squad player ratings. Not currently utilising squad ratings so returned as '_'
+    df_r, _ = generate_team_fst(filtered_df, selected_year)
 
 
-    # # Now AR based on position
+    # # -------- ADD SCALED SHOTS AS ATTACK RATING ------------
 
-    # # Define conditions based on 'Position'
-    # conditions = [
-    #     filtered_df['Position'] == 'Goalkeeper',
-    #     filtered_df['Position'] == 'Defender',
-    #     filtered_df['Position'] == 'Midfielder',
-    #     filtered_df['Position'] == 'Attacker'
-    # ]
+    # Step 1: Find the min and max values in the 'Shots Total' column
+    if not per_90_toggle:
+        min_shots = (filtered_df['Shots Total'] / filtered_df['Minutes']).min()
+        max_shots = (filtered_df['Shots Total'] / filtered_df['Minutes']).max()
 
-    # # Define corresponding values for each condition
-    # values = [0, 2.5, 6.5, 9]
+        min_goals = (filtered_df['Goals'] / filtered_df['Minutes']).min()
+        max_goals = (filtered_df['Goals'] / filtered_df['Minutes']).max()
 
-    # # Apply conditions using np.select
-    # filtered_df['Attack_Rating_2'] = np.select(conditions, values, default=5)  # default=5 for other positions
+        min_passes_key = (filtered_df['Passes Key'] / filtered_df['Minutes']).min()
+        max_passes_key = (filtered_df['Passes Key'] / filtered_df['Minutes']).max()
 
-    # # Merge Attack_Rating_1 and Attack_Rating_2 (Mix 30:70)
+        min_dribbles_suc = (filtered_df['Dribbles Success'] / filtered_df['Minutes']).min()
+        max_dribbles_suc = (filtered_df['Dribbles Success'] / filtered_df['Minutes']).max()
 
-    # filtered_df['Attack Rating'] = round(filtered_df['Attack_Rating_1'] * 0.5 + filtered_df['Attack_Rating_2'] * 0.5, 1)
+    else:
+        min_shots = filtered_df['Shots Total'].min()
+        max_shots = filtered_df['Shots Total'].max()
+
+        min_goals = filtered_df['Goals'].min()
+        max_goals = filtered_df['Goals'].max()
+
+        min_passes_key = filtered_df['Passes Key'].min()
+        max_passes_key = filtered_df['Passes Key'].max()
+
+        min_dribbles_suc = filtered_df['Dribbles Success'].min()
+        max_dribbles_suc = filtered_df['Dribbles Success'].max()
+
+    if not per_90_toggle:
+        # Step 2: Apply Min-Max Scaling
+        filtered_df['Shots_Rating'] = (((filtered_df['Shots Total'] / filtered_df['Minutes']) - min_shots) / (max_shots - min_shots)) * 10
+        filtered_df['Goals_Rating'] = (((filtered_df['Goals'] / filtered_df['Minutes']) - min_goals) / (max_goals - min_goals)) * 10
+        filtered_df['Passes_Key_Rating'] = (((filtered_df['Passes Key'] / filtered_df['Minutes'])- min_passes_key) / (max_passes_key - min_passes_key)) * 10
+        filtered_df['Dribbles_Success_Rating'] = (((filtered_df['Dribbles Success'] / filtered_df['Minutes']) - min_dribbles_suc) / (max_dribbles_suc - min_dribbles_suc)) * 10
+
+    else:
+        # Step 2: Apply Min-Max Scaling
+        filtered_df['Shots_Rating'] = ((filtered_df['Shots Total']  - min_shots) / (max_shots - min_shots)) * 10
+        filtered_df['Goals_Rating'] = ((filtered_df['Goals']  - min_goals) / (max_goals - min_goals)) * 10
+        filtered_df['Passes_Key_Rating'] = ((filtered_df['Passes Key'] - min_passes_key) / (max_passes_key - min_passes_key)) * 10
+        filtered_df['Dribbles_Success_Rating'] = ((filtered_df['Dribbles Success'] - min_dribbles_suc) / (max_dribbles_suc - min_dribbles_suc)) * 10
+
+    filtered_df['Attack_Rating_1'] = (filtered_df['Shots_Rating'] * 0.7) + (filtered_df['Goals_Rating'] * 0.1) + (filtered_df['Passes_Key_Rating'] * 0.1) +  (filtered_df['Dribbles_Success_Rating'] * 0.1)
+
+
+    # Now AR based on position
+
+    # Define conditions based on 'Position'
+    conditions = [
+        filtered_df['Position'] == 'Goalkeeper',
+        filtered_df['Position'] == 'Defender',
+        filtered_df['Position'] == 'Midfielder',
+        filtered_df['Position'] == 'Attacker'
+    ]
+
+    # Define corresponding values for each condition
+    values = [0, 2.5, 6.5, 9]
+
+    # Apply conditions using np.select
+    filtered_df['Attack_Rating_2'] = np.select(conditions, values, default=5)  # default=5 for other positions
+
+    # Merge Attack_Rating_1 and Attack_Rating_2 (Mix 30:70)
+
+    filtered_df['Attack Rating'] = round(filtered_df['Attack_Rating_1'] * 0.5 + filtered_df['Attack_Rating_2'] * 0.5, 1)
 
 
 
-    # # Step 4: Merge the scaled values into df_r
-    # df_r = df_r.merge(filtered_df[['Player', 'Attack Rating']], on='Player', how='left')
+    # Step 4: Merge the scaled values into df_r
+    df_r = df_r.merge(filtered_df[['Player', 'Attack Rating']], on='Player', how='left')
 
  
-    # # # Display the DataFrame with styles applied in Streamlit
-    # col1, _,col3, _ = st.columns([10,1,6,1])
+    # # Display the DataFrame with styles applied in Streamlit
+    col1, _,col3, _ = st.columns([10,1,6,1])
 
-    # with col3:
-    #     st.write("")
-    #     st.write("")
-    #     # WIDGET
-    #     show_d_grade_info = st.checkbox('Downgrade/Classification Info', label_visibility = 'visible')
-    #     if show_d_grade_info:
-    #         st.caption(
-    #             """
-    #                 Player Rating reflects the significance of each player's contribution to the team's performance (during the selected season only) and this rating translates to an automated classification of that player's likely relative importance within the full squad.  
-    #                 A player's downgrade indicates the estimated reduction in team supremacy, measured in hundredths of a goal. For instance, a downgrade of -9 means the team’s supremacy shifts from 0.00 to -0.09 if the player does not start.
-    #                 Downgrades are calculated assuming a match with zero supremacy and average goals, where the replacement player is rated as "Regular." If the substitute is rated lower, the downgrade may increase accordingly.
-    #                 These values scale proportionally for matches with higher supremacy or total goals.
-    #                 Players who have been sold or are out due to long-term injuries may still appear in Best XI. 
-    #                 While their ratings gradually decay over time, their classification remains relevant due to their prior impact on matches, influence on overall team ratings and the potential effect of their absence on team performance.
-    #                 All ratings are data-derived.
-    #             """
-    #         )
-    #         st.write('Player classification and downgrade values around midseason:')
-    #         st.caption('"Key +" : -12')
-    #         st.caption('"Key" : -9')
-    #         st.caption('"Important +" : -6')
-    #         st.caption('"Important" : -4')
-    #         st.caption('"Regular +" : -2')
-    #         st.caption('"Regular" : -1')
-    #         st.caption("Downgrade values increase as the season progresses and player classifications become less volatile")
+    with col3:
+        st.write("")
+        st.write("")
+        # WIDGET
+        show_d_grade_info = st.checkbox('Downgrade/Classification Info', label_visibility = 'visible')
+        if show_d_grade_info:
+            st.caption(
+                """
+                    Player Rating reflects the significance of each player's contribution to the team's performance (during the selected season only) and this rating translates to an automated classification of that player's likely relative importance within the full squad.  
+                    A player's downgrade indicates the estimated reduction in team supremacy, measured in hundredths of a goal. For instance, a downgrade of -9 means the team’s supremacy shifts from 0.00 to -0.09 if the player does not start.
+                    Downgrades are calculated assuming a match with zero supremacy and average goals, where the replacement player is rated as "Regular." If the substitute is rated lower, the downgrade may increase accordingly.
+                    These values scale proportionally for matches with higher supremacy or total goals.
+                    Players who have been sold or are out due to long-term injuries may still appear in Best XI. 
+                    While their ratings gradually decay over time, their classification remains relevant due to their prior impact on matches, influence on overall team ratings and the potential effect of their absence on team performance.
+                    All ratings are data-derived.
+                """
+            )
+            st.write('Player classification and downgrade values around midseason:')
+            st.caption('"Key +" : -12')
+            st.caption('"Key" : -9')
+            st.caption('"Important +" : -6')
+            st.caption('"Important" : -4')
+            st.caption('"Regular +" : -2')
+            st.caption('"Regular" : -1')
+            st.caption("Downgrade values increase as the season progresses and player classifications become less volatile")
 
 
-    # # ------- Build FST df -------------
+    # ------- Build FST df -------------
 
-    # # get the top 1 GK
-    # df_goalkeepers = df_r[df_r['Position'] == 'Goalkeeper'].nlargest(1, 'Rating')
+    # get the top 1 GK
+    df_goalkeepers = df_r[df_r['Position'] == 'Goalkeeper'].nlargest(1, 'Rating')
 
-    # # Get the top 4 Defenders
-    # df_defenders = df_r[df_r['Position'] == 'Defender'].nlargest(4, 'Rating')
+    # Get the top 4 Defenders
+    df_defenders = df_r[df_r['Position'] == 'Defender'].nlargest(4, 'Rating')
 
-    # # Get the top 5 Midfielders
-    # df_midfielders = df_r[df_r['Position'] == 'Midfielder'].nlargest(5, 'Rating')
+    # Get the top 5 Midfielders
+    df_midfielders = df_r[df_r['Position'] == 'Midfielder'].nlargest(5, 'Rating')
 
-    # # Get the top 3 Attackers
-    # df_attackers = df_r[df_r['Position'] == 'Attacker'].nlargest(3, 'Rating')
+    # Get the top 3 Attackers
+    df_attackers = df_r[df_r['Position'] == 'Attacker'].nlargest(3, 'Rating')
 
-    # # 13 players selected - now concat and filter best 11 - this is so teams with fewer attackers still return 11 players, 10 outfield
-    # # Concatenate the three results into a single dataframe
-    # df_fst = pd.concat([df_goalkeepers, df_defenders, df_midfielders, df_attackers])
-    # df_fst = df_fst.nlargest(11, 'Rating')
-    # df_fst = df_fst.sort_values(by='Attack Rating', ascending=True)
+    # 13 players selected - now concat and filter best 11 - this is so teams with fewer attackers still return 11 players, 10 outfield
+    # Concatenate the three results into a single dataframe
+    df_fst = pd.concat([df_goalkeepers, df_defenders, df_midfielders, df_attackers])
+    df_fst = df_fst.nlargest(11, 'Rating')
+    df_fst = df_fst.sort_values(by='Attack Rating', ascending=True)
 
-    # df_fst = df_fst.drop(['Player_id'], axis = 1)
+    df_fst = df_fst.drop(['Player_id'], axis = 1)
 
-    # # Reset index for cleanliness (optional)
-    # df_fst.reset_index(drop=True, inplace=True)
+    # Reset index for cleanliness (optional)
+    df_fst.reset_index(drop=True, inplace=True)
 
-    # # --- Create coloured DF for df_fst -------------------
+    # --- Create coloured DF for df_fst -------------------
 
-    # # Configure Ag-Grid options
-    # gb3 = GridOptionsBuilder.from_dataframe(df_fst)
+    # Configure Ag-Grid options
+    gb3 = GridOptionsBuilder.from_dataframe(df_fst)
 
-    # # Freeze the 'Player' column
-    # gb3.configure_column('Player', pinned='left')
+    # Freeze the 'Player' column
+    gb3.configure_column('Player', pinned='left')
 
-    # # Light green background color for the entire DataFrame
-    # light_purple = '#ffccff'  # Light green color
+    # Light green background color for the entire DataFrame
+    light_purple = '#ffccff'  # Light green color
 
-    # # Cell style for all cells
-    # cell_style = {
-    #     'backgroundColor': light_purple,  # Light green color for all cells
-    #     'color': 'black'                  # Default text color
-    # }
+    # Cell style for all cells
+    cell_style = {
+        'backgroundColor': light_purple,  # Light green color for all cells
+        'color': 'black'                  # Default text color
+    }
 
-    # # # Dynamically set column widths based on header text lengths
-    # # for column in df_r.columns:
-    # #     # Calculate width based on header text length
-    # #     header_length = len(column) * 10  # Adjust multiplier for better fitting
-    # #     gb.configure_column(column, width=max(100, header_length))  # Minimum width of 100
+    # # Dynamically set column widths based on header text lengths
+    # for column in df_r.columns:
+    #     # Calculate width based on header text length
+    #     header_length = len(column) * 10  # Adjust multiplier for better fitting
+    #     gb.configure_column(column, width=max(100, header_length))  # Minimum width of 100
 
-    # # Apply the same cell style to all columns
-    # gb3.configure_default_column(cellStyle=cell_style)
-    # gb3.configure_column('Player', cellStyle={'color': 'black', 'backgroundColor': '#FFB6C1'})
-    # gb3.configure_column('Downgrade', maxWidth=120)
-    # gb3.configure_column('Attack Rating', maxWidth=120)
-    # gb3.configure_column('Rating', maxWidth=95)
-    # gb3.configure_column('Classification', maxWidth=120)
-    # gb3.configure_column('Position', maxWidth=130)
+    # Apply the same cell style to all columns
+    gb3.configure_default_column(cellStyle=cell_style)
+    gb3.configure_column('Player', cellStyle={'color': 'black', 'backgroundColor': '#FFB6C1'})
+    gb3.configure_column('Downgrade', maxWidth=120)
+    gb3.configure_column('Attack Rating', maxWidth=120)
+    gb3.configure_column('Rating', maxWidth=95)
+    gb3.configure_column('Classification', maxWidth=120)
+    gb3.configure_column('Position', maxWidth=130)
 
-    # # # Build grid options
-    # grid_options = gb3.build()
+    # # Build grid options
+    grid_options = gb3.build()
 
-    # with col1:
-    #     st.write("")
-    #     st.write(f'**{selected_team} Best XI - {selected_year}**')
+    with col1:
+        st.write("")
+        st.write(f'**{selected_team} Best XI - {selected_year}**')
 
-    #     for col in df_fst.select_dtypes(['category']):
-    #         df_fst[col] = df_fst[col].astype(str)  # convert to object (string)
+        for col in df_fst.select_dtypes(['category']):
+            df_fst[col] = df_fst[col].astype(str)  # convert to object (string)
 
-    #     # st.write(df_fst)
-    #     df_fst = df_fst.replace([np.inf, -np.inf], 0)
-    #     df_fst = df_fst.fillna("")
-    #     AgGrid(df_fst, gridOptions=grid_options, enable_enterprise_modules=False, height=375)
+        # st.write(df_fst)
+        df_fst = df_fst.replace([np.inf, -np.inf], 0)
+        df_fst = df_fst.fillna("")
+        AgGrid(df_fst, gridOptions=grid_options, enable_enterprise_modules=False, height=375)
 
     # # ------------------ Wage Bill -------------------------------------
 
