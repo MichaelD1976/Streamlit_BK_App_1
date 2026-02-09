@@ -97,14 +97,14 @@ def main():
     filtered_df.index = filtered_df.index + 1
     filtered_df['Rating'] = round(filtered_df['Rating'], 1)
 
-    # Remove columns for non advanced league eg xg,attacking carries etc
-    advanced_stat_leagues = ['England Premier', 'Germany Bundesliga', 'Spain La Liga', 'Italy Serie A']
+    # # Remove columns for non advanced league eg xg,attacking carries etc
+    # advanced_stat_leagues = ['England Premier', 'Germany Bundesliga', 'Spain La Liga', 'Italy Serie A']
 
-    if selected_league not in advanced_stat_leagues:
-        filtered_df.drop([ 'npxG+xAG', 'XG', 'Non_Pen_XG', 'X_Assists', 'Attacking Carries', 'Attacking Receives', 'Attacking Passes'], axis=1, inplace=True)
-        #st.caption(f'Metrics currently unavailable for {selected_league} : XG, Non_Pen_XG, X_Assists, Attacking Carries, Attacking Passes, Attacking Receives')
-    # 'npxG+AG', 
-    st.write("---")
+    # if selected_league not in advanced_stat_leagues:
+    #     filtered_df.drop([ 'npxG+xAG', 'XG', 'Non_Pen_XG', 'X_Assists', 'Attacking Carries', 'Attacking Receives', 'Attacking Passes'], axis=1, inplace=True)
+    #     #st.caption(f'Metrics currently unavailable for {selected_league} : XG, Non_Pen_XG, X_Assists, Attacking Carries, Attacking Passes, Attacking Receives')
+    # # 'npxG+AG', 
+    # st.write("---")
 
 
     # ------------DF CONFIG ------------------------------
