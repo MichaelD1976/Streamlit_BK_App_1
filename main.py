@@ -44,6 +44,7 @@ page_options = [
                  'HTUP Pricing',
                   'Player Stats',
                   'Squad Data',
+            #      'High Draw Matches',
             #     'Shots on Target',
             #     'Fouls',
              #    'Corners',
@@ -186,6 +187,10 @@ def main():
     elif selected_page == 'Squad Data':
         import page_18_squad_data
         page_18_squad_data.main() 
+
+    elif selected_page == 'High Draw Matches':
+        import page_19_draw_matches
+        page_19_draw_matches.main() 
 
     # elif selected_page == 'Offsides':
     #     import page_9_offsides
