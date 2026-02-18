@@ -44,7 +44,7 @@ page_options = [
                  'HTUP Pricing',
                   'Player Stats',
                   'Squad Data',
-            #      'High Draw Matches',
+                  'High Draw Matches',
             #     'Shots on Target',
             #     'Fouls',
              #    'Corners',
@@ -83,6 +83,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 18/02/26 High draw matches page added
                      - 04/02/26 Squad Data - team best XI's added
                      - 03/02/26 Squad Data page added
                      - 16/12/25 HTUP pricing page added    

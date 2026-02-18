@@ -29,7 +29,7 @@ league_options = {
     'E1': 'England Championship',
     'E2': 'England League One',
     'E3': 'England League Two',
-    'SC0': 'Scotland Premier',
+#    'SC0': 'Scotland Premier',
 #     'D2': 'Germany 2 Bundesliga',
 #     'SP2': 'Spain La Liga 2',
 #     'I2': 'Italy Serie B',
@@ -98,9 +98,9 @@ def main():
         'E2': 'England League One',
         'E3': 'England League Two',
         'SC0': 'Scotland Premier',
-        'SC1': 'Scotland Championship',
-        'SC2': 'Scotland League One',
-        'SC3': 'Scotland League Two',
+    #    'SC1': 'Scotland Championship',
+    #    'SC2': 'Scotland League One',
+    #    'SC3': 'Scotland League Two',
         # 'D2': 'Germany 2 Bundesliga',
         # 'I2': 'Italy Serie B',
         # 'SP2': 'Spain La Liga 2',
@@ -276,7 +276,7 @@ def main():
 
 
     # st.write("---")
-    st.subheader(f'Generate fixtures for all upcoming {selected_league} matches (up to 7 days ahead)')
+    st.subheader(f'Generate fixtures for upcoming {selected_league} matches (up to 7 days ahead)')
 
     # GET FIXTURES UP TO DATE
     today = datetime.now()
@@ -475,7 +475,8 @@ def main():
 
                     # If you want a string dtype rather than categorical
                     df['Outcome'] = df['Outcome'].astype(str)
-
+                    # st.write(df)
+                    df = df[['Date', 'Home Team', 'Away Team', 'Outcome', 'Goal_PR', 'Home_mean_tg/g_exp', 'Away_mean_tg/g_exp']]
 
 
                     st.write(df)
@@ -490,23 +491,23 @@ def main():
 
 
 
-                    # Filter only caution matches
-                    caution_df = df[df['Outcome'].isin(['V LOW GOALS', 'Low'])]
+                    # # Filter only caution matches
+                    # caution_df = df[df['Outcome'].isin(['V LOW GOALS', 'Low'])]
 
-                    st.markdown("### ⚠️ Matches flagged as low goals (high draw)")
+                    # st.markdown("### ⚠️ Matches flagged as low goals (high draw)")
 
-                    # Loop through the rows
-                    for idx, row in caution_df.iterrows():
-                        if row['Outcome'] == 'V LOW GOALS':
-                            st.error(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
-                        elif row['Outcome'] == 'Low':
-                            st.warning(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
+                    # # Loop through the rows
+                    # for idx, row in caution_df.iterrows():
+                    #     if row['Outcome'] == 'V LOW GOALS':
+                    #         st.error(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
+                    #     elif row['Outcome'] == 'Low':
+                    #         st.warning(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
 
 
  
 
-                    if df.empty:
-                        st.write('Odds currently unavailable from API') 
+                    # if df.empty:
+                    #     st.write('Odds currently unavailable from API') 
 
 
 
@@ -516,3 +517,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+# TODO graphic to show team 'Goal_PR' ratings
+# TODO add lower scottish leagues
+# TODO add low goal 'Matches flagged'
+# TODO add high goal 'Matches flagged'
+# TODO add derbies
