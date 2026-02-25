@@ -83,6 +83,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 25/02/26 Odds Calculators - Early Goals O/U Payout tool added
                      - 18/02/26 High draw matches page added
                      - 04/02/26 Squad Data - team best XI's added
                      - 03/02/26 Squad Data page added

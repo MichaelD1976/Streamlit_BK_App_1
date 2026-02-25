@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import math
 # from scipy.stats import poisson
 # from scipy.optimize import minimize_scalar
 from mymodule.functions import poisson_expectation, poisson_probabilities
@@ -94,6 +95,88 @@ def main():
             st.write(f'(Line {line_minus_1}) - Over', round(1 / probabilities[f'over_minus_1 {line_minus_1}'], 2), f'Under', round(1 / probabilities[f'under_minus_1 {line_minus_1}'], 2))
 
             st.write(f'(Line {line_minus_2}) - Over', round(1 / probabilities[f'over_minus_2 {line_minus_2}'], 2), f'Under', round(1 / probabilities[f'under_minus_2 {line_minus_2}'], 2))
+
+
+    with col1:
+
+        # Eary Goals Market Calculations
+
+        # Cumulative goal distribution probabilities based on historical data
+        GOAL_CUMULATIVE = {
+            0: 0,
+            5: 0.04,
+            10: 0.08,
+            15: 0.13,
+            20: 0.18,
+            25: 0.24,
+            30: 0.30,
+            35: 0.37
+        }
+
+
+        def poisson_prob(k, lam):
+            return (lam**k * math.exp(-lam)) / math.factorial(k)
+
+
+        def poisson_under(max_goals, lam):
+            return sum(poisson_prob(k, lam) for k in range(max_goals+1))
+
+
+        def price_early_goals(lam, minute_cutoff, line):
+
+            goals_needed = int(line + 0.5)
+
+            # Over/Under probabilities
+            p_under = poisson_under(goals_needed-1, lam)
+            p_over = 1 - p_under
+
+            # Early goal probability
+            goal_share = GOAL_CUMULATIVE[minute_cutoff]
+
+            p_early = 1 - math.exp(-lam * goal_share)
+
+            # Offer probability
+            p_offer = p_over + p_under * p_early
+
+            odds = 1 / p_offer
+
+            return p_offer, odds
+        
+
+        # Interface
+        container_3 = st.container(border=True)
+        with container_3:
+            st.subheader("Over/Under with Early Goal")
+            st.caption("Calculate the true odds of over/under market with an early goal pay-out")
+
+            lam = st.number_input(
+                "Match Expected Goals",
+                value=2.7,
+                step=0.05
+            )
+
+            minute_cutoff = st.selectbox(
+                "Goal scored before minute",
+                [0,5,10,15,20,25,30, 35]
+            )
+
+            line = st.selectbox(
+                "Market Line",
+                [1.5,2.5,3.5]
+            )
+
+            prob, odds = price_early_goals(
+                lam,
+                minute_cutoff,
+                line
+            )
+
+            # st.write(f"Probability Over {line}:", round(prob,2))
+            # st.write(f"True Odds - Over {line} or Goal < {minute_cutoff} mins:", round(odds,2))
+            st.caption(f"Odds of over {line} OR any goal before {minute_cutoff} mins:")
+            st.success(f"**True Odds: {odds:.2f}**")
+
+
 
 if __name__ == '__main__':
     main()
