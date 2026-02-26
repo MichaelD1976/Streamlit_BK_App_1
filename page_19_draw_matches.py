@@ -41,6 +41,8 @@ team_naming_dict = {
     "Nott'm Forest": "Nottm Forest",
     "Peterboro": "Peterborough",
     'Sheffield United': 'Sheffield Utd',
+    'Dundee United': 'Dundee Utd',
+    'Man United': 'Man Utd',
 }
 
 # Dictionary to map league names to their IDs
@@ -214,7 +216,7 @@ def main():
         how='left'   # use left so you keep all teams from av_odds_df
     )
 
-    # st.write('205', av_odds_df)
+    # st.write('217', av_odds_df)
 
     # # ---   Conditions to handle different average odds and the average expected goals based on those odds  -----------------
 
@@ -301,7 +303,7 @@ def main():
 
                 
                 df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
-                # st.write('625', df_fixtures)
+                # st.write('304', df_fixtures)
                 if df_fixtures.empty:
                     st.write("No data returned for the specified league and date range.")
                 else:
