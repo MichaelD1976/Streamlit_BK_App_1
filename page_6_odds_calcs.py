@@ -280,7 +280,7 @@ def main():
                 min_value=0.5,
                 max_value=6.0,
                 value=2.7,
-                step=0.1
+                step=0.05
             )
 
 
