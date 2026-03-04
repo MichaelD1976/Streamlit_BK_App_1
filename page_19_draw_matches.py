@@ -493,23 +493,23 @@ def main():
 
 
 
-                    # # Filter only caution matches
-                    # caution_df = df[df['Outcome'].isin(['V LOW GOALS', 'Low'])]
+                    # Filter only caution matches
+                    caution_df = df[df['Outcome'].isin(['V LOW GOALS', 'Low'])]
 
-                    # st.markdown("### ⚠️ Matches flagged as low goals (high draw)")
+                    st.markdown("### ⚠️ Matches flagged as low goals (high draw)")
 
-                    # # Loop through the rows
-                    # for idx, row in caution_df.iterrows():
-                    #     if row['Outcome'] == 'V LOW GOALS':
-                    #         st.error(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
-                    #     elif row['Outcome'] == 'Low':
-                    #         st.warning(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
+                    # Loop through the rows
+                    for idx, row in caution_df.iterrows():
+                        if row['Outcome'] == 'V LOW GOALS':
+                            st.error(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
+                        elif row['Outcome'] == 'Low':
+                            st.warning(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
 
 
  
 
-                    # if df.empty:
-                    #     st.write('Odds currently unavailable from API') 
+                    if df.empty:
+                        st.write('Odds currently unavailable from API') 
 
 
 
