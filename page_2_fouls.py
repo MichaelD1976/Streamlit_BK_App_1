@@ -183,7 +183,7 @@ def main():
         st.write("No data available to display.")
         return
 
-    # st.write(df)
+    # st.write('186',df)
 
     # Sidebar for user input
     st.sidebar.title('Select Data Filters')
@@ -241,6 +241,7 @@ def main():
 
     this_df = df[(df['Season'] == CURRENT_SEASON)]  # remove all matches that are not current season
     last_df = df[(df['Season'] == LAST_SEASON)] 
+    st.write('244', this_df)
 
     # -----------------------------------------------------------------------
 
@@ -691,7 +692,7 @@ def main():
                                 all_odds_df = pd.concat([all_odds_df, odds_df], ignore_index=True)
 
                     # Display the collected odds
-                    # st.write('all odds df 670', all_odds_df)
+                    # st.write('all odds df 695', all_odds_df)
 
                     # Use groupby and fillna to collapse rows and remove None values
                     df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
@@ -743,7 +744,7 @@ def main():
 
                     ###########################################################################################
 
-                    # st.write(df_collapsed)
+                    # st.write('747', df_collapsed)
 
                     # Merge odds df_fixts with df_collapsed
                     df = df_fixts.merge(df_collapsed, on='Fixture ID')
@@ -762,7 +763,12 @@ def main():
                     df_dist_grid.set_index('Unnamed: 0', inplace=True)
 
                     # Now, loop over each row in df to extract the distance from dist_grid
-                    df['Dist'] = df.apply(lambda row: df_dist_grid.at[row['Home Team'], row['Away Team']], axis=1)
+                    df['Dist'] = df.apply(
+                        lambda row: df_dist_grid.at[row['Home Team'], row['Away Team']]
+                        if row['Home Team'] in df_dist_grid.index and row['Away Team'] in df_dist_grid.columns
+                        else 100,
+                        axis=1
+                    )
 
                     # Function to assign Derby_mult based on Dist value
                     def get_derby_mult(dist):
@@ -792,7 +798,7 @@ def main():
                                         right_on=['Home Team', 'Away Team'], 
                                         how='left')
                     
-                    # st.write('merged_df 723', merged_df)
+                    st.write('merged_df 796', merged_df)
 
                     # Only update 'Derby_mult' if 'Mult' is not None (ie is a non local derby) 
                     df['Derby_mult'] = np.where(merged_df['Mult'].notna(), merged_df['Mult'], df['Derby_mult'])
