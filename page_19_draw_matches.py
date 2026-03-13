@@ -29,7 +29,9 @@ league_options = {
     'E1': 'England Championship',
     'E2': 'England League One',
     'E3': 'England League Two',
-#    'SC0': 'Scotland Premier',
+    'SC0': 'Scotland Premier',
+    'SC1': 'Scotland Championship',
+    'SC2': 'Scotland League One',
 #     'D2': 'Germany 2 Bundesliga',
 #     'SP2': 'Spain La Liga 2',
 #     'I2': 'Italy Serie B',
@@ -43,6 +45,14 @@ team_naming_dict = {
     'Sheffield United': 'Sheffield Utd',
     'Dundee United': 'Dundee Utd',
     'Man United': 'Man Utd',
+    "Queens Park" : "Queen's Park",
+    'Airdrie Utd': 'Airdrie United',
+    'Raith Rvs': 'Raith Rovers',
+    'Ayr': 'Ayr Utd',
+    'Hamilton': 'Hamilton Academical',
+    'Queen of Sth': 'Queen of the South',
+    'Inverness C': 'Inverness CT',
+    'Alloa': 'Alloa Athletic',
 }
 
 # Dictionary to map league names to their IDs
@@ -61,7 +71,7 @@ leagues_dict = {
     "Portugal Liga I": '94',
     "Scotland Premier": '179',
     "Scotland Championship": '180',
-    "Scotland League One": '181',
+    "Scotland League One": '183',
 }
 
 
@@ -100,8 +110,8 @@ def main():
         'E2': 'England League One',
         'E3': 'England League Two',
         'SC0': 'Scotland Premier',
-    #    'SC1': 'Scotland Championship',
-    #    'SC2': 'Scotland League One',
+        'SC1': 'Scotland Championship',
+        'SC2': 'Scotland League One',
     #    'SC3': 'Scotland League Two',
         # 'D2': 'Germany 2 Bundesliga',
         # 'I2': 'Italy Serie B',
@@ -303,7 +313,7 @@ def main():
 
                 
                 df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
-                # st.write('304', df_fixtures)
+                # st.write('312', df_fixtures)
                 if df_fixtures.empty:
                     st.write("No data returned for the specified league and date range.")
                 else:
@@ -384,7 +394,7 @@ def main():
                     # Collect odds for all fixtures
                     all_odds_df = pd.DataFrame()  # DataFrame to collect all odds
 
-                    # st.write('706', fixt_id_list)
+                    # st.write('393', fixt_id_list)
 
                     # Iterate through each fixture ID and get odds
                     for fixture_id in fixt_id_list:
@@ -395,7 +405,7 @@ def main():
                                 all_odds_df = pd.concat([all_odds_df, odds_df], ignore_index=True)
 
                     # Display the collected odds
-                    # st.write('717', all_odds_df)
+                    # st.write('404', all_odds_df)
 
                     # Use groupby and fillna to collapse rows and remove None values
                     df_collapsed = all_odds_df.groupby('Fixture ID').first().combine_first(
@@ -445,14 +455,14 @@ def main():
                         return df
                     
                     df_collapsed = fill_missing_ou25(df_collapsed)
-                    # st.write('767', df_collapsed)
+                    # st.write('454', df_collapsed)
 
                     ###########################################################################################
 
-                    # st.write('771', df_fixts)
+                    # st.write('458', df_fixts)
                     # Merge odds df_fixts with df_collapsed
                     df = df_fixts.merge(df_collapsed, on='Fixture ID')
-                    # st.write('442', df)
+                    # st.write('461', df)
 
 
                     # Create a mapping from team → scaled ratio
@@ -523,7 +533,5 @@ if __name__ == "__main__":
 
 
 # TODO graphic to show team 'Goal_PR' ratings
-# TODO add lower scottish leagues
-# TODO add low goal 'Matches flagged'
-# TODO add high goal 'Matches flagged'
+
 # TODO add derbies

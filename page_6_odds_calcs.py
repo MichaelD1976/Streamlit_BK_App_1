@@ -191,6 +191,132 @@ def main():
     # Early Payout Pricer for Over/Under Markets where set number of goals needed for selected line eg 2.5 line, 2 goals score before selected min, 1.5 line 1 goal etc
     with col3:
 
+        # GOAL_CUMULATIVE = {
+        #     0: 0.00,
+        #     5: 0.04,
+        #     10: 0.08,
+        #     15: 0.13,
+        #     20: 0.18,
+        #     25: 0.24,
+        #     30: 0.30,
+        #     35: 0.37,
+        #     40: 0.43,
+        #     45: 0.46,
+        #     50: 0.54,
+        #     55: 0.60,
+        #     60: 0.67,
+        #     65: 0.74,
+        #     70: 0.80
+        # }
+
+        # -------------------------------------------------
+        # POISSON PROBABILITY MASS FUNCTION
+        # -------------------------------------------------
+        # Returns:
+        #   P(X = k) for a Poisson distribution with mean λ
+        #
+        # Formula:
+        #   (λ^k * e^-λ) / k!
+        # -------------------------------------------------
+
+        # def poisson(k, lam):
+        #     return (lam ** k * math.exp(-lam)) / math.factorial(k)
+
+
+        # -------------------------------------------------
+        # POISSON CUMULATIVE DISTRIBUTION FUNCTION
+        # -------------------------------------------------
+        # Returns:
+        #   P(X ≤ max_k)
+        #
+        # Used to compute:
+        #   P(FT ≥ N+1) = 1 - P(FT ≤ N)
+        # -------------------------------------------------
+
+        # def cumulative_poisson(max_k, lam):
+        #     return sum(poisson(k, lam) for k in range(max_k + 1))
+
+
+        # def price_early_payout(lam, minute_cutoff, line):
+
+        #     """
+        #     Prices a market where the bet wins if:
+        #     1) FT total ≥ line + 1 (over N)
+        #     OR
+        #     2) At least N goals are scored before the cutoff minute
+        #     """
+        #     # N = floor of line, e.g., 1.5 → 1, 2.5 → 2
+        #     N = math.floor(line)
+
+        #     # Split expected goals into early and late based on historical time share
+        #     share = GOAL_CUMULATIVE[minute_cutoff]
+        #     lam_early = lam * share
+        #     lam_late = lam * (1 - share)
+
+        #     p_over = 1 - cumulative_poisson(N, lam)
+
+        #     p_under = cumulative_poisson(N, lam)  # P(FT ≤ N)
+        #     p_early = 1 - cumulative_poisson(N-1, lam_early)  # P(Early ≥ N)
+        #     p_offer = p_over + p_under * p_early
+
+        #     odds = 1 / p_offer
+
+        #     return p_offer, odds
+
+        # st.write("")
+        # st.write("")       
+
+        # -------------------------------------------------
+        # STREAMLIT USER INTERFACE
+        # -------------------------------------------------
+        # st.write("")
+        # st.write("")
+        # container_4 = st.container(border=True)
+        # with container_4:
+        #     st.subheader("Over/Under with Early Defined Goals")
+        #     st.caption("Calculate the true odds of over/under market with an early goal pay-out based on defined goals for selected line - 1.5 line 1 goal, 2.5 line 2 goals etc")
+
+        #     # Total expected goals (λ)
+        #     lam = st.number_input(
+        #         "Expected Match Goals",
+        #         min_value=0.5,
+        #         max_value=6.0,
+        #         value=2.7,
+        #         step=0.05
+        #     )
+
+
+        #     # Select betting line
+        #     line = st.selectbox(
+        #         "Over/Under Line",
+        #         [1.5, 2.5, 3.5, 4.5]
+        #     )
+
+
+        #     # Select early payout minute
+        #     minute_cutoff = st.selectbox(
+        #         "Early Payout Minute",
+        #         list(GOAL_CUMULATIVE.keys())
+        #     )
+
+
+        #     # Calculate probability and fair odds
+        #     prob, odds = price_early_payout(
+        #         lam,
+        #         minute_cutoff,
+        #         line
+        #     )
+
+
+        #     # Display results
+        #     st.caption(f"Odds of over {line} OR at least {math.floor(line)} goals before {minute_cutoff} mins:")
+        #     # st.write("Win Probability:", round(prob, 4))
+        #     # st.success("True Odds:", round(odds, 2))
+        #     st.success(f"**True Odds: {odds:.2f}**")
+
+    # ---------------------------------------------------------------
+    # New process
+
         GOAL_CUMULATIVE = {
             0: 0.00,
             5: 0.04,
@@ -209,108 +335,71 @@ def main():
             70: 0.80
         }
 
-        # -------------------------------------------------
-        # POISSON PROBABILITY MASS FUNCTION
-        # -------------------------------------------------
-        # Returns:
-        #   P(X = k) for a Poisson distribution with mean λ
-        #
-        # Formula:
-        #   (λ^k * e^-λ) / k!
-        # -------------------------------------------------
-
         def poisson(k, lam):
             return (lam ** k * math.exp(-lam)) / math.factorial(k)
-
-
-        # -------------------------------------------------
-        # POISSON CUMULATIVE DISTRIBUTION FUNCTION
-        # -------------------------------------------------
-        # Returns:
-        #   P(X ≤ max_k)
-        #
-        # Used to compute:
-        #   P(FT ≥ N+1) = 1 - P(FT ≤ N)
-        # -------------------------------------------------
 
         def cumulative_poisson(max_k, lam):
             return sum(poisson(k, lam) for k in range(max_k + 1))
 
-
         def price_early_payout(lam, minute_cutoff, line):
 
-            """
-            Prices a market where the bet wins if:
-            1) FT total ≥ line + 1 (over N)
-            OR
-            2) At least N goals are scored before the cutoff minute
-            """
-            # N = floor of line, e.g., 1.5 → 1, 2.5 → 2
             N = math.floor(line)
 
-            # Split expected goals into early and late based on historical time share
             share = GOAL_CUMULATIVE[minute_cutoff]
             lam_early = lam * share
             lam_late = lam * (1 - share)
 
+            # Standard over probability
             p_over = 1 - cumulative_poisson(N, lam)
 
-            p_under = cumulative_poisson(N, lam)  # P(FT ≤ N)
-            p_early = 1 - cumulative_poisson(N-1, lam_early)  # P(Early ≥ N)
-            p_offer = p_over + p_under * p_early
+            # Early-only path: exactly N early AND zero late
+            p_early_exact = poisson(N, lam_early)
+            p_late_zero = poisson(0, lam_late)
+
+            p_offer = p_over + p_early_exact * p_late_zero
 
             odds = 1 / p_offer
 
             return p_offer, odds
-
-
-        # -------------------------------------------------
-        # STREAMLIT USER INTERFACE
-        # -------------------------------------------------
+            
         st.write("")
         st.write("")
-        container_4 = st.container(border=True)
-        with container_4:
+
+        container_5 = st.container(border=True)
+        with container_5:
+
             st.subheader("Over/Under with Early Defined Goals")
             st.caption("Calculate the true odds of over/under market with an early goal pay-out based on defined goals for selected line - 1.5 line 1 goal, 2.5 line 2 goals etc")
 
-            # Total expected goals (λ)
             lam = st.number_input(
                 "Expected Match Goals",
                 min_value=0.5,
                 max_value=6.0,
                 value=2.7,
-                step=0.05
+                step=0.05,key=1,
             )
 
-
-            # Select betting line
             line = st.selectbox(
                 "Over/Under Line",
-                [1.5, 2.5, 3.5, 4.5]
+                [1.5, 2.5, 3.5], key=2
             )
 
-
-            # Select early payout minute
             minute_cutoff = st.selectbox(
                 "Early Payout Minute",
-                list(GOAL_CUMULATIVE.keys())
+                list(GOAL_CUMULATIVE.keys()), key=3
             )
 
+            prob, odds = price_early_payout(lam, minute_cutoff, line)
 
-            # Calculate probability and fair odds
-            prob, odds = price_early_payout(
-                lam,
-                minute_cutoff,
-                line
+            st.caption(
+                f"Odds of over {line} OR exactly {math.floor(line)} goals before {minute_cutoff} mins and no more goals"
             )
 
+            overs_fudge = 0.95
+            st.success(f"True Odds: {odds * overs_fudge:.2f}")
 
-            # Display results
-            st.caption(f"Odds of over {line} OR at least {math.floor(line)} goals before {minute_cutoff} mins:")
-            # st.write("Win Probability:", round(prob, 4))
-            # st.success("True Odds:", round(odds, 2))
-            st.success(f"**True Odds: {odds:.2f}**")
+
+    
 
 
 

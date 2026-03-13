@@ -83,6 +83,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 16/03/26 High Draw Matches - Scottish Champ and League One data added
                      - 04/03/26 High Draw Matches - low goal individual matches flagged
                      - 26/02/26 Odds Calculators - Early Goals O/U payout tool added - defined goals per line
                      - 25/02/26 Odds Calculators - Early Goals O/U Payout tool added - any early goal
