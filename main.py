@@ -38,13 +38,14 @@ st.markdown(
 page_options = [
                  'Home', 
                  'Models',
-                 'Derivatives',
+                 'Pricing Tools',
+            #     'Derivatives',
             #     'Specials Pricing',
-                 '1Up Pricing',
-                 'HTUP Pricing',
+                #  '1Up Pricing',
+                #  'HTUP Pricing',
                   'Player Stats',
                   'Squad Data',
-                  'High Draw Matches',
+            #      'High Draw Matches',
             #     'Shots on Target',
             #     'Fouls',
              #    'Corners',
@@ -57,7 +58,7 @@ page_options = [
             #     'Popular Matches'
             #     'Chance Mix Calc'
                  'Outright Sim',
-                 'Odds Calculators',
+            #     'Odds Calculators',
                 ]
 
 
@@ -83,6 +84,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 23/06/26 Home page/sidebar - selection dropdown and page restructuring. Models - GMT > BST default change.
                      - 16/03/26 High Draw Matches - Scottish Champ and League One data added
                      - 04/03/26 High Draw Matches - low goal individual matches flagged
                      - 26/02/26 Odds Calculators - Early Goals O/U payout tool added - defined goals per line
@@ -126,36 +128,15 @@ def main():
         st.write("")
         st.write("")
 
-        # st.write('Select required market from dropdown menu')
 
-
-    # elif selected_page == 'Shots on Target':
-    #     import page_1_sot
-    #     page_1_sot.main()
-
-    # elif selected_page == 'Fouls':
-    #     import page_2_fouls
-    #     page_2_fouls.main()
-
-    # elif selected_page == 'Corners':
-    #     import page_3_corners
-    #     page_3_corners.main()
 
     elif selected_page == 'Models':
         import page_10_models_choose
         page_10_models_choose.main()
 
-    elif selected_page == 'Goalscorer Matchbets':
-        import page_4_goalscorer_matchbets
-        page_4_goalscorer_matchbets.main()
-
-    elif selected_page == 'League Matchbets':
-        import page_5_league_matchbets
-        page_5_league_matchbets.main()    
-
-    elif selected_page == 'Odds Calculators':
-        import page_6_odds_calcs
-        page_6_odds_calcs.main()
+    elif selected_page == 'Pricing Tools':
+        import page_20_pricing_tools_choose
+        page_20_pricing_tools_choose.main()
 
     elif selected_page == 'Team News':
         import page_7_team_news
@@ -164,42 +145,15 @@ def main():
     elif selected_page == 'Outright Sim':
         import page_11_simulator
         page_11_simulator.main() 
-
-    elif selected_page == 'Popular Matches':
-        import page_12_popular_matches
-        page_12_popular_matches.main() 
-
-    elif selected_page == 'Derivatives':
-        import page_13_derivatives
-        page_13_derivatives.main() 
-
-    elif selected_page == 'Chance Mix Calc':
-        import page_14_chance_mix
-        page_14_chance_mix.main() 
     
     elif selected_page == 'Player Stats':
         import page_15_player_stats
         page_15_player_stats.main() 
 
-    elif selected_page == '1Up Pricing':
-        import page_16_1up
-        page_16_1up.main() 
-    
-    elif selected_page == 'HTUP Pricing':
-        import page_17_htup
-        page_17_htup.main() 
-
     elif selected_page == 'Squad Data':
         import page_18_squad_data
         page_18_squad_data.main() 
 
-    elif selected_page == 'High Draw Matches':
-        import page_19_draw_matches
-        page_19_draw_matches.main() 
-
-    # elif selected_page == 'Offsides':
-    #     import page_9_offsides
-    #     page_9_offsides.main()
 
 
 

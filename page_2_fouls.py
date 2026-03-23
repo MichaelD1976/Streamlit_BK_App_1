@@ -241,7 +241,7 @@ def main():
 
     this_df = df[(df['Season'] == CURRENT_SEASON)]  # remove all matches that are not current season
     last_df = df[(df['Season'] == LAST_SEASON)] 
-    st.write('244', this_df)
+    # st.write('244', this_df)
 
     # -----------------------------------------------------------------------
 
@@ -573,7 +573,7 @@ def main():
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
         # over bias set to 1.07 pre overs only being published
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.15, min_value=1.00, max_value=1.30, key='bias_to_apply', label_visibility = 'visible')
-        is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=False)
+        is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=True)
 
     with column2:
         # GET FIXTURES UP TO DATE
@@ -1642,7 +1642,7 @@ def main():
 
         # Add additional factors
         home_prediction = fouls_model_h_prediction * extra_time_factor * is_neutral_factor_home * big_cup_factor * derby_factor
-        home_prediction = round(float(home_prediction), 2)
+        home_prediction = round(float(np.ravel(home_prediction)[0]), 2)
         
         with cls1:
             st.success(f'Home Prediction: {home_prediction}')
@@ -1653,7 +1653,7 @@ def main():
 
         # Add additional factors
         away_prediction = fouls_model_a_prediction * extra_time_factor * is_neutral_factor_away * big_cup_factor * derby_factor
-        away_prediction = round(float(away_prediction), 2)
+        away_prediction = round(float(np.ravel(away_prediction)[0]), 2)
         total_prediction = home_prediction + away_prediction
 
         with cls3:

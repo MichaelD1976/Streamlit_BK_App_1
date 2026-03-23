@@ -596,7 +596,7 @@ def main():
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.09, min_value=1.01, max_value=1.2, key='margin_to_apply')
         # over bias initially set to 1.07 pre over only being published
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.08, min_value=1.00, max_value=1.12, key='bias_to_apply')
-        is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=False)
+        is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=True)
 
     with column2:
         # GET FIXTURES UP TO DATE

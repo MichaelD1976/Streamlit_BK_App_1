@@ -395,7 +395,7 @@ def main():
                 f"Odds of over {line} OR exactly {math.floor(line)} goals before {minute_cutoff} mins and no more goals"
             )
 
-            overs_fudge = 0.98
+            overs_fudge = 0.99
             st.success(f"True Odds: {odds * overs_fudge:.2f}")
 
 

@@ -52,12 +52,18 @@ def predict_away_offsides(AG_Exp, ht_h_r_av_ag, at_a_r_av_f):
 # 3 - 3.5: + 1.1
 
 outlier_teams_dict = {
-    'Barcelona': 1.25,         # Oct - avg offsides against = 4.87
-    'Ath Bilbao': 1.2,          # Oct - 4.27
-    'Valencia': 1.1,            # Oct - 3.5
-    'Ein Frankfurt': 1.15,     # Oct - 3.84
-    'Nantes': 1.1,              # Oct - avg offsides against = 3.4
-    'Aston Villa': 1.1
+    'Barcelona': 1.25,         
+    'Ath Bilbao': 1.2,          
+    'Real Betis': 1.1,          
+    'Getafe': 1.1,              
+    'Ein Frankfurt': 1.15,     
+    'Nantes': 1.1,   
+    'Marseille': 1.1,          
+    'Aston Villa': 1.1,
+    'Man City': 1.1,   
+    'Fulham': 1.05,  
+    'Bologna': 1.1,   
+    'Como': 1.1,          
 }
 
 # ------------------------------------------------------------
@@ -579,7 +585,7 @@ def main():
         # WIDGET
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.15, min_value=0.95, max_value=1.30, key='bias_to_apply', label_visibility = 'visible')
-        is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=False)
+        is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=True)
 
     with column2:
         # GET FIXTURES UP TO DATE

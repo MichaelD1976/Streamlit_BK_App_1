@@ -130,9 +130,14 @@ def main():
 
     # Handicap -1
     # Home Win by 2 or More Goals
-    home_win_by_2_or_more = np.sum(prob_matrix_ft[i, j] for i in range(2, max_goals+1) for j in range(i-1))
+    home_win_by_2_or_more = np.sum(
+        np.tril(prob_matrix_ft, k=-2)
+    )
     # Tie (Home Wins by Exactly 1 Goal)
-    tie_home_win_by_1 = np.sum(prob_matrix_ft[i, j] for i in range(1, max_goals+1) for j in range(i) if i-j == 1)
+    tie_home_win_by_1 = np.sum(
+        np.diag(prob_matrix_ft, k=1)
+    )
+
     # Away Win or Draw
     away_win_or_draw = draw_prob + away_win_prob 
 
@@ -140,9 +145,14 @@ def main():
     # Home Win or Draw (if home wins or if match is a draw, considering the handicap)
     home_win_or_draw = home_win_prob + draw_prob  # Sum of match draw + home win percentage
     # Tie (Away Wins by Exactly 1 Goal, which nullifies the -1 handicap)
-    tie_away_win_by_1 = np.sum(prob_matrix_ft[i, j] for j in range(1, max_goals+1) for i in range(j) if j-i == 1)
+    tie_away_win_by_1 = np.sum(
+        np.diag(prob_matrix_ft, k=-1)
+    )
+    
     # Away Win by 2 or More Goals (considering the handicap of -1)
-    away_win_by_2_or_more = np.sum(prob_matrix_ft[i, j] for j in range(2, max_goals+1) for i in range(j-1))
+    away_win_by_2_or_more = np.sum(
+        np.triu(prob_matrix_ft, k=2)
+    )
 
 
     # Calculate HT-FT market
