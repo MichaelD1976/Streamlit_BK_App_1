@@ -84,7 +84,8 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
-                     - 23/06/26 Home page/sidebar - selection dropdown and page restructuring. Models - GMT > BST default change.
+                     - 26/03/26 High Draw Matches - plot and derby matches added
+                     - 23/03/26 Home page/sidebar - selection dropdown and page restructuring. Models - GMT > BST default change.
                      - 16/03/26 High Draw Matches - Scottish Champ and League One data added
                      - 04/03/26 High Draw Matches - low goal individual matches flagged
                      - 26/02/26 Odds Calculators - Early Goals O/U payout tool added - defined goals per line

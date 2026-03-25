@@ -277,8 +277,35 @@ def main():
 
     av_odds_df['Team'] = av_odds_df['Team'].map(team_naming_dict).fillna(av_odds_df['Team'])
 
+    show_av_odds_df = st.checkbox('Show team average odds and average expected goals per match data', key='show_av_odds_df')
+    if show_av_odds_df:
+        st.write(av_odds_df)
+
+
+    # ------------  Show plot  --------------------
+
+    def plot_heatmap(df, metric):
+        heatmap_chart = alt.Chart(df).mark_rect().encode(
+            x=alt.X('Team:N', title='Team', sort='-y'),
+            y=alt.Y(f'{metric}:Q', title=metric, scale=alt.Scale(domain=[0.5, df[metric].max()])),
+            color=alt.Color(f'{metric}:Q', scale=alt.Scale(scheme='redyellowgreen', domain=[df[metric].min(), df[metric].max()]), legend=None, title=''),
+            tooltip=['Team:N', f'{metric}:Q']
+        ).properties(
+            width=600,
+            height=400,
+            title=""
+        ).configure_axis(
+            labelFontSize=12,
+            titleFontSize=14,
+            labelPadding=10,
+            titlePadding=15,
+        )
+        return heatmap_chart
     
-    # st.write('253', av_odds_df)
+
+    st.write("")
+    st.write("**Average Total Match Goals / Total Match Goal Expectation**")
+    st.altair_chart(plot_heatmap(av_odds_df, 'Mean_TG/g_exp_scl'), width='content')
 
 
     # -------------------------------------------- CREATE ODDS FOR ALL UPCOMING FIXTURES --------------------------------------------------------------------
@@ -490,6 +517,62 @@ def main():
                     # st.write(df)
                     df = df[['Date', 'Home Team', 'Away Team', 'Outcome', 'Goal_PR', 'Home_mean_tg/g_exp', 'Away_mean_tg/g_exp']]
 
+                    # ---------------- Incorporate Distance/Derby factor --------
+
+                    # 1. Now check for LOCAL derbies.
+                    try:
+                        df_dist_grid = pd.read_csv(f'data/coordinates/dist_grid_{selected_league}.csv')
+
+                        # Now, loop over each row in df to extract the distance from dist_grid
+                        df['Dist'] = df.apply(
+                            lambda row: df_dist_grid.at[row['Home Team'], row['Away Team']]
+                            if row['Home Team'] in df_dist_grid.index and row['Away Team'] in df_dist_grid.columns
+                            else 100,
+                            axis=1
+                        )
+
+                        # Function to assign Derby_mult based on Dist value
+                        def get_derby_mult(dist):
+                            if dist < 8:
+                                return 1.03
+                            elif 8 <= dist < 15:
+                                return 1.02
+                            elif 15 <= dist < 24:
+                                return 1.015
+                            elif 24 <= dist < 33:                       
+                                return 1.01
+                            elif 33 <= dist < 40:
+                                return 1.00
+                            else:
+                                return 1.00
+                            
+                        df['Derby_mult'] = df['Dist'].apply(get_derby_mult)
+
+
+                        # 1. Check for NON local derbies first 1st, reference csv
+                        df_non_local_derby = pd.read_csv('data/derbies_non_local.csv')
+                        # st.write('554', df_non_local_derby)
+
+                        # Merge df with df_non_local_derby on matching Home Team and Away Team
+                        merged_df = df.merge(df_non_local_derby[['Home Team', 'Away Team', 'Mult']], 
+                                            left_on=['Home Team', 'Away Team'], 
+                                            right_on=['Home Team', 'Away Team'], 
+                                            how='left')
+                        
+                        # st.write('merged_df 562', merged_df)
+
+                        # Only update 'Derby_mult' if 'Mult' is not None (ie is a non local derby) 
+                        df['Derby_mult'] = np.where(merged_df['Mult'].notna(), merged_df['Mult'], df['Derby_mult'])
+                        # df['Derby_mult'] = df['Derby_mult'].fillna(1)
+
+                    except Exception as e:
+                        st.write(f"No derby data available for {selected_league} - derby multiple defaulted to 1")
+                        df['Derby_mult'] = 1  # Default to no adjustment if there's an error
+
+                    # st.write('df 571', df)
+
+                    # -------------------------------
+
 
                     st.write(df)
 
@@ -504,18 +587,24 @@ def main():
 
 
                     # Filter only caution matches
-                    caution_df = df[df['Outcome'].isin(['V LOW GOALS', 'Low'])]
+                    caution_df_1 = df[df['Outcome'].isin(['V LOW GOALS', 'Low'])]
+                    caution_df_2 = df[df['Derby_mult'] > 1.01]
 
                     st.markdown("### ⚠️ Matches flagged as low goals (high draw)")
 
                     # Loop through the rows
-                    for idx, row in caution_df.iterrows():
+                    for idx, row in caution_df_1.iterrows():
                         if row['Outcome'] == 'V LOW GOALS':
                             st.error(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
                         elif row['Outcome'] == 'Low':
                             st.warning(f"{row['Home Team']} vs {row['Away Team']} — {row['Outcome']}")
 
+                    # if column 'Outcome' does not contain 'Low' or 'V LOW GOALS', display message
+                    if not df['Outcome'].isin(['V LOW GOALS', 'Low']).any():
+                        st.write('No matches flagged as low goals (high draw)')       
 
+                    for idx, row in caution_df_2.iterrows():
+                        st.warning(f"{row['Home Team']} vs {row['Away Team']} — Derby: higher draw probability")
  
 
                     if df.empty:
@@ -530,8 +619,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-
-# TODO graphic to show team 'Goal_PR' ratings
-
-# TODO add derbies

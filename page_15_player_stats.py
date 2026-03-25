@@ -169,6 +169,7 @@ def main():
 
 
     # # ----------------------------------------------------------------------------------------
+    st.write(filtered_df)
     # Function to plot the heatmap (chart 1)
     def plot_heatmap(df, metric):
         heatmap_chart = alt.Chart(df).mark_rect().encode(
