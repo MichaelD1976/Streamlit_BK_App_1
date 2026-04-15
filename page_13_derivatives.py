@@ -479,97 +479,64 @@ def main():
 
     # -----------  Double Chance 1 Up Functions ------------------------------
 
-    def calculate_dc_outcomes_given_one_nil(hg, ag, minute_of_goal=29):
+    # MARKET FORMULA
+    # P(DC 1 Up) = P(Win or Draw) + P(Score first AND Lose)
+
+    def calculate_loss_given_one_nil(hg, ag, minute_of_goal=29):
         """
-        PURPOSE:
-        --------
-        Estimates conditional match outcome probabilities AFTER a team has taken a 1-0 or 0-1 lead.
-
-        We split into two scenarios:
-        - Home leads 1-0
-        - Away leads 0-1
-
-        RETURNS:
-        --------
-        - P(Home win | 1-0 lead)
-        - P(Draw | 1-0 lead)
-        - P(Away win | 0-1 lead)
-        - P(Draw | 0-1 lead)
+        Returns:
+        - P(Home lose | 1-0) # home LOSE given they go 1-0 up
+        - P(Away lose | 0-1)
         """
 
-        # Remaining time after first goal (assumed average goal minute = 29)
         minutes_remaining = 93 - minute_of_goal
 
-        # Convert full-match xG into per-minute scoring rates
+        # Convert full-match xG into per-minute rates
         home_rate = hg / 93
         away_rate = ag / 93
 
-        # Expected goals remaining AFTER first goal (baseline)
+        # Remaining expected goals after first goal
         rem_home_xg = home_rate * minutes_remaining
         rem_away_xg = away_rate * minutes_remaining
 
-        # -----------------------------
-        # GAME STATE ADJUSTMENTS
-        # -----------------------------
-        # When leading → slightly lower attacking output
-        # When trailing → slightly higher attacking output
+        # Game state adjustments
+        # Leading team slightly reduces attacking intensity
+        # Trailing team increases attacking intensity
+        adj_home_xg_lead = rem_home_xg * 0.95
+        adj_away_xg_trail = rem_away_xg * 1.05
 
-        # Home leads 1-0
-        adj_home_xg_lead = rem_home_xg * 0.95   # home protects lead slightly
-        adj_away_xg_trail = rem_away_xg * 1.05  # away pushes harder
+        adj_home_xg_trail = rem_home_xg * 1.05
+        adj_away_xg_lead = rem_away_xg * 0.95
 
-        # Away leads 0-1
-        adj_home_xg_trail = rem_home_xg * 1.05  # home pushes harder
-        adj_away_xg_lead = rem_away_xg * 0.95   # away protects lead
+        max_goals = 7
 
-        max_goals = 7  # truncation of Poisson distribution (computational limit)
+        lose_prob_home = 0.0
+        lose_prob_away = 0.0
 
-        # -----------------------------
-        # PROBABILITY ACCUMULATORS
-        # -----------------------------
-
-        win_prob_home = 0.0
-        draw_prob_home = 0.0
-
-        win_prob_away = 0.0
-        draw_prob_away = 0.0
-
-        # -----------------------------
-        # POISSON OUTCOME SIMULATION
-        # -----------------------------
-        # We simulate all possible goal combinations after the first goal:
-        # i = goals by one team
-        # j = goals by the other team
-
+        # Poisson simulation of remaining goals
         for i in range(max_goals + 1):
             for j in range(max_goals + 1):
 
-                # =========================================================
-                # SCENARIO 1: Home is leading 1-0
-                # Final score becomes: (1 + i) vs (j)
-                # =========================================================
-
+                # -----------------------------
+                # Home leads 1-0
+                # Final score: (1 + i) vs j
+                # -----------------------------
                 final_home_1_0 = 1 + i
                 final_away_1_0 = j
 
-                # Probability of this exact outcome (independent Poisson assumption)
                 prob_home_lead = (
                     poisson.pmf(i, adj_home_xg_lead) *
                     poisson.pmf(j, adj_away_xg_trail)
                 )
 
-                # Classify match result
-                if final_home_1_0 > final_away_1_0:
-                    win_prob_home += prob_home_lead
-                elif final_home_1_0 == final_away_1_0:
-                    draw_prob_home += prob_home_lead
+                # We ONLY care about losing outcomes
+                if final_home_1_0 < final_away_1_0:
+                    lose_prob_home += prob_home_lead
 
-
-                # =========================================================
-                # SCENARIO 2: Away is leading 0-1
-                # Final score becomes: i vs (1 + j)
-                # =========================================================
-
+                # -----------------------------
+                # Away leads 0-1
+                # Final score: i vs (1 + j)
+                # -----------------------------
                 final_home_0_1 = i
                 final_away_0_1 = 1 + j
 
@@ -578,89 +545,44 @@ def main():
                     poisson.pmf(j, adj_away_xg_lead)
                 )
 
-                # Classify match result
-                if final_away_0_1 > final_home_0_1:
-                    win_prob_away += prob_away_lead
-                elif final_home_0_1 == final_away_0_1:
-                    draw_prob_away += prob_away_lead
+                if final_away_0_1 < final_home_0_1:
+                    lose_prob_away += prob_away_lead
 
-        return win_prob_home, draw_prob_home, win_prob_away, draw_prob_away
-
-
-    # Run conditional model once (used in pricing function below)
-    w_pb_given_1_up_h, d_pb_given_1_up_h, w_pb_given_1_up_a, d_pb_given_1_up_a = (
-        calculate_dc_outcomes_given_one_nil(hg, ag, minute_of_goal=29)
+        return lose_prob_home, lose_prob_away
+    
+    # Run conditional model
+    l_pb_given_1_up_h, l_pb_given_1_up_a = calculate_loss_given_one_nil(
+        hg, ag, minute_of_goal=29
     )
 
 
     # -----------  Double Chance 1 Up - Main Pricing Function ------------------------------
 
     def calculate_dc_one_up(
-        home_next_goal,        # P(Home scores FIRST goal)
-        home_win_prob,         # P(Home wins full match)
-        draw_prob,             # P(Draw full match)
-        w_pb_given_1_up_h,     # P(Home wins | Home leads 1-0)
-        d_pb_given_1_up_h,     # P(Draw | Home leads 1-0)
-        away_next_goal,        # P(Away scores FIRST goal)
-        away_win_prob,         # P(Away wins full match)
-        w_pb_given_1_up_a,     # P(Away wins | Away leads 0-1)
-        d_pb_given_1_up_a      # P(Draw | Away leads 0-1)
-    ):
+        home_next_goal,
+        home_win_prob,
+        draw_prob,
+        l_pb_given_1_up_h,
+        away_next_goal,
+        away_win_prob,
+        l_pb_given_1_up_a,
+        ):
 
-        """
-        PURPOSE:
-        --------
-        Computes "Double Chance 1 Up" probability:
-
-        HOME (1X 1 Up):
-        - Wins if:
-            (A) Home scores first goal
-            OR
-            (B) Home wins OR draws full match
-
-        AWAY (X2 1 Up):
-        - Wins if:
-            (A) Away scores first goal
-            OR
-            (B) Away wins OR draws full match
-
-        Uses inclusion-exclusion to avoid double counting.
-        """
-
-        # =========================================================
-        # HOME 1X 1-UP LOGIC
-        # =========================================================
-
-        # Probability team does NOT lose full-time
-        home_not_lose = home_win_prob + draw_prob
-
-        # Conditional probability of NOT losing given they already led 1-0
-        home_not_lose_given_1_up = w_pb_given_1_up_h + d_pb_given_1_up_h
-
-        # Final inclusion-exclusion formula:
+        # Home (1X)
         home_dc_1_up = (
-            home_next_goal
-            + home_not_lose
-            - (home_next_goal * home_not_lose_given_1_up)
+            (home_win_prob + draw_prob)
+            + (home_next_goal * l_pb_given_1_up_h)
         )
 
-        # =========================================================
-        # AWAY X2 1-UP LOGIC
-        # =========================================================
-
-        away_not_lose = away_win_prob + draw_prob
-
-        away_not_lose_given_1_up = w_pb_given_1_up_a + d_pb_given_1_up_a
-
+        # Away (X2)
         away_dc_1_up = (
-            away_next_goal
-            + away_not_lose
-            - (away_next_goal * away_not_lose_given_1_up)
+            (away_win_prob + draw_prob)
+            + (away_next_goal * l_pb_given_1_up_a)
         )
 
         return home_dc_1_up, away_dc_1_up
-    
-    
+        
+        
     # ------------------  2 UP FUNCTIONS  --------------------
     
     def calculate_win_given_two_nil(hg, ag, minute_of_second_goal=42):
@@ -807,9 +729,7 @@ def main():
         # DC 1 Up
         st.markdown(f"<h4 style='color:{market_name_color};'>DC 1 Up Early Payout</h4>", unsafe_allow_html=True)
         # st.caption("Double Chance 1 Up: wins if team scores first OR avoids losing (win or draw). ""Draw is included in base 1x2 market, so adjustment reduces outsider more heavily.")
-        home_dc_1_up, away_dc_1_up = calculate_dc_one_up(home_next_goal, home_win_prob, draw_prob, w_pb_given_1_up_h, d_pb_given_1_up_h, away_next_goal, away_win_prob, w_pb_given_1_up_a, d_pb_given_1_up_a)
-        # st.write(home_next_goal, home_win_prob, draw_prob, w_pb_given_1_up_h, d_pb_given_1_up_h,
-        #          away_next_goal, away_win_prob, w_pb_given_1_up_a, d_pb_given_1_up_a)
+        home_dc_1_up, away_dc_1_up = calculate_dc_one_up(home_next_goal, home_win_prob, draw_prob, l_pb_given_1_up_h, away_next_goal, away_win_prob, l_pb_given_1_up_a)
         display_odds_with_percentage("Home DC 1 Up (1X)",1 / home_dc_1_up,home_dc_1_up)
         display_odds_with_percentage("Away DC 1 Up (X2)",1 / away_dc_1_up,away_dc_1_up)
 
