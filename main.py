@@ -55,6 +55,7 @@ page_options = [
             #    'Goalscorer Matchbets',
             #    'League Matchbets',
                  'Team News',
+                 'Fixtures',
             #     'Popular Matches'
             #     'Chance Mix Calc'
                  'Outright Sim',
@@ -84,6 +85,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 22/04/26 Fixtures page added
                      - 15/04/26 Derivatives - DC 1 Up market added 
                      - 26/03/26 High Draw Matches - plot and derby matches added
                      - 23/03/26 Home page/sidebar - selection dropdown and page restructuring. Models - GMT > BST default change.
@@ -155,6 +157,11 @@ def main():
     elif selected_page == 'Squad Data':
         import page_18_squad_data
         page_18_squad_data.main() 
+
+    elif selected_page == 'Fixtures':
+        import page_21_fixtures
+        page_21_fixtures.main() 
+
 
 
 
