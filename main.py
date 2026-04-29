@@ -85,6 +85,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 29/04/26 Fixtures page - selection dropdowns, api links, team badges and fst's added
                      - 22/04/26 Fixtures page added
                      - 15/04/26 Derivatives - DC 1 Up market added 
                      - 26/03/26 High Draw Matches - plot and derby matches added
@@ -150,9 +151,15 @@ def main():
         import page_11_simulator
         page_11_simulator.main() 
     
+
+    # remove this and swap with below for Nig players page
     elif selected_page == 'Player Stats':
         import page_15_player_stats
         page_15_player_stats.main() 
+
+    # elif selected_page == 'Player Stats':
+    #     import page_22_player_stats_choose
+    #     page_22_player_stats_choose.main() 
 
     elif selected_page == 'Squad Data':
         import page_18_squad_data

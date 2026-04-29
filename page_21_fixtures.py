@@ -270,229 +270,232 @@ def load_data():
 # Main function to run the Streamlit app
 def main():
 
-    st.subheader("Fixtures and Team News page in development")
+    st.subheader("*** Fixtures and Team News page in development ***", divider='blue')
+    st.write("")
+    st.write("")
+    st.write("")
 
-    # with st.spinner('Loading Data...'):
-    #     df, df_past_fixts = load_data()
+    with st.spinner('Loading Data...'):
+        df, df_past_fixts = load_data()
 
 
-    # # Custom CSS 
-    # st.markdown(
-    #     '''
-    #     <style>
-    #     .streamlit-expanderHeader {
-    #         background-color: white;
-    #         color: black; # Adjust this for expander header color
-    #     }
-    #     .streamlit-expanderContent {
-    #         background-color: white;
-    #         color: black; # Expander content color
-    #     }
-    #     </style>
-    #     ''',
-    #     unsafe_allow_html=True
-    # )
+    # Custom CSS 
+    st.markdown(
+        '''
+        <style>
+        .streamlit-expanderHeader {
+            background-color: white;
+            color: black; # Adjust this for expander header color
+        }
+        .streamlit-expanderContent {
+            background-color: white;
+            color: black; # Expander content color
+        }
+        </style>
+        ''',
+        unsafe_allow_html=True
+    )
         
-    # # Initialize default values
-    # default_league = "England Premier"
-    # today = datetime.now()
-    # week_from_today = today + timedelta(days=3)
+    # Initialize default values
+    default_league = "England Premier"
+    today = datetime.now()
+    week_from_today = today + timedelta(days=3)
 
-    # # Dictionary to map league names to their IDs
-    # leagues_dict = {
-    #     "England Premier": '39',
-    #     "Germany Bundesliga": '78',
-    #     "Spain La Liga": '140',
-    #     "Italy Serie A": '135',
-    #     "France Ligue 1": '61',
-    #     # "Netherlands Eredivisie": "88",
-    #     # "Belgium Jupiler": "144",
-    #     # "Portugal Liga I": '94',
-    #     # 'Scotland Premier': '179',
-    #     # 'England Championship': '40',
-    #     # 'England League One': '41',
-    #     # 'England League Two': '42',
-    #     # "Germany 2 Bundesliga": '79',
-    #     # 'Italy Serie B': '136',
-    #     # 'Spain La Liga 2': '141',
-    #     # 'France Ligue 2': '62',
-    #     # 'Turkey Super Lig': '203',
-    #     # 'Greece Super League': '197'
+    # Dictionary to map league names to their IDs
+    leagues_dict = {
+        "England Premier": '39',
+        "Germany Bundesliga": '78',
+        "Spain La Liga": '140',
+        "Italy Serie A": '135',
+        "France Ligue 1": '61',
+        # "Netherlands Eredivisie": "88",
+        # "Belgium Jupiler": "144",
+        # "Portugal Liga I": '94',
+        # 'Scotland Premier': '179',
+        # 'England Championship': '40',
+        # 'England League One': '41',
+        # 'England League Two': '42',
+        # "Germany 2 Bundesliga": '79',
+        # 'Italy Serie B': '136',
+        # 'Spain La Liga 2': '141',
+        # 'France Ligue 2': '62',
+        # 'Turkey Super Lig': '203',
+        # 'Greece Super League': '197'
+    }
+
+    # Define selection options
+
+    # league_options = {
+    #     'E0': 'England Premier',
+    #     'D1': 'Germany Bundesliga',
+    #     'SP1': 'Spain La Liga',
+    #     'I1': 'Italy Serie A',
+    #     'F1': 'France Ligue 1',
+    #     'N1': 'Netherlands Eredivisie',
+    #     'B1': 'Belgium Jupiler',
+    #     'P1': 'Portugal Liga I',
+    #     'SC0': 'Scotland Premier',
+    #     'E1': 'England Championship',
+    #     'E2': 'England League One',
+    #     'E3': 'England League Two',
+    #     'D2': 'Germany 2 Bundesliga',
+    #     'SP2': 'Spain La Liga 2',
+    #     'I2': 'Italy Serie B',
+    #     'F2': 'France Ligue 2',
     # }
 
-    # # Define selection options
+    non_player_stat_leagues = ['Germany 2 Bundesliga', 'Italy Serie B', 'Spain La Liga 2', 'France Ligue 2', 'Turkey Super Lig', 'Greece Super League' ]
 
-    # # league_options = {
-    # #     'E0': 'England Premier',
-    # #     'D1': 'Germany Bundesliga',
-    # #     'SP1': 'Spain La Liga',
-    # #     'I1': 'Italy Serie A',
-    # #     'F1': 'France Ligue 1',
-    # #     'N1': 'Netherlands Eredivisie',
-    # #     'B1': 'Belgium Jupiler',
-    # #     'P1': 'Portugal Liga I',
-    # #     'SC0': 'Scotland Premier',
-    # #     'E1': 'England Championship',
-    # #     'E2': 'England League One',
-    # #     'E3': 'England League Two',
-    # #     'D2': 'Germany 2 Bundesliga',
-    # #     'SP2': 'Spain La Liga 2',
-    # #     'I2': 'Italy Serie B',
-    # #     'F2': 'France Ligue 2',
-    # # }
+    # Market and bookmaker settings
+    markets_dict = {
+        "Match Winner": '1',
+        "Asian Handicap": '4',
+        "Goals Over/Under": '5',
+        "Correct Score": '10',
+        'Double Chance': '12',
+        "Both Teams to Score": '8',
+        'Half-time/Full-time': '7',
+        "First Goalscorer": '93',
+        'Anytime Goalscorer': '92',
+        'Corners 1X2': '55',
+        'Corners Total': '45',
+        'Win Both Halves': '32',
+        'Win Either Half': '39'
+    }
 
-    # non_player_stat_leagues = ['Germany 2 Bundesliga', 'Italy Serie B', 'Spain La Liga 2', 'France Ligue 2', 'Turkey Super Lig', 'Greece Super League' ]
-
-    # # Market and bookmaker settings
-    # markets_dict = {
-    #     "Match Winner": '1',
-    #     "Asian Handicap": '4',
-    #     "Goals Over/Under": '5',
-    #     "Correct Score": '10',
-    #     'Double Chance': '12',
-    #     "Both Teams to Score": '8',
-    #     'Half-time/Full-time': '7',
-    #     "First Goalscorer": '93',
-    #     'Anytime Goalscorer': '92',
-    #     'Corners 1X2': '55',
-    #     'Corners Total': '45',
-    #     'Win Both Halves': '32',
-    #     'Win Either Half': '39'
-    # }
-
-    # bookmaker_list = ['4','3','8', '11', '16', '7', '3', '24', '1', '5', '27', '2', '26', '32', '22', '9'] 
+    bookmaker_list = ['4','3','8', '11', '16', '7', '3', '24', '1', '5', '27', '2', '26', '32', '22', '9'] 
 
     # # --------------------------------------------------------------
 
-    # # PUT SELECTIONS IN SESSION STATE SO WHEN PAGE REFRESHED, SELECTIONS DONT NEED TO BE PICKED AGAIN   
-    # # Initialize default values if they don't exist in session state
-    # if 'league_name' not in st.session_state:
-    #     st.session_state.league_name = default_league
-    # if 'from_date' not in st.session_state:
-    #     st.session_state.from_date = today
-    # if 'to_date' not in st.session_state:
-    #     st.session_state.to_date = week_from_today
+    # PUT SELECTIONS IN SESSION STATE SO WHEN PAGE REFRESHED, SELECTIONS DONT NEED TO BE PICKED AGAIN   
+    # Initialize default values if they don't exist in session state
+    if 'league_name' not in st.session_state:
+        st.session_state.league_name = default_league
+    if 'from_date' not in st.session_state:
+        st.session_state.from_date = today
+    if 'to_date' not in st.session_state:
+        st.session_state.to_date = week_from_today
 
 
-    # # Sidebar for league selection (WIDGET)
-    # league_name = st.sidebar.selectbox(
-    #     "Select a League",
-    #     list(leagues_dict.keys()),
-    #     index=list(leagues_dict.keys()).index(st.session_state.league_name),
-    #     label_visibility='visible',
-    # )
+    # Sidebar for league selection (WIDGET)
+    league_name = st.sidebar.selectbox(
+        "Select a League",
+        list(leagues_dict.keys()),
+        index=list(leagues_dict.keys()).index(st.session_state.league_name),
+        label_visibility='visible',
+    )
 
-    # # Check if the league selection has changed
-    # if league_name != st.session_state.league_name:
-    #     # Update the session state to reflect the new league name
-    #     st.session_state.league_name = league_name
+    # Check if the league selection has changed
+    if league_name != st.session_state.league_name:
+        # Update the session state to reflect the new league name
+        st.session_state.league_name = league_name
         
-    #     # Trigger a page refresh (only if the selection has changed)
-    #     st.rerun()
+        # Trigger a page refresh (only if the selection has changed)
+        st.rerun()
 
 
-    # # Sidebar for 'from_date' input  # WIDGET
-    # from_date = st.sidebar.date_input(
-    #     "From Date",
-    #     st.session_state.from_date,
-    #     label_visibility = 'visible'
-    # )
+    # Sidebar for 'from_date' input  # WIDGET
+    from_date = st.sidebar.date_input(
+        "From Date",
+        st.session_state.from_date,
+        label_visibility = 'visible'
+    )
 
-    # # Check if the from_date has changed
-    # if from_date != st.session_state.from_date:
-    #     # Update the session state to reflect the new league name
-    #     st.session_state.from_date = from_date        
-    #     # Trigger a page refresh (only if the selection has changed)
-    #     st.rerun()
-
-
-    # # Calculate max 'to_date' based on 'from_date'
-    # max_to_date = from_date + timedelta(days=30)
-
-    # # Sidebar for 'to_date' input  # WIDGET
-    # to_date = st.sidebar.date_input(
-    #     "To Date",
-    #     st.session_state.to_date,
-    #     max_value=max_to_date,
-    #     label_visibility = 'visible'
-    # )
-
-    # # Check if the to_date has changed
-    # if to_date != st.session_state.to_date:
-    #     # Update the session state to reflect the new league name
-    #     st.session_state.to_date = to_date        
-    #     # Trigger a page refresh (only if the selection has changed)
-    #     st.rerun()
+    # Check if the from_date has changed
+    if from_date != st.session_state.from_date:
+        # Update the session state to reflect the new league name
+        st.session_state.from_date = from_date        
+        # Trigger a page refresh (only if the selection has changed)
+        st.rerun()
 
 
+    # Calculate max 'to_date' based on 'from_date'
+    max_to_date = from_date + timedelta(days=30)
 
-    # # Update from_date_str and to_date_str after confirming changes
-    # from_date_str = st.session_state.from_date.strftime('%Y-%m-%d')
-    # to_date_str = st.session_state.to_date.strftime('%Y-%m-%d')
+    # Sidebar for 'to_date' input  # WIDGET
+    to_date = st.sidebar.date_input(
+        "To Date",
+        st.session_state.to_date,
+        max_value=max_to_date,
+        label_visibility = 'visible'
+    )
+
+    # Check if the to_date has changed
+    if to_date != st.session_state.to_date:
+        # Update the session state to reflect the new league name
+        st.session_state.to_date = to_date        
+        # Trigger a page refresh (only if the selection has changed)
+        st.rerun()
+
+
+
+    # Update from_date_str and to_date_str after confirming changes
+    from_date_str = st.session_state.from_date.strftime('%Y-%m-%d')
+    to_date_str = st.session_state.to_date.strftime('%Y-%m-%d')
 
 
     # # --------------------  MAIN PAGE  ---------------------------
-    # st.header(f"{st.session_state.league_name} Fixtures")
+    st.header(f"{st.session_state.league_name} Fixtures")
 
-    # st.caption('Downgrades from Best XI indicate the cumulative expected team weakness denoted as 100ths of a goal from the best possible starting XI based on current season data')
-    # st.write("---")
-
-
-    # # Automatically fetch fixtures on page load
-    # league_id = leagues_dict[st.session_state.league_name]
-    # df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
-
-    # # Display the fixtures and injuries in a structured layout
-    # if not df_fixtures.empty:
-    #     df_fixtures['Date'] = pd.to_datetime(df_fixtures['Date'], format='%d-%m-%y %H:%M')  # Convert to datetime
-    #     df_fixtures.sort_values(by='Date', inplace=True)  # Sort by date
-
-    #     for index, row in df_fixtures.iterrows():
-    #         fixture_id = row['Fixture ID']
-    #         home_team_name = row['Home Team']
-    #         away_team_name = row['Away Team']
-
-    #         # Create a three-column layout: Fixture | Injuries Home | Injuries Away
-    #         col1, col2, col3, col4, col5, _ = st.columns([3, 0.5, 3.5, 0.5, 3.5, 0.2])
-
-    #         # Left column: Display fixture details
-    #         with col1:
-    #             st.subheader(f"{home_team_name} vs {away_team_name}")
-    #             st.write(f"Date: {row['Date']}")
-    #             st.write(f"Venue: {row['Venue']} ({row['City']})")
-    #             st.write(f"Status: {row['Status']}")
-    #             if row['Status'] == 'Match Finished':
-    #                 st.write(f"FT: {int(row['Fulltime Score Home'])} - {int(row['Fulltime Score Away'])}")
-    #             elif row['Status'] == 'Halftime':
-    #                 st.write(f"HT: {int(row['Halftime Score Home'])} - {int(row['Halftime Score Away'])}")
-    #             elif row['Status'] == 'Match Postponed':
-    #                 pass
-    #             elif row['Status'] != 'Not Started':
-    #                 st.write(f"Score: {int(row['Goals Home'])} - {int(row['Goals Away'])}")
+    st.caption('Downgrades from Best XI indicate the cumulative expected team weakness denoted as 100ths of a goal from the best possible starting XI based on current season data')
+    st.write("---")
 
 
-    #         with col2:
-    #          st.write("")
-    #          st.image(row['Home Team Logo'], width=40)
+    # Automatically fetch fixtures on page load
+    league_id = leagues_dict[st.session_state.league_name]
+    df_fixtures = get_fixtures(league_id, from_date_str, to_date_str, API_SEASON)
 
-    #         with col4:
-    #          st.write("")
-    #          st.image(row['Away Team Logo'], width=40)    
+    # Display the fixtures and injuries in a structured layout
+    if not df_fixtures.empty:
+        df_fixtures['Date'] = pd.to_datetime(df_fixtures['Date'], format='%d-%m-%y %H:%M')  # Convert to datetime
+        df_fixtures.sort_values(by='Date', inplace=True)  # Sort by date
+
+        for index, row in df_fixtures.iterrows():
+            fixture_id = row['Fixture ID']
+            home_team_name = row['Home Team']
+            away_team_name = row['Away Team']
+
+            # Create a three-column layout: Fixture | Injuries Home | Injuries Away
+            col1, col2, col3, col4, col5, _ = st.columns([3, 0.5, 3.5, 0.5, 3.5, 0.2])
+
+            # Left column: Display fixture details
+            with col1:
+                st.subheader(f"{home_team_name} vs {away_team_name}")
+                st.write(f"Date: {row['Date']}")
+                st.write(f"Venue: {row['Venue']} ({row['City']})")
+                st.write(f"Status: {row['Status']}")
+                if row['Status'] == 'Match Finished':
+                    st.write(f"FT: {int(row['Fulltime Score Home'])} - {int(row['Fulltime Score Away'])}")
+                elif row['Status'] == 'Halftime':
+                    st.write(f"HT: {int(row['Halftime Score Home'])} - {int(row['Halftime Score Away'])}")
+                elif row['Status'] == 'Match Postponed':
+                    pass
+                elif row['Status'] != 'Not Started':
+                    st.write(f"Score: {int(row['Goals Home'])} - {int(row['Goals Away'])}")
 
 
-    #         with col3:
-    #             st.write("")
+            with col2:
+             st.write("")
+             st.image(row['Home Team Logo'], width=40)
+
+            with col4:
+             st.write("")
+             st.image(row['Away Team Logo'], width=40)    
+
+
+            with col3:
+                st.write("")
                 
     #             # ----------------- show fst -----------
-    #             st.write("")
-    #             # WIDGET
-    #             with st.expander(f"Show {home_team_name} Best XI", expanded=False):
-    #                 if league_name not in non_player_stat_leagues:   
-    #                     df_filtered = df[df['Team'] == home_team_name]
-    #                     team_df, _ = generate_team_fst(df_filtered, CURRENT_SEASON)  # returns 2 dfs, fst and squad ratings, not utilising squad here so '_'
-    #                     st.dataframe(team_df, height=420)
-    #                 else:
-    #                     st.write(f'Best XI unavailable for {league_name}')
+                st.write("")
+                # WIDGET
+                with st.expander(f"Show {home_team_name} Best XI", expanded=False):
+                    if league_name not in non_player_stat_leagues:   
+                        df_filtered = df[df['Team'] == home_team_name]
+                        team_df, _ = generate_team_fst(df_filtered, CURRENT_SEASON)  # returns 2 dfs, fst and squad ratings, not utilising squad here so '_'
+                        st.dataframe(team_df, height=420)
+                    else:
+                        st.write(f'Best XI unavailable for {league_name}')
 
     #             # ----------------- team info -----------
     #             # WIDGET
@@ -666,19 +669,19 @@ def main():
 
 
     #         # Right column: Display injuries for away team in an expander
-    #         with col5:
-    #             st.write("")
+            with col5:
+                st.write("")
 
     #             # ----------------- show fst -----------
-    #             st.write("")
-    #             # WIDGET
-    #             with st.expander(f"Show {away_team_name} Best XI", expanded=False): 
-    #                 if league_name not in non_player_stat_leagues:   
-    #                     df_filtered = df[df['Team'] == away_team_name]
-    #                     team_df, _ = generate_team_fst(df_filtered, CURRENT_SEASON)
-    #                     st.dataframe(team_df, height=420)
-    #                 else:
-    #                     st.write(f'Best XI unavailable for {league_name}')
+                st.write("")
+                # WIDGET
+                with st.expander(f"Show {away_team_name} Best XI", expanded=False): 
+                    if league_name not in non_player_stat_leagues:   
+                        df_filtered = df[df['Team'] == away_team_name]
+                        team_df, _ = generate_team_fst(df_filtered, CURRENT_SEASON)
+                        st.dataframe(team_df, height=420)
+                    else:
+                        st.write(f'Best XI unavailable for {league_name}')
 
     #             # WIDGET
     #             with st.expander(f"{away_team_name} team info", expanded=False):                    
