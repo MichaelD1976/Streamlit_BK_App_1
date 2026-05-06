@@ -81,7 +81,7 @@ def main():
         st.write("No Nigerian players found in the selected league and season.")
     else:
         highest_rating = df_nig['Rating'].max().round(2)
-        highest_rating_player = df_nig[df_nig['Rating'] == highest_rating]['Player'].values[0]
+        highest_rating_player = df_nig.loc[df_nig['Rating'].idxmax(), 'Player']
         highest_goals = df_nig['Goals'].max()
         highest_goals_player = df_nig[df_nig['Goals'] == highest_goals]['Player'].values[0]
         highest_assists = df_nig['Assists'].max()
