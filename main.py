@@ -56,6 +56,7 @@ page_options = [
             #    'League Matchbets',
                  'Team News',
                  'Fixtures',
+                 'TPF',
             #     'Popular Matches'
             #     'Chance Mix Calc'
                  'Outright Sim',
@@ -85,7 +86,8 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
-                     - 06/05/26 Nigerian Players summary page added within player stats page
+                     - 13/05/26 TPF page added
+                     - 06/05/26 Nigerian Players summary page added (embedded within player stats page)
                      - 29/04/26 Fixtures page - selection dropdowns, api links, team badges and fst's added
                      - 22/04/26 Fixtures page added
                      - 15/04/26 Derivatives - DC 1 Up market added 
@@ -169,6 +171,10 @@ def main():
     elif selected_page == 'Fixtures':
         import page_21_fixtures
         page_21_fixtures.main() 
+
+    elif selected_page == 'TPF':
+        import page_24_tpf
+        page_24_tpf.main() 
 
 
 

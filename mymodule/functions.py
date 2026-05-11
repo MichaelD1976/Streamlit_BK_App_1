@@ -266,6 +266,82 @@ CURRENT_SEASON_FST_FORMAT = '2025-26' # for generate_fst downgrades. If not curr
 
 # ---------------------------------------------------
 
+# Function to fetch data from the API for league standings
+
+@st.cache_resource
+def get_table(league, year):
+
+    # Load environment variables (API key)
+    load_dotenv()
+    API_KEY = os.getenv('API_KEY_FOOTBALL_API')
+
+    url = "https://api-football-v1.p.rapidapi.com/v3/standings"
+
+    querystring = {
+        "league": league,
+        "season": year
+    }
+
+    headers = {
+        "x-rapidapi-key": API_KEY,
+        "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
+    }
+
+    response = requests.get(url, headers=headers, params=querystring)
+    if response.status_code != 200:
+        st.error("API request failed.")
+        return pd.DataFrame()  # or handle it as needed
+    response_data = response.json()
+
+    # Extract standings
+    standings = response_data['response'][0]['league']['standings'][0]
+
+    # Transform into DataFrame with all relevant columns
+    data = []
+    for team_info in standings:
+        team = team_info['team']['name']
+      # rank = team_info['rank']
+      #  logo = team_info['team']['logo']
+        points = team_info['points']
+        goals_for = team_info['all']['goals']['for']
+        goals_against = team_info['all']['goals']['against']
+        played = team_info['all']['played']
+        wins = team_info['all']['win']
+        draws = team_info['all']['draw']
+        losses = team_info['all']['lose']
+        goals_diff = team_info['goalsDiff']
+        form = team_info['form']
+
+        data.append({
+         #   'Badge': logo,
+            'Team': team,
+            'P': played,
+            'W': wins,
+            'D': draws,
+            'L': losses,
+            'GF': goals_for,
+            'GA': goals_against,
+            'GD': goals_diff,
+            'Pts': points,
+            'Form': form,
+        })
+
+    # Create DataFrame
+    standings_df = pd.DataFrame(data)
+
+    # Reset index starting from 1 to look like a proper league table
+    standings_df.index = standings_df.index + 1
+    # convert team name to 1x2 standardized
+
+    if not standings_df.empty:
+        standings_df['Team'] = standings_df['Team'].apply(unidecode)
+        standings_df['Team'] = standings_df['Team'].map(team_names_api_to_t1x2_dict).fillna(standings_df['Team'])
+
+    return standings_df
+
+
+# ---------------------------------------------------
+
 
 # Function to fetch data from the API for fixtures
 @st.cache_resource
