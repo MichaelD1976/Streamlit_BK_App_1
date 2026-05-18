@@ -12,7 +12,7 @@ from mymodule.functions import team_names_api_to_t1x2_dict, get_fixtures, get_ta
 
 # Load environment variables (API key)
 load_dotenv()
-API_KEY = os.getenv('API_KEY_FOOTBALL-API')
+API_KEY = os.getenv('API_KEY_FOOTBALL_API')
 CURRENT_SEASON = '2025-26' # to fetch team FST's
 API_SEASON = '2025' # current season as used by api-foot
 
@@ -46,10 +46,10 @@ leagues_dict = {
 valid_positions_dict = {
     'England Premier': [38,7,18],
     'Germany Bundesliga': [34,7,16],
-    'Spain La Liga': [38,6,18],
-    'Italy Serie A': [38,6,18],
+    'Spain La Liga': [38,7,18],
+    'Italy Serie A': [38,7,18],
     'France Ligue 1': [34,6,16],
-    'Netherlands Eredivisie': [34,8,16],
+    'Netherlands Eredivisie': [34,9,16],
     'Portugal Liga I': [34,4,16],
     'Scotland Premier': [38,4,2],
     'England Championship': [46,8,22],
@@ -57,7 +57,7 @@ valid_positions_dict = {
     'England League Two': [46,6,22],
     'Germany 2 Bundesliga': [34,3,16],
     'Italy Serie B': [38,8,16],
-    'Spain La Liga 2': [42,6,18],
+    'Spain La Liga 2': [42,6,19],
     'France Ligue 2': [34,5,16],
     'Turkey Super Lig': [34,4,16],
 }
@@ -178,9 +178,13 @@ def main():
     # function to access the api for the split leagues only
     def get_split_league_table(league, year):
 
-        # Load environment variables (API key)
-        load_dotenv()
-        API_KEY = os.getenv('API_KEY_FOOTBALL_API')
+        if not st.secrets:
+            load_dotenv()
+            API_KEY = os.getenv("API_KEY_FOOTBALL_API")
+
+        else:
+            # Use Streamlit secrets in production
+            API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
 
         url = "https://api-football-v1.p.rapidapi.com/v3/standings"
 

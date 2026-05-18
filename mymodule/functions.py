@@ -271,9 +271,13 @@ CURRENT_SEASON_FST_FORMAT = '2025-26' # for generate_fst downgrades. If not curr
 @st.cache_resource
 def get_table(league, year):
 
-    # Load environment variables (API key)
-    load_dotenv()
-    API_KEY = os.getenv('API_KEY_FOOTBALL_API')
+    if not st.secrets:
+        load_dotenv()
+        API_KEY = os.getenv("API_KEY_FOOTBALL_API")
+
+    else:
+        # Use Streamlit secrets in production
+        API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
 
     url = "https://api-football-v1.p.rapidapi.com/v3/standings"
 
