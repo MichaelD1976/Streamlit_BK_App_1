@@ -1205,7 +1205,7 @@ def generate_team_fst(filtered_df, selected_year): # added selected_year argumen
 def get_injuries_by_team(api_id, current_season):
 
     load_dotenv()
-    API_KEY = os.getenv('API_KEY_FOOTBALL-API')
+    API_KEY = os.getenv('API_KEY_FOOTBALL_API')
 
     url = "https://api-football-v1.p.rapidapi.com/v3/injuries"
     querystring = {"season": current_season, "team": api_id}
@@ -1258,7 +1258,7 @@ def get_injuries_by_team(api_id, current_season):
 def get_transfers_by_team(api_id, current_season):
 
     load_dotenv()
-    API_KEY = os.getenv('API_KEY_FOOTBALL-API')
+    API_KEY = os.getenv('API_KEY_FOOTBALL_API')
 
     url = "https://api-football-v1.p.rapidapi.com/v3/transfers"
     querystring = {"team": api_id}  # Replace "33" with your team API_ID if needed
