@@ -365,7 +365,7 @@ def main():
     elif table_chosen == 'Relegation':
         league_table_df['test'] = league_table_df['lowest_position'] - bottom_valid_positions
         league_table_df['Midtable NTPF'] = league_table_df.apply(lambda row: 'NTPF' if row['lowest_position'] < bottom_valid_positions else 'TPF', axis=1)
-        st.write(bottom_valid_positions)
+        # st.write(bottom_valid_positions)
 
     # st.write(bottom_valid_positions)
     # st.write(top_valid_positions)

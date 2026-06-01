@@ -268,7 +268,7 @@ CURRENT_SEASON_FST_FORMAT = '2025-26' # for generate_fst downgrades. If not curr
 
 # Function to fetch data from the API for league standings
 
-@st.cache_resource
+# @st.cache_resource - remove cache so tpf sheet updates table after midweek matches when checking for weekend
 def get_table(league, year):
 
     if not st.secrets:
