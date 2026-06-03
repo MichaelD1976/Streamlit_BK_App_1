@@ -1,5 +1,7 @@
 import streamlit as st
 import warnings
+
+import page_26_simulator_choose
 warnings.filterwarnings('ignore')
 import logging
 
@@ -59,7 +61,7 @@ page_options = [
                  'TPF',
             #     'Popular Matches'
             #     'Chance Mix Calc'
-                 'Outright Sim',
+                 'Simulators',
             #     'Odds Calculators',
                 ]
 
@@ -86,6 +88,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 03/06/26 Simulators page amended with 'group stage' option added
                      - 13/05/26 TPF page added
                      - 06/05/26 Nigerian Players summary page added (embedded within player stats page)
                      - 29/04/26 Fixtures page - selection dropdowns, api links, team badges and fst's added
@@ -150,10 +153,10 @@ def main():
         import page_7_team_news
         page_7_team_news.main()
 
-    elif selected_page == 'Outright Sim':
-        import page_11_simulator
-        page_11_simulator.main() 
-    
+    elif selected_page == 'Simulators':
+        import page_26_simulator_choose
+        page_26_simulator_choose.main() 
+
 
     # # remove this and swap with below for Nig players page
     # elif selected_page == 'Player Stats':
