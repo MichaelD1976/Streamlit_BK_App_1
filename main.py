@@ -88,7 +88,8 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
-                     - 03/06/26 Simulators page amended with 'group stage' option added
+                     - 10/06/26 Simulator page - 'Position Explorer' added to Group Stage sim output
+                     - 03/06/26 Simulator page - 'Group Stage' sim added
                      - 13/05/26 TPF page added
                      - 06/05/26 Nigerian Players summary page added (embedded within player stats page)
                      - 29/04/26 Fixtures page - selection dropdowns, api links, team badges and fst's added

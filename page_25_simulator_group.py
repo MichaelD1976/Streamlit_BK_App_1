@@ -310,75 +310,75 @@ def main():
         st.dataframe(df.style.format(format_dict))
 
     # --------------------
-    # st.write("")
-    # st.write("---")
-    # st.subheader("Position Odds Explorer")
+    st.write("")
+    st.write("---")
+    st.subheader("Position Odds Explorer")
 
-    # if "position_counts" not in st.session_state:
-    #     st.info("Run the simulation first")
-    #     return  # or st.stop()
+    if "position_counts" not in st.session_state:
+        st.info("Run the simulation first")
+        return  # or st.stop()
 
-    # position_counts = st.session_state["position_counts"]
-    # n_sims = st.session_state["n_sims"]
+    position_counts = st.session_state["position_counts"]
+    n_sims = st.session_state["n_sims"]
 
 
-    # team_selected = st.selectbox("Select team", teams)
+    team_selected = st.selectbox("Select team", teams)
 
-    # position_selected = st.number_input(
-    #     "Select position",
-    #     min_value=1,
-    #     max_value=n_teams,
-    #     value=2
-    # )
+    position_selected = st.number_input(
+        "Select position",
+        min_value=1,
+        max_value=n_teams,
+        value=2
+    )
 
-    # if team_selected:
+    if team_selected:
 
-    #     pos_probs = {
-    #         pos: position_counts[team_selected][pos] / n_sims
-    #         for pos in range(1, n_teams + 1)
-    #     }
+        pos_probs = {
+            pos: position_counts[team_selected][pos] / n_sims
+            for pos in range(1, n_teams + 1)
+        }
 
-    #     # -----------------------------
-    #     # ABOVE / BELOW SPLIT
-    #     # -----------------------------
+        # -----------------------------
+        # ABOVE / BELOW SPLIT
+        # -----------------------------
 
-    #     p_above = sum(
-    #         pos_probs[p]
-    #         for p in range(position_selected, n_teams + 1)
-    #     )
+        p_above = sum(
+            pos_probs[p]
+            for p in range(position_selected, n_teams + 1)
+        )
 
-    #     p_below = sum(
-    #         pos_probs[p]
-    #         for p in range(1, position_selected)
-    #     )
+        p_below = sum(
+            pos_probs[p]
+            for p in range(1, position_selected)
+        )
 
-    #     # odds
-    #     odds_above = 1 / p_above if p_above > 0 else None
-    #     odds_below = 1 / p_below if p_below > 0 else None
+        # odds
+        odds_above = 1 / p_above if p_above > 0 else None
+        odds_below = 1 / p_below if p_below > 0 else None
 
-    #     # -----------------------------
-    #     # DISPLAY
-    #     # -----------------------------
+        # -----------------------------
+        # DISPLAY
+        # -----------------------------
 
-    #     st.markdown(f"### {team_selected} — Position Analysis")
+        st.markdown(f"### {team_selected} — Position Analysis")
 
-    #     st.write(f"**P({position_selected} or better / worse)**")
+        st.write(f"**P({position_selected} or better / worse)**")
 
-    #     col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2)
 
-    #     with col1:
-    #         st.metric(
-    #             label=f"Finish {position_selected} or WORSE (positions {position_selected}-{n_teams})",
-    #             value=f"{p_above:.2%}",
-    #             delta=f"Odds: {odds_above:.2f}" if odds_above else "N/A"
-    #         )
+        with col1:
+            st.metric(
+                label=f"Finish {position_selected} or WORSE (positions {position_selected}-{n_teams})",
+                value=f"{p_above:.2%}",
+                delta=f"Odds: {odds_above:.2f}" if odds_above else "N/A"
+            )
 
-    #     with col2:
-    #         st.metric(
-    #             label=f"Finish ABOVE {position_selected} (positions 1-{position_selected-1})",
-    #             value=f"{p_below:.2%}",
-    #             delta=f"Odds: {odds_below:.2f}" if odds_below else "N/A"
-    #         )
+        with col2:
+            st.metric(
+                label=f"Finish ABOVE {position_selected} (positions 1-{position_selected-1})",
+                value=f"{p_below:.2%}",
+                delta=f"Odds: {odds_below:.2f}" if odds_below else "N/A"
+            )
 
 
 if __name__ == "__main__":
