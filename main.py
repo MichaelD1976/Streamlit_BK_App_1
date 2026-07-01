@@ -89,7 +89,8 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
-                     - 16/06/26 Team Stats page added
+                     - 01/07/26 Team Stats Page - stats frequency distribution plot added
+                     - 17/06/26 Team Stats page added (plus visuals)
                      - 10/06/26 Simulator page - 'Position Explorer' added to Group Stage sim output
                      - 03/06/26 Simulator page - 'Group Stage' sim added
                      - 13/05/26 TPF page added
@@ -171,8 +172,8 @@ def main():
         page_22_player_stats_choose.main() 
 
     elif selected_page == 'Team Stats':
-        import page_26_team_stats
-        page_26_team_stats.main() 
+        import page_27_team_stats
+        page_27_team_stats.main() 
 
     elif selected_page == 'Squad Data':
         import page_18_squad_data

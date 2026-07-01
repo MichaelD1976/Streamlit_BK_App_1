@@ -336,58 +336,58 @@ def main():
     st.write("----")
 
 
-    # # ----- PREPARE CHART 3 ----------------------
-    #  # WIDGET
-    # if total_metric == 'T_Pos':
-    #     with left_column:
-    #         poss_choice = st.selectbox('Select Home or Away Possession', options=['Home', 'Away'], label_visibility = 'visible')
-    #         if poss_choice == 'Home':
-    #             total_metric = home_metric
-    #         else:
-    #             total_metric = away_metric
-    #     bin_step = 0.02
+    # ----- PREPARE CHART 3 ----------------------
+     # WIDGET
+    if total_metric == 'T_Pos':
+        with left_column:
+            poss_choice = st.selectbox('Select Home or Away Possession', options=['Home', 'Away'], label_visibility = 'visible')
+            if poss_choice == 'Home':
+                total_metric = home_metric
+            else:
+                total_metric = away_metric
+        bin_step = 0.02
 
-    # elif total_metric == 'T_Pass':
-    #     bin_step = 25
+    elif total_metric == 'T_Pass':
+        bin_step = 25
 
-    # elif total_metric == 'TxG':
-    #     bin_step = 0.5
+    elif total_metric == 'TxG':
+        bin_step = 0.5
 
-    # else:
-    #     bin_step = 1
+    else:
+        bin_step = 1
             
-    # histogram = alt.Chart(filtered_df).mark_bar().encode(
-    #     x=alt.X(total_metric, 
-    #             bin=alt.Bin(step=bin_step, extent=[filtered_df[total_metric].min(), filtered_df[total_metric].max()]),
-    #             title=f'Total {selected_metric}'),
-    #     y=alt.Y('count()', title='Frequency'),
-    #     tooltip=[total_metric, 'count()']
-    # ).properties(
-    #     width=500,
-    #     height=500
-    # )
+    histogram = alt.Chart(filtered_df).mark_bar().encode(
+        x=alt.X(total_metric, 
+                bin=alt.Bin(step=bin_step, extent=[filtered_df[total_metric].min(), filtered_df[total_metric].max()]),
+                title=f'Total {selected_metric}'),
+        y=alt.Y('count()', title='Frequency'),
+        tooltip=[total_metric, 'count()']
+    ).properties(
+        width=500,
+        height=500
+    )
 
-    # line = alt.Chart(filtered_df).transform_density(
-    #     total_metric,
-    #     as_=[total_metric, 'density']
-    # ).mark_line().encode(
-    #     x=alt.X(total_metric, title=f'Total {selected_metric}'),
-    #     y='density:Q'
-    # )
+    line = alt.Chart(filtered_df).transform_density(
+        total_metric,
+        as_=[total_metric, 'density']
+    ).mark_line().encode(
+        x=alt.X(total_metric, title=f'Total {selected_metric}'),
+        y='density:Q'
+    )
 
-    # # -------------- DISPLAY CHART 3 -----------------  
+    # -------------- DISPLAY CHART 3 -----------------  
 
-    # # handle possession selected metric
-    # if total_metric == 'H_Pos':
-    #     st.subheader(f'Frequency of Home {selected_metric}, All Matches')
-    # elif total_metric == 'A_Pos':
-    #     st.subheader(f'Frequency of Away {selected_metric}, All Matches')
-    # elif total_metric != 'TR':
-    #     st.subheader(f'Frequency of {selected_metric}, All Matches')
+    # handle possession selected metric
+    if total_metric == 'H_Pos':
+        st.subheader(f'Frequency of Home {selected_metric}, All Matches')
+    elif total_metric == 'A_Pos':
+        st.subheader(f'Frequency of Away {selected_metric}, All Matches')
+    elif total_metric != 'TR':
+        st.subheader(f'Frequency of {selected_metric}, All Matches')
 
-    # if total_metric != 'TR':
-    #     st.altair_chart(histogram + line, use_container_width=False)
-    #     st.write("----")
+    if total_metric != 'TR':
+        st.altair_chart(histogram + line, use_container_width=False)
+        st.write("----")
 
 # # -------------------------------------------------------------
 
