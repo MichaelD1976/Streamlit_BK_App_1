@@ -89,7 +89,8 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
-                     - 01/07/26 Team Stats Page - stats frequency distribution plot added
+                     - 06/07/26 Player Stats page - shots on per goal metric added
+                     - 01/07/26 Team Stats page - stats frequency distribution plot added
                      - 17/06/26 Team Stats page added (plus visuals)
                      - 10/06/26 Simulator page - 'Position Explorer' added to Group Stage sim output
                      - 03/06/26 Simulator page - 'Group Stage' sim added

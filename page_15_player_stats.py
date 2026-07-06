@@ -87,7 +87,7 @@ def main():
 
     if selected_league in advanced_stat_leagues and selected_year in advanced_stat_seasons:
         heatmap_metrics = [
-            'Goals', 'XG', 'Assists', 'Shots On', 'Shots Total', 
+            'Goals', 'XG', 'Assists', 'Shots On', 'Shots Total', 'Shots on/gl',
             'Fouls Drawn', 'Fouls Committed', 'Tackles Total', 'Blocks', 'Passes Total',
             'Passes Key', 'Dribbles Attempted', 'Dribbles Success', 'Minutes', 'Age',
             'Interceptions', 'Attacking Carries', 'Attacking Passes', 'Attacking Receives',
@@ -96,7 +96,7 @@ def main():
         ]
     else:
         heatmap_metrics = [
-            'Goals', 'Assists', 'Shots On', 'Shots Total',
+            'Goals', 'Assists', 'Shots On', 'Shots Total', 'Shots on/gl',
             'Fouls Drawn', 'Fouls Committed', 'Tackles Total', 'Blocks', 'Passes Total',
             'Passes Key', 'Dribbles Attempted', 'Dribbles Success', 'Minutes', 'Age',
             'Interceptions', 'Yellow Cards', 'Red Cards', 'Duels Total',
@@ -109,13 +109,21 @@ def main():
 
     # If multi-leagues chosen, filter the top X players and alter 'team name'
     if selected_league == '**All Leagues**':
-        filtered_df = filtered_df.sort_values(by=selected_heatmap_metric, ascending=False).head(num_players)
+        if selected_heatmap_metric == 'Shots on/gl':
+            # make ascending = True and filter out players with 0 shots on/gl
+            filtered_df = (filtered_df[(filtered_df[selected_heatmap_metric] != 0) & (filtered_df[selected_heatmap_metric] != 1)].sort_values(by=selected_heatmap_metric, ascending=True).head(num_players))
+        else:
+            filtered_df = filtered_df.sort_values(by=selected_heatmap_metric, ascending=False).head(num_players)
+            
         filtered_df['Player'] = filtered_df['Player'] + " (" + filtered_df['Team'] + ")"
         # Update the "Team" column to indicate multiple leagues
         filtered_df['Team'] = 'Selected Leagues'
     else:
         # Sort for single-league filtering
-        filtered_df = filtered_df.sort_values(by=selected_heatmap_metric, ascending=False)
+        if selected_heatmap_metric == 'Shots on/gl':
+            filtered_df = filtered_df.sort_values(by=selected_heatmap_metric, ascending=True)
+        else:
+            filtered_df = filtered_df.sort_values(by=selected_heatmap_metric, ascending=False)
 
     # Display results
     if filtered_df.empty:
