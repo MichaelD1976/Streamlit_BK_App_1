@@ -31,7 +31,10 @@ team_names_api_to_t1x2_dict = {
    'Salford City': 'Salford',
    'Swindon Town': 'Swindon',
     'Accrington ST': 'Accrington',
+
     'AS Roma': 'Roma',
+    'Vicenza Virtus': 'Vicenza', # 26/27
+
     'Borussia Monchengladbach': "M'gladbach",
     'VfL Bochum': 'Bochum',
     'Borussia Dortmund': 'Dortmund',
@@ -46,37 +49,49 @@ team_names_api_to_t1x2_dict = {
     'FC St. Pauli': 'St Pauli',
     '1. FC Heidenheim': 'Heidenheim',
     'Bayer Leverkusen': 'Leverkusen',   
+
     'Rayo Vallecano': 'Vallecano',
     'Real Sociedad': 'Sociedad',
     'Athletic Club': 'Ath Bilbao',
     'Atletico Madrid': 'Atl Madrid',
+
     'LE Havre': 'Le Havre',
     'Paris Saint Germain': 'Paris SG',
     'Stade Brestois 29': 'Brest',
     'Saint Etienne': 'St Etienne',   
+
     'Heart Of Midlothian': 'Hearts',
     'ST Mirren': 'St Mirren',
     'ST Johnstone': 'St Johnstone',
+
     'PEC Zwolle': 'Zwolle',
     'GO Ahead Eagles': 'Go Ahead Eagles',
     'NEC Nijmegen': 'Nijmegen',
     'Almere City FC': 'Almere City',
     'Fortuna Sittard': 'For Sittard',
+    'FC Volendam': 'Volendam',
+
     'Beerschot Wilrijk': 'Beerschot',
     'KV Mechelen': 'Mechelen',
     'Club Brugge KV': 'Club Brugge',
     'KVC Westerlo': 'Westerlo',
     'Union St. Gilloise': 'St Gilloise',
     'St. Truiden': 'St Truiden',
+    'Lommel United': 'Lommel SK',  # 26/27
+    'SK Beveren': 'Beveren',  # 26/27
+
     'FC Porto': 'Porto',
     'GIL Vicente': 'Gil Vicente',
     'SC Braga': 'Braga',
     'Sporting CP': 'Sporting',
+    'Academico Viseu': 'Academico', # 26/27
+
     'Hamburger SV': 'Hamburg',
     'FC Schalke 04': 'Schalke',
     'Fortuna Dusseldorf': 'Dusseldorf',
     '1. FC Kaiserslautern': 'Kaiserslautern',
     'Hannover 96': 'Hannover',
+
     'SV Elversberg': 'Elversberg',
     'SpVgg Greuther Furth': 'Greuther Furth',
     'SC Paderborn 07': 'Paderborn',
@@ -89,7 +104,18 @@ team_names_api_to_t1x2_dict = {
     '1.FC Koln': 'FC Koln',
     '1. FC Koln': 'FC Koln',
     'SSV Ulm 1846': 'Ulm',
-    'SV Darmstadt 98': 'Darmstadt'
+    'SV Darmstadt 98': 'Darmstadt',
+    'SSV Jahn Regensburg': 'Regensburg',
+    'Arminia Bielefeld': 'Bielefeld',
+    'Dynamo Dresden': 'Dresden',
+    'Energie Cottbus': 'Cottbus', # 26/27
+
+    'Deportivo La Coruna': 'La Coruna',
+    'FC Cartagena': 'Cartagena',
+    'Granada CF': 'Granada',
+    'Racing Ferrol': 'Ferrol',
+    'Racing Santander': 'Santander',
+    'Sporting Gijon': 'Sp Gijon'
 }
 
 team_names_t1x2_to_BK_dict = {
