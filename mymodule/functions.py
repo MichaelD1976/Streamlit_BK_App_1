@@ -320,7 +320,7 @@ def get_table(league, year):
     response = requests.get(url, headers=headers, params=querystring)
     if response.status_code != 200:
         st.error("API request failed.")
-        return pd.DataFrame()  # or handle it as needed
+        # return pd.DataFrame()  # or handle it as needed
     response_data = response.json()
 
     # Extract standings
