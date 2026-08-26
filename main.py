@@ -90,6 +90,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 26/08/26 New season - api params updated & new season outputs ready
                      - 15/07/26 ESPN API set up & Transfer News page added
                      - 06/07/26 Player Stats page - shots on per goal metric added
                      - 01/07/26 Team Stats page - stats frequency distribution plot added

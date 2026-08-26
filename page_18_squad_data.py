@@ -6,8 +6,8 @@ from st_aggrid import AgGrid, GridOptionsBuilder
 import altair as alt
 from mymodule.functions import generate_team_fst, get_injuries_by_team, get_transfers_by_team
 
-CURRENT_SEASON = '2025' # for api injuries call
-CURRENT_SEASON_FST_FORMAT = '2025-26' # for generate_fst downgrades. If not current season, use spring adjustments
+CURRENT_SEASON = '2026' # for api injuries call
+CURRENT_SEASON_FST_FORMAT = '2026-27' # for generate_fst downgrades. If not current season, use spring adjustments
 
 # Load the CSV file
 @st.cache_data
@@ -32,7 +32,7 @@ def main():
     # Sidebar for user input
     st.sidebar.title('Select Data Filters')
 
-    year_options = ['2025-26', '2024-25', '2023-24']
+    year_options = ['2026-27', '2025-26', '2024-25', '2023-24']
 
     # Define selection options
     league_options = ['England Premier',

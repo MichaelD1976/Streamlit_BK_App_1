@@ -47,8 +47,8 @@ def main():
     selected_league = st.sidebar.selectbox('Select League', options=league_options_with_all, index=league_options_with_all.index(default_league))
 
     # Year options
-    year_options = ['2025-26', '2024-25', '2023-24']
-    default_year = '2025-26'  # Default to the latest season
+    year_options = ['2026-27', '2025-26', '2024-25', '2023-24']
+    default_year = '2026-27'  # Default to the latest season
     selected_year = st.sidebar.selectbox('Select Year', options=year_options, index=year_options.index(default_year))
 
     # Filter the DataFrame by season
@@ -76,14 +76,14 @@ def main():
 
 
     # Drop players with fewer than 180 minutes played
-    filtered_df = filtered_df[filtered_df['Minutes'] > 180]
+    filtered_df = filtered_df[filtered_df['Minutes'] > 170]
     # st.write(filtered_df)
 
     # Define metrics for heatmap
     # FBREF FORBIDDING SCRAPING AS OF 10/11/25 - ADVANCED PLAYER DATA OPTIONS SUSPENDED
     # advanced_stat_leagues = ['England Premier', 'Germany Bundesliga', 'Spain La Liga', 'Italy Serie A', '**All Leagues**']
     advanced_stat_leagues = []
-    advanced_stat_seasons = ['2025-26', '2024-25']
+    advanced_stat_seasons = ['2026-27', '2025-26', '2024-25']
 
     if selected_league in advanced_stat_leagues and selected_year in advanced_stat_seasons:
         heatmap_metrics = [

@@ -11,7 +11,7 @@ from mymodule.functions import get_fixtures
 
 FROM_DATE = date.today()
 TO_DATE = date.today() + timedelta(days=7)
-API_SEASON = '2025'  
+API_SEASON = '2026'  
 
 # ------------------------------------------------------------------------------
 

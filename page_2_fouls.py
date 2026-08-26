@@ -21,8 +21,8 @@ dict_api_to_bk_league_names = {
      'Spain La Liga' : 'Spain LaLiga',
  }
 
-CURRENT_SEASON = '2025-26'
-LAST_SEASON = '2024-25'
+CURRENT_SEASON = '2026-27'
+LAST_SEASON = '2025-26'
 OVERS_BOOST = 1.03 # increase all overs expectations by this amount as a foundation. 26.5 > 27.3. Odds change outputs also dafaulted on front-end.
 TOTALS_BOOST = 1.02 # increase daily totals by this factor
 

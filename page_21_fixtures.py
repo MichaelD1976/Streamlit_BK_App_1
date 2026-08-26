@@ -61,8 +61,8 @@ def get_reversed_team_name_dict():
 # Load environment variables (API key)
 load_dotenv()
 API_KEY = os.getenv('API_KEY_FOOTBALL_API')
-CURRENT_SEASON = '2025-26' # to fetch team FST's
-API_SEASON = '2025' # current season as used by api-foot
+CURRENT_SEASON = '2026-27' # to fetch team FST's
+API_SEASON = '2026' # current season as used by api-foot
 
 # Custom CSS 
 st.markdown(

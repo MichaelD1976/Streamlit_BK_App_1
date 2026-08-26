@@ -21,8 +21,8 @@ dict_api_to_bk_league_names = {
      'Spain La Liga' : 'Spain LaLiga',
  }
 
-CURRENT_SEASON = '2025-26'
-LAST_SEASON = '2024-25'
+CURRENT_SEASON = '2026-27'
+LAST_SEASON = '2025-26'
 OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 8.5 > 8.67. Odds change outputs also dafaulted on front-end.
 TOTALS_BOOST = 1.02 # increase daily totals by this
 
@@ -61,26 +61,26 @@ game_week_decay_dict = {
 }
 
 lg_ex_h_sot_p_g_dict = {
-    'England Premier' : 3.10,
-    'Germany Bundesliga' : 3.06,
-    'France Ligue 1': 3.11,
-    'Spain La Liga': 3.16,
-    'Italy Serie A': 3.18,
+    'England Premier' : 3.05,
+    'Germany Bundesliga' : 3.00,
+    'France Ligue 1': 3.06,
+    'Spain La Liga': 3.17,
+    'Italy Serie A': 3.21,
     'South Africa Premier': 3.45
 }
 
-DEFAULT_H_SOT_P_GL = 3.18 # avg +2% (5 top leagues averaged)
+DEFAULT_H_SOT_P_GL = 3.10 # avg +2% (5 top leagues averaged)
 
 lg_ex_a_sot_p_g_dict = {
-    'England Premier' : 3.16,
-    'Germany Bundesliga' : 3.07,
-    'France Ligue 1': 3.26,
-    'Spain La Liga': 3.13,
-    'Italy Serie A': 3.11,
+    'England Premier' : 3.15,
+    'Germany Bundesliga' : 2.98,
+    'France Ligue 1': 3.23,
+    'Spain La Liga': 3.18,
+    'Italy Serie A': 3.10,
     'South Africa Premier': 3.60
 }
 
-DEFAULT_A_SOT_P_GL = 3.21 # avg +2% (5 top leagues averaged)
+DEFAULT_A_SOT_P_GL = 3.13 # avg +2% (5 top leagues averaged)
 
 
 # ------------- Load the CSV file -----------------

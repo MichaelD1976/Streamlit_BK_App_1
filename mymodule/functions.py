@@ -287,7 +287,7 @@ team_names_t1x2_to_BK_dict = {
 }
 
 
-CURRENT_SEASON_FST_FORMAT = '2025-26' # for generate_fst downgrades. If not current season, use spring adjustments
+CURRENT_SEASON_FST_FORMAT = '2026-27' # for generate_fst downgrades. If not current season, use spring adjustments
 
 
 # ---------------------------------------------------

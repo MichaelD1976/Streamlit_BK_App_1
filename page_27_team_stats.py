@@ -77,6 +77,7 @@ def main():
     }
 
     year_options = [
+                    '2026-27',
                     '2025-26',
                     '2024-25',
                     '2023-24',
@@ -112,7 +113,9 @@ def main():
         
         # Filter by year
         if year != 'ALL':
-            if year == '2025-26':
+            if year == '2026-27':
+                start_date, end_date = datetime(2026, 8, 1), datetime(2027, 7, 1)
+            elif year == '2025-26':
                 start_date, end_date = datetime(2025, 8, 1), datetime(2026, 7, 1)
             elif year == '2024-25':
                 start_date, end_date = datetime(2024, 8, 1), datetime(2025, 7, 1)
