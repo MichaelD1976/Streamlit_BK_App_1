@@ -17,7 +17,6 @@ import gc
 
 CURRENT_SEASON = '2026-27'
 LAST_SEASON = '2025-26'
-OVERS_BOOST = 1.01
 TOTALS_BOOST = 1.01
 
 
@@ -585,6 +584,8 @@ def main():
         # WIDGET
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.15, min_value=0.95, max_value=1.30, key='bias_to_apply', label_visibility = 'visible')
+        # overs boost applies a percentage increase to the modelled prediction
+        overs_boost = st.number_input('Overs boost to apply to predicted output:', step=0.01, value = 1.02, min_value=1.00, max_value=1.05, key='overs_boost')
         is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=True)
 
     with column2:
@@ -821,8 +822,8 @@ def main():
                     # ------------------------ APPLY MODELS ---------------------------------------
 
 
-                    df['HO_Exp'] = round(predict_home_offsides(df['hg_ex'], df['H_h_for'], df['A_a_ag']) * df['outlier_mult_a'], 2)
-                    df['AO_Exp'] = round(predict_away_offsides(df['ag_ex'], df['H_h_ag'], df['A_a_for']) * df['outlier_mult_h'], 2)
+                    df['HO_Exp'] = round(predict_home_offsides(df['hg_ex'], df['H_h_for'], df['A_a_ag']) * df['outlier_mult_a'] * overs_boost, 2)
+                    df['AO_Exp'] = round(predict_away_offsides(df['ag_ex'], df['H_h_ag'], df['A_a_for']) * df['outlier_mult_h'] * overs_boost, 2)
                     df['TO_Exp'] = df['HO_Exp'] + df['AO_Exp']
                     # st.write(df) 
 
@@ -1297,7 +1298,7 @@ def main():
 
         # ----------------------------
 
-        home_prediction = round(h_off_exp * extra_time_factor * is_neutral_factor_home, 2)
+        home_prediction = round(h_off_exp * extra_time_factor * is_neutral_factor_home * overs_boost, 2)
         
         with cls1:
             st.success(f'Home Prediction: {home_prediction}')
@@ -1306,7 +1307,7 @@ def main():
                 st.write('ET mult', extra_time_factor, 'Neutral mult', is_neutral_factor_home)
 
 
-        away_prediction = round(a_off_exp * extra_time_factor * is_neutral_factor_away, 2)
+        away_prediction = round(a_off_exp * extra_time_factor * is_neutral_factor_away * overs_boost, 2)
 
         with cls3:
             for i in range(11):

@@ -23,7 +23,6 @@ dict_api_to_bk_league_names = {
 
 CURRENT_SEASON = '2026-27'
 LAST_SEASON = '2025-26'
-OVERS_BOOST = 1.02 # increase all overs expectations by this amount as a foundation. 8.5 > 8.67. Odds change outputs also dafaulted on front-end.
 TOTALS_BOOST = 1.02 # increase daily totals by this
 
 sot_model_h = joblib.load('models/sot/sot_home_poisson.pkl')
@@ -596,6 +595,8 @@ def main():
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.09, min_value=1.01, max_value=1.2, key='margin_to_apply')
         # over bias initially set to 1.07 pre over only being published
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.08, min_value=1.00, max_value=1.12, key='bias_to_apply')
+        # overs boost applies a percentage increase to the modelled prediction
+        overs_boost = st.number_input('Overs boost to apply to predicted output:', step=0.01, value = 1.02, min_value=1.00, max_value=1.05, key='overs_boost')
         is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=True)
 
     with column2:
@@ -874,7 +875,7 @@ def main():
                         X_poly_input_h = poly_h.fit_transform(ml_inputs_array_h)  # Transform the input features
 
                         # Predict using the model
-                        sot_model_h_prediction_ml = sot_model_h.predict(X_poly_input_h) * OVERS_BOOST
+                        sot_model_h_prediction_ml = sot_model_h.predict(X_poly_input_h)
 
                         # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
                         df['hst_exp_ml'] = np.round(sot_model_h_prediction_ml, 2)
@@ -910,7 +911,7 @@ def main():
                             hst_dog_reduce_3
                         ]
 
-                        df['HST_Exp'] = round(df['HST_Exp_initial'] * np.select(conditions, choices, default=1.0), 2)
+                        df['HST_Exp'] = round(df['HST_Exp_initial'] * np.select(conditions, choices, default=1.0) * overs_boost, 2)
                         # --------------------------------------------------
 
                         # calculate_sot_lines_and_odds(prediction)
@@ -956,7 +957,7 @@ def main():
                         X_poly_input_a = poly_a.fit_transform(ml_inputs_array_a)  # Transform the input features
 
                         # Predict using the model
-                        sot_model_a_prediction_ml = sot_model_a.predict(X_poly_input_a) * OVERS_BOOST
+                        sot_model_a_prediction_ml = sot_model_a.predict(X_poly_input_a)
 
                         # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
                         df['ast_exp_ml'] = np.round(sot_model_a_prediction_ml, 2)
@@ -992,7 +993,7 @@ def main():
                             ast_dog_reduce_3
                         ]
 
-                        df['AST_Exp'] = round(df['AST_Exp_initial'] * np.select(conditions, choices, default=1.0), 2)
+                        df['AST_Exp'] = round(df['AST_Exp_initial'] * np.select(conditions, choices, default=1.0) * overs_boost, 2)
                         # -----------------------------------------------------
 
                         # calculate_corners_lines_and_odds(prediction)
@@ -1468,7 +1469,7 @@ def main():
 
                     # Get poisson odds and lines for each day returned for Daily SOT
                     for _, row in df_result_sot.iterrows():
-                        exp = row['TST'] * 1/OVERS_BOOST * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
+                        exp = row['TST'] * 1/overs_boost * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
                         day = row['Day']
                         main_line = np.floor(exp) + 0.5
 
@@ -1738,7 +1739,7 @@ def main():
 
         home_prediction = round(home_prediction * np.select(conditions_h, choices, default=1.0), 2)
 
-        home_prediction = round(home_prediction * extra_time_factor * is_neutral_factor_home * big_cup_factor, 2)
+        home_prediction = round(home_prediction * extra_time_factor * is_neutral_factor_home * big_cup_factor * overs_boost, 2)
         
         with cls1:
             st.success(f'Home Prediction: {home_prediction}')
@@ -1788,7 +1789,7 @@ def main():
 
         away_prediction = round(away_prediction * np.select(conditions_a, choices, default=1.0), 2)
 
-        away_prediction = round(away_prediction * extra_time_factor * is_neutral_factor_away * big_cup_factor, 2)
+        away_prediction = round(away_prediction * extra_time_factor * is_neutral_factor_away * big_cup_factor * overs_boost, 2)
 
         with cls3:
             for i in range(16):

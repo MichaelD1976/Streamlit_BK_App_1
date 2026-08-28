@@ -23,7 +23,6 @@ dict_api_to_bk_league_names = {
 
 CURRENT_SEASON = '2026-27'
 LAST_SEASON = '2025-26'
-OVERS_BOOST = 1.03 # increase all overs expectations by this amount as a foundation. 26.5 > 27.3. Odds change outputs also dafaulted on front-end.
 TOTALS_BOOST = 1.02 # increase daily totals by this factor
 
 fouls_model_h = joblib.load('models/fouls/fouls_home_neg_binom_4.pkl')
@@ -573,6 +572,8 @@ def main():
         margin_to_apply = st.number_input('Margin to apply:', step=0.01, value = 1.10, min_value=1.01, max_value=1.2, key='margin_to_apply', label_visibility = 'visible')
         # over bias set to 1.07 pre overs only being published
         bias_to_apply = st.number_input('Overs bias to apply (reduce overs & increase unders odds by a set %):', step=0.01, value = 1.15, min_value=1.00, max_value=1.30, key='bias_to_apply', label_visibility = 'visible')
+        # overs boost applies a percentage increase to the modelled prediction
+        overs_boost = st.number_input('Overs boost to apply to predicted output:', step=0.01, value = 1.03, min_value=1.00, max_value=1.06, key='overs_boost')
         is_bst = st.toggle('Set time outputs if BST(-1hr). Unselected = UTC', value=True)
 
     with column2:
@@ -899,10 +900,10 @@ def main():
                         X_poly_input = poly_array.fit_transform(ml_inputs_array)  # Transform the input features
 
                         # Predict using the HOME FOULS model
-                        fouls_model_h_prediction = fouls_model_h.predict(X_poly_input) * OVERS_BOOST
+                        fouls_model_h_prediction = fouls_model_h.predict(X_poly_input)
 
                         # Assign the predictions to the DataFrame
-                        df['HF_Exp_initial'] = np.round(fouls_model_h_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
+                        df['HF_Exp_initial'] = np.round(fouls_model_h_prediction * df['Derby_mult'] * df['Ref_mult'] * overs_boost, 2)
 
                         # ---   Fudge to handle big home fav/dog  -----------------
 
@@ -965,10 +966,10 @@ def main():
                     try:
                         # Model AWAY
                         # Predict using the model
-                        fouls_model_a_prediction = fouls_model_a.predict(X_poly_input) * OVERS_BOOST
+                        fouls_model_a_prediction = fouls_model_a.predict(X_poly_input)
 
                         # Assign the predictions to the DataFrame - ** NAME THIS HEADER '_RAW' IF NEED TO ADD OVERS BIAS **
-                        df['AF_Exp_initial'] = np.round(fouls_model_a_prediction * df['Derby_mult'] * df['Ref_mult'], 2)
+                        df['AF_Exp_initial'] = np.round(fouls_model_a_prediction * df['Derby_mult'] * df['Ref_mult'] * overs_boost, 2)
 
                         # -------- Fudge to handle big away fav/dog ------------
 
@@ -1392,7 +1393,7 @@ def main():
 
                     # Get poisson odds and lines for each day returned for Daly Goals
                     for _, row in df_result_fl.iterrows():
-                        exp = row['TF'] * 1/OVERS_BOOST * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
+                        exp = row['TF'] * 1/overs_boost * TOTALS_BOOST  # remove individual match overs_boost factor, then mult by totals boost
                         day = row['Day']
                         time = row['Time']
                         main_line = np.floor(exp) + 0.5
@@ -1594,8 +1595,8 @@ def main():
         X_poly_input = poly_array.fit_transform(ml_inputs_array_single)  # Transform the input features
 
         # Predict using the HOME FOULS model
-        fouls_model_h_prediction = fouls_model_h.predict(X_poly_input) * OVERS_BOOST
-        fouls_model_a_prediction = fouls_model_a.predict(X_poly_input) * OVERS_BOOST
+        fouls_model_h_prediction = fouls_model_h.predict(X_poly_input) * overs_boost
+        fouls_model_a_prediction = fouls_model_a.predict(X_poly_input) * overs_boost
 
         # st.write(fouls_model_h_prediction, fouls_model_a_prediction)
 
