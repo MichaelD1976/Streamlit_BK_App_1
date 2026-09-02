@@ -90,6 +90,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 02/09/26 Shots (Total) model & page added
                      - 31/08/26 'Overs boost' parameter added to model pages
                      - 26/08/26 New season - api params updated & new season outputs ready
                      - 15/07/26 ESPN API set up & Transfer News page added

@@ -558,7 +558,119 @@ def calculate_home_away_lines_and_odds(prediction, model):
             # float(prob_under_maj_2), float(prob_over_maj_2))
 
 
-# ----------------------------------------------------------------------------------------------------------------
+
+# ------------- CALCULATE MAIN & ALT LINES & ODDS (TOTAL) --------------------------
+
+# Takes home_prediction and away_prediction as args and returns lines (main, minor, major) and over/under %'s
+    # # PASS THROUGH FUNCTION
+    # total_prediction, tot_main_line, tot_minor_line, tot_major_line, tot_minor_line_2, tot_major_line_2, below_midpoint_p_main, \
+    # above_midpoint_p_main, below_midpoint_p_minor, above_midpoint_p_minor, below_midpoint_p_major, \
+    # above_midpoint_p_major, _, _, \
+    # _, _ = calculate_totals_lines_and_odds(home_prediction, away_prediction, total_metrics_df)
+
+def calculate_totals_lines_and_odds(home_prediction, away_prediction, total_metrics_df):
+    # Calculate main line & odds
+    total_prediction = round(home_prediction + away_prediction, 2)
+    tot_main_line = np.floor(total_prediction) + 0.5
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_main = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_main_line)]['Probability'].sum()
+    above_midpoint_p_main = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_main_line)]['Probability'].sum()
+
+    # Calculate minor line & odds
+    tot_minor_line = tot_main_line - 1
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_minor = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_minor_line)]['Probability'].sum()
+    above_midpoint_p_minor = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_minor_line)]['Probability'].sum()
+
+    # Calculate major line & odds
+    tot_major_line = tot_main_line + 1
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_major = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_major_line)]['Probability'].sum()
+    above_midpoint_p_major = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_major_line)]['Probability'].sum()
+
+    # Calculate minor line 2 & odds
+    tot_minor_line_2 = tot_main_line - 2
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_minor_2 = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_minor_line_2)]['Probability'].sum()
+    above_midpoint_p_minor_2 = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_minor_line_2)]['Probability'].sum()
+
+    # Calculate major line & odds
+    tot_major_line_2 = tot_main_line + 2
+    # Sum probabilities below and above this midpoint
+    below_midpoint_p_major_2 = total_metrics_df[total_metrics_df['Total Metrics'] <= np.floor(tot_major_line_2)]['Probability'].sum()
+    above_midpoint_p_major_2 = total_metrics_df[total_metrics_df['Total Metrics'] >= np.ceil(tot_major_line_2)]['Probability'].sum()
+
+
+    return (float(total_prediction), float(tot_main_line), float(tot_minor_line), float(tot_major_line), float(tot_minor_line_2), float(tot_major_line_2),\
+            float(below_midpoint_p_main), float(above_midpoint_p_main), float(below_midpoint_p_minor), float(above_midpoint_p_minor), \
+            float(below_midpoint_p_major), float(above_midpoint_p_major), \
+            float(below_midpoint_p_minor_2), float(above_midpoint_p_minor_2), \
+            float(below_midpoint_p_major_2), float(above_midpoint_p_major_2)
+    )
+
+
+# --------------------------- PROBABILITY GRID HC vs AC ---------------------------------------------------
+
+# Enter H_EXP and A_EXP to return probability_grid, total_metrics_df (df of probability of each band), home_more_prob, equal_prob, away_more_prob (for matchups), total_metric_probabilities
+# Call function
+# probability_grid, total_metrics_df, home_more_prob, equal_prob, away_more_prob, total_metric_probabilities = calculate_probability_grid_hexp_vs_aexp(home_prediction, away_prediction)
+
+def calculate_probability_grid_h_exp_vs_a_exp(home_prediction, away_prediction):
+    # Set the range for corners
+    metric_range = np.arange(0, 55)
+
+    # Initialize a DataFrame to store probabilities
+    probability_grid = pd.DataFrame(index=metric_range, columns=metric_range)
+
+    # Calculate probabilities for each combination of home and away corners
+    for home_metric in metric_range:
+        for away_metric in metric_range:
+            # Calculate Poisson probabilities
+            poisson_home_prob = poisson.pmf(home_metric, home_prediction)
+            poisson_away_prob = poisson.pmf(away_metric, away_prediction)
+
+            # Calculate Negative Binomial probabilities
+            nb_home_prob = nbinom.pmf(home_metric, home_prediction, home_prediction / (home_prediction + home_prediction))
+            nb_away_prob = nbinom.pmf(away_metric, away_prediction, away_prediction / (away_prediction + away_prediction))
+
+            # Calculate combined probability (50% from Poisson, 50% from Negative Binomial)
+            combined_home_prob = 0.1 * poisson_home_prob + 0.9 * nb_home_prob
+            combined_away_prob = 0.1 * poisson_away_prob + 0.9 * nb_away_prob
+
+            # Store the combined probabilities in the grid
+            probability_grid.loc[home_metric, away_metric] = combined_home_prob * combined_away_prob
+
+    # Normalize the probability grid to ensure it sums to 1
+    probability_sum = probability_grid.values.sum()
+    probability_grid /= probability_sum  # Normalization step
+
+    # Calculate total probabilities after grid is normalized
+    equal_prob = round(np.trace(probability_grid), 2)  # Probability where home = away
+    home_more_mask = np.array(probability_grid.index)[:, None] > np.array(probability_grid.columns)
+    away_more_mask = np.array(probability_grid.index)[:, None] < np.array(probability_grid.columns)
+
+    home_more_prob = probability_grid.values[home_more_mask].sum()
+    away_more_prob = probability_grid.values[away_more_mask].sum()
+
+    # Calculate probabilities for total metrics (e.g., home_metric + away_metric)
+    range_value = np.arange(0, 55)
+    total_metric_probabilities = np.zeros(56)  # Array for outcomes 0-30
+    for home_metric in range_value:
+        for away_metric in range_value:
+            total_metrics = home_metric + away_metric
+            if total_metrics <= 55:
+                total_metric_probabilities[total_metrics] += probability_grid.loc[home_metric, away_metric]
+
+    total_metric_probabilities /= total_metric_probabilities.sum()  # Ensure it sums to 1
+
+    # Create a DataFrame to display the total metric probabilities
+    total_metrics_df = pd.DataFrame({
+        'Total Metrics': np.arange(len(total_metric_probabilities)),
+        'Probability': total_metric_probabilities
+    })
+
+    return probability_grid, total_metrics_df, home_more_prob, equal_prob, away_more_prob, total_metric_probabilities
+    # ---------------------------------------------------------------
 
 def poisson_expectation(line, unders_prob):
     # Poisson is a discrete distribution, so we deal with integers below the line

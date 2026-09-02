@@ -799,7 +799,7 @@ def main():
                                         right_on=['Home Team', 'Away Team'], 
                                         how='left')
                     
-                    st.write('merged_df 796', merged_df)
+                    # st.write('merged_df 796', merged_df)
 
                     # Only update 'Derby_mult' if 'Mult' is not None (ie is a non local derby) 
                     df['Derby_mult'] = np.where(merged_df['Mult'].notna(), merged_df['Mult'], df['Derby_mult'])

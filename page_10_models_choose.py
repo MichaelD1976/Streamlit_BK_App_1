@@ -2,6 +2,7 @@ import streamlit as st
 
 model_options = [
     'Shots on Target',
+    'Shots Total',
     'Fouls',
     'Offsides', 
     'Corners',  
@@ -19,9 +20,9 @@ def main():
         import page_1_sot
         page_1_sot.main()
 
-    # elif selected_page == 'Shots Total':
-    #     import page21_model_shots
-    #     page21_model_shots.main()
+    elif selected_page == 'Shots Total':
+        import page_29_shots
+        page_29_shots.main()
 
     elif selected_page == 'Fouls':
         import page_2_fouls
