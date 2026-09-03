@@ -390,7 +390,7 @@ def main():
     # Multiply initial modelled predictions (home_predictions_raw) by these factors for final home_prediction (SEE project 'shots_model_aug_26') 
     # KEY: initial prediction, VALUE: factor to multiply that initial prediction
     hs_calibration_dict = {  
-        "<9": -0.02,  
+        "<9": -0.01,  
         "9-11": 0.00,  
         "11-13": 0.01,  
         "13-15": 0.01,  
@@ -403,8 +403,8 @@ def main():
         "9-11": 0.00,  
         "11-13": 0.00,  
         "13-15": 0.00,  
-        "15-17": 0.00,   
-        "17+": 0.05,  
+        "15-17": 0.01,   
+        "17+": 0.03,  
     } 
 
     def get_calibration_key(prediction, calibration_dict):
@@ -455,7 +455,6 @@ def main():
             try:
 
                 # GET FIXTURES WEEK AHEAD
-                today = datetime.now()
                 from_date_str = today.strftime("%Y-%m-%d")
                 to_date_str = up_to_date.strftime("%Y-%m-%d")
                 MARKET_IDS = ['1', '5']             # WDW & Ov/Un
@@ -474,8 +473,13 @@ def main():
                     # st.write('Fixtures returned:', len(fixt_id_list)) 
                     # st.write(df_fixts)
 
-                    load_dotenv()
-                    API_KEY = os.getenv('API_KEY_FOOTBALL_API')
+                    if not st.secrets:
+                        load_dotenv()
+                        API_KEY = os.getenv('API_KEY_FOOTBALL_API')
+
+                    else:
+                        # Use Streamlit secrets in production
+                        API_KEY = st.secrets["rapidapi"]["API_KEY_FOOTBALL_API"]
 
                     @st.cache_resource
                     def get_odds(fixture_id, market_id, bookmakers):
@@ -1043,7 +1047,7 @@ def main():
                             st.write("")            
                             
             except Exception as e:
-                st.write(f'An error has occurred whilst compiling: {e} - please inform admin@trader1x2.com')
+                st.write(f'An error has occurred whilst compiling: {e}')
 
 
 
