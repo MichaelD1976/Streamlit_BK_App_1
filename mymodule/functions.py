@@ -35,7 +35,7 @@ team_names_api_to_t1x2_dict = {
     'AS Roma': 'Roma',
     'Vicenza Virtus': 'Vicenza', # 26/27
 
-    'Borussia Monchengladbach': "M'gladbach",
+    'Borussia Monchengladbach': "Gladbach",
     'VfL Bochum': 'Bochum',
     'Borussia Dortmund': 'Dortmund',
     'Eintracht Frankfurt': 'Ein Frankfurt',
@@ -197,7 +197,7 @@ team_names_t1x2_to_BK_dict = {
     'Heidenheim': 'Heidenheim',
     'Hoffenheim': 'Hoffenheim',
     'Leverkusen': 'Bayer Leverkusen',
-    "M'gladbach": 'B. Monchengladbach',
+    "Gladbach": 'B. Monchengladbach',
     'Mainz': 'Mainz',
     'RB Leipzig': 'RB Leipzig', #same
     'St Pauli': 'St. Pauli',

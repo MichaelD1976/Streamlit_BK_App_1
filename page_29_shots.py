@@ -390,12 +390,12 @@ def main():
     # Multiply initial modelled predictions (home_predictions_raw) by these factors for final home_prediction (SEE project 'shots_model_aug_26') 
     # KEY: initial prediction, VALUE: factor to multiply that initial prediction
     hs_calibration_dict = {  
-        "<9": -0.01,  
+        "<9": 0.00,  
         "9-11": 0.00,  
-        "11-13": 0.01,  
+        "11-13": 0.00,  
         "13-15": 0.01,  
         "15-17": 0.01,   
-        "17+": 0.015,  
+        "17+": 0.02,  
     }  
 
     as_calibration_dict = {  
