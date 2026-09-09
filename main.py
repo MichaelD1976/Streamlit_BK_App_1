@@ -47,6 +47,7 @@ page_options = [
                 #  '1Up Pricing',
                 #  'HTUP Pricing',
                   'Player Stats',
+                  'Player Props',
                   'Team Stats',
                   'Squad Data',
             #      'High Draw Matches',
@@ -196,6 +197,11 @@ def main():
     elif selected_page == 'Transfer News':
         import page_28_news
         page_28_news.main() 
+
+    elif selected_page == 'Player Props':
+        import page_30_player_props
+        page_30_player_props.main() 
+
 
 
 
