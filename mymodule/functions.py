@@ -1365,7 +1365,7 @@ def get_injuries_by_team(api_id, current_season):
         return pd.DataFrame(columns=["Player Name", "Reason", "Date"])
 
     # Get the current date and calculate the date two weeks ago
-    two_weeks_ago = datetime.utcnow() - timedelta(weeks=2)
+    two_weeks_ago = datetime.now(datetime.timezone.utc) - timedelta(weeks=2)
 
     # Dictionary to store the first occurrence of each player
     injury_dict = {}
@@ -1382,10 +1382,15 @@ def get_injuries_by_team(api_id, current_season):
         if fixture_datetime >= two_weeks_ago and player_name not in injury_dict:
             injury_dict[player_name] = {"Reason": reason, "Date": fixture_datetime.date()}  # Store date as well
 
+    # Rename columns
+    df_injuries.columns = ["Player Name", "Reason", "Date"]
 
     # Convert to DataFrame
     df_injuries = pd.DataFrame.from_dict(injury_dict, orient="index").reset_index()
     df_injuries.columns = ["Player Name", "Reason", "Date"]  # Rename columns properly
+
+    # Sort alphabetically by player name 
+    df_injuries = df_injuries.sort_values( by="Player Name" ).reset_index(drop=True) 
 
     return df_injuries
 

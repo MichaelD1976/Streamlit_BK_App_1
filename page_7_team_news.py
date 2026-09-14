@@ -53,7 +53,24 @@ def get_injuries(fixture_id):
             
             injury_list.append(injury_details)
 
-    return pd.DataFrame(injury_list) if injury_list else pd.DataFrame()
+        # Return empty DataFrame if there are no injuries
+    if not injury_list:
+        return pd.DataFrame()
+
+    df_injuries = pd.DataFrame(injury_list)
+
+    # Remove duplicate players
+    df_injuries = df_injuries.drop_duplicates(
+        subset=['Player Name'],
+        keep='first'
+    )
+
+    # Sort alphabetically by player name
+    df_injuries = df_injuries.sort_values(
+        by=['Team Name', 'Player Name']
+    ).reset_index(drop=True)
+
+    return df_injuries
     
 # ------------------------------------------------------------------------
 
