@@ -4,7 +4,7 @@ import altair as alt
 # import plotly.express as px
 import time
 import gc
-import plotly.graph_objects as go
+# import plotly.graph_objects as go
 
 
 # Load the CSV file
@@ -254,7 +254,7 @@ def main():
 
         st.dataframe(
             filtered_df_squad,
-            use_container_width=True
+            width=True
         )
 
         st.write(
@@ -264,7 +264,7 @@ def main():
 
         st.dataframe(
             filtered_df_player,
-            use_container_width=True
+            width=True
         )
 
         st.write("")
@@ -364,35 +364,64 @@ def main():
         # HORIZONTAL BAR CHART
         # -----------------------------------------------------
 
-        fig = go.Figure()
-
-        fig.add_trace(
-            go.Bar(
-                x=comparison_df['Average'],
-                y=comparison_df['Category'],
-                orientation='h',
-                text=comparison_df['Average'].round(2),
-                textposition='auto',
-                marker_color=[
-                    '#1f77b4',   # Player
-                    '#ff7f0e',   # Team
-                    '#2ca02c'    # Position
-                ],
-                showlegend=False
+        chart = (
+            alt.Chart(comparison_df)
+            .mark_bar()
+            .encode(
+                x=alt.X(
+                    'Average:Q',
+                    title=f'{selected_metric} per 90'
+                ),
+                y=alt.Y(
+                    'Category:N',
+                    title='',
+                    sort=None
+                ),
+                color=alt.Color(
+                    'Category:N',
+                    scale=alt.Scale(
+                        range=[
+                            '#1f77b4',   # Player
+                            '#ff7f0e',   # Team
+                            '#2ca02c'    # Position
+                        ]
+                    ),
+                    legend=None
+                ),
+                tooltip=[
+                    alt.Tooltip('Category:N', title='Category'),
+                    alt.Tooltip('Average:Q', title='Average', format='.2f')
+                ]
+            )
+            .properties(
+                title=f'{selected_metric} per 90: Player vs Team vs Position',
+                height=300
             )
         )
 
-        fig.update_layout(
-            title=f'{selected_metric} per 90: Player vs Team vs Position',
-            xaxis_title=f'{selected_metric} per 90',
-            yaxis_title='',
-            height=300,
-            margin=dict(l=20, r=20, t=60, b=20)
+        # Add value labels
+        labels = (
+            alt.Chart(comparison_df)
+            .mark_text(
+                align='left',
+                dx=5
+            )
+            .encode(
+                x='Average:Q',
+                y=alt.Y(
+                    'Category:N',
+                    sort=None
+                ),
+                text=alt.Text(
+                    'Average:Q',
+                    format='.2f'
+                )
+            )
         )
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
+        st.altair_chart(
+            chart + labels,
+            width='stretch'
         )
 
 
@@ -484,7 +513,7 @@ def main():
         top_15_players[
             ['Player', 'Position', 'Minutes', 'Metric', 'Per 90']
         ],
-        width='stretch',
+       # width='stretch',
         hide_index=True
     )
 

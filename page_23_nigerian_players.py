@@ -149,7 +149,7 @@ def main():
     # Display heatmap and bar chart
     #st.subheader(f"Bar Charts showing {selected_team} {selected_heatmap_metric}")
     if selected_heatmap_metric in heatmap_metrics:
-        st.altair_chart(plot_heatmap(filtered_df_2, selected_heatmap_metric), use_container_width=False)
+        st.altair_chart(plot_heatmap(filtered_df_2, selected_heatmap_metric), width='stretch')
         st.write("----")
         # st.altair_chart(plot_bar_chart(filtered_df, selected_heatmap_metric))
     else:
