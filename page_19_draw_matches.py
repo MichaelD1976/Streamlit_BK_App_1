@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 import os
 
 
-CURRENT_SEASON = '2025-26'
+CURRENT_SEASON = '2026-27'
 # year_options = ['2024-25', '2023-24']
 
 # Define league options

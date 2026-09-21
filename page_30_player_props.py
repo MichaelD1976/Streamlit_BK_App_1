@@ -4,7 +4,31 @@ import altair as alt
 # import plotly.express as px
 import time
 import gc
-# import plotly.graph_objects as go
+import plotly.graph_objects as go
+from mymodule.functions import get_fixtures, calculate_expected_team_goals_from_1x2_refined
+import requests
+import joblib
+from dotenv import load_dotenv
+import os
+from scipy.stats import poisson
+
+
+API_SEASON = '2026'
+
+# Dictionary to map league names to their IDs
+leagues_dict = {
+    "England Premier": '39',
+    "Spain La Liga": '140',
+    "Germany Bundesliga": '78',
+    "Italy Serie A": '135',
+    "France Ligue 1": '61',
+    "England Championship": '40',
+    "England League One": '41', 
+    "England League Two": '42'  
+}
+
+sot_model_h = joblib.load('models/sot/sot_home_poisson.pkl')
+sot_model_a = joblib.load('models/sot/sot_away_poisson.pkl')
 
 
 # Load the CSV file
@@ -57,7 +81,9 @@ def main():
         'Germany Bundesliga',
         'Spain La Liga',
         'Italy Serie A',
-        'France Ligue 1'
+        'France Ligue 1',
+        'England League One',
+        'England League Two',
     ]
 
     selected_league = st.sidebar.selectbox(
@@ -254,7 +280,7 @@ def main():
 
         st.dataframe(
             filtered_df_squad,
-            width=True
+            use_container_width=True
         )
 
         st.write(
@@ -264,7 +290,7 @@ def main():
 
         st.dataframe(
             filtered_df_player,
-            width=True
+            use_container_width=True
         )
 
         st.write("")
@@ -364,64 +390,35 @@ def main():
         # HORIZONTAL BAR CHART
         # -----------------------------------------------------
 
-        chart = (
-            alt.Chart(comparison_df)
-            .mark_bar()
-            .encode(
-                x=alt.X(
-                    'Average:Q',
-                    title=f'{selected_metric} per 90'
-                ),
-                y=alt.Y(
-                    'Category:N',
-                    title='',
-                    sort=None
-                ),
-                color=alt.Color(
-                    'Category:N',
-                    scale=alt.Scale(
-                        range=[
-                            '#1f77b4',   # Player
-                            '#ff7f0e',   # Team
-                            '#2ca02c'    # Position
-                        ]
-                    ),
-                    legend=None
-                ),
-                tooltip=[
-                    alt.Tooltip('Category:N', title='Category'),
-                    alt.Tooltip('Average:Q', title='Average', format='.2f')
-                ]
-            )
-            .properties(
-                title=f'{selected_metric} per 90: Player vs Team vs Position',
-                height=300
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Bar(
+                x=comparison_df['Average'],
+                y=comparison_df['Category'],
+                orientation='h',
+                text=comparison_df['Average'].round(2),
+                textposition='auto',
+                marker_color=[
+                    '#1f77b4',   # Player
+                    '#ff7f0e',   # Team
+                    '#2ca02c'    # Position
+                ],
+                showlegend=False
             )
         )
 
-        # Add value labels
-        labels = (
-            alt.Chart(comparison_df)
-            .mark_text(
-                align='left',
-                dx=5
-            )
-            .encode(
-                x='Average:Q',
-                y=alt.Y(
-                    'Category:N',
-                    sort=None
-                ),
-                text=alt.Text(
-                    'Average:Q',
-                    format='.2f'
-                )
-            )
+        fig.update_layout(
+            title=f'{selected_metric} per 90: Player vs Team vs Position',
+            xaxis_title=f'{selected_metric} per 90',
+            yaxis_title='',
+            height=300,
+            margin=dict(l=20, r=20, t=60, b=20)
         )
 
-        st.altair_chart(
-            chart + labels,
-            width='stretch'
+        st.plotly_chart(
+            fig,
+            use_container_width=True
         )
 
 
@@ -513,7 +510,7 @@ def main():
         top_15_players[
             ['Player', 'Position', 'Minutes', 'Metric', 'Per 90']
         ],
-       # width='stretch',
+        use_container_width=True,
         hide_index=True
     )
 
@@ -550,7 +547,7 @@ def main():
 
         st.dataframe(
             position_averages,
-            width='stretch',
+            use_container_width=True,
             hide_index=True
         )
 
@@ -664,6 +661,8 @@ def main():
     # PLAYER EXPECTED SHARE
     # =========================================================
 
+    average_share = None # initialise
+
     if selected_player_rate is not None:
 
         rate_442 = calculate_xi_rate(
@@ -744,4 +743,371 @@ def main():
             their expected share, and the final percentage is the average of the
             two formations."""
         )
+
+    st.write('---')
     # =========================================================
+
+    st.subheader('Player Expectation for Next Fixture')
+
+
+    # Player wasn't found in player_summary
+    if average_share is None:
+
+        st.warning(
+            f"Unable to calculate an expected share for {selected_player}. "
+        )
+
+        st.stop()
+
+
+    # Player was found, but calculated share is zero/negative
+    if average_share <= 0:
+
+        st.warning(
+            'Average Share must be greater than 0.'
+        )
+
+        st.stop()
+
+    elif average_share >0.5:
+        st.warning(
+            'Average share is disproportionately high. Check data and/or manually adjust the lower Expected Team Share value'
+        )
+
+
+    average_share = st.number_input(
+        'Average Expected Player Share %:',
+        value=average_share,
+        min_value=0.0,
+        max_value=1.0,
+        step=0.01,
+    )
+
+    expected_minutes = st.number_input(
+        'Expected Minutes to Play (defaulted to 87):',
+        value=87,
+        min_value=50,
+        max_value=90,
+        step=1,
+    )
+
+    player_form_boost = st.number_input(
+        f"Is {selected_player} playing better/worse than his 'average' data might suggest? If so apply a % adjustment:",
+        value=1.0,
+        min_value=0.9,
+        max_value=1.1,
+        step=0.01,
+    )
+
+    # except:
+    #     st.error("Selected player must have an expected share of > 0")
+    #     st.stop
+
+    if st.button("Run Next Match Calculation"):
+
+        league_id = leagues_dict.get(selected_league)
+        from_date = pd.Timestamp.now().strftime('%Y-%m-%d')
+        to_date = (pd.Timestamp.now() + pd.Timedelta(days=7)).strftime('%Y-%m-%d')
+        df_fixtures = get_fixtures(league_id, from_date, to_date, API_SEASON)
+
+        # if df_fixtures empty then tell user and stop code
+        if df_fixtures.empty:
+            st.write('No upcoming fixtures available (code line:815)') 
+            st.stop()
+
+        # st.write('818', df_fixtures)
+
+        try:
+            fixture_id = int(df_fixtures[(df_fixtures['Home Team'] == selected_team) | (df_fixtures['Away Team'] == selected_team)]['Fixture ID'].values[0])
+        except:
+            st.write('Next fixture unavailable (code line:823)')
+            st.stop()
+
+        # st.write(fixture_id)
+
+
+
+        # -------------- get fixture odds'
+
+
+        def get_odds(fixture_id, market_ids, bookmakers):
+            load_dotenv()
+
+            API_KEY = os.getenv('API_KEY_FOOTBALL_API')
+
+            url = "https://api-football-v1.p.rapidapi.com/v3/odds"
+
+            headers = {
+                "X-RapidAPI-Key": API_KEY,
+                "X-RapidAPI-Host": "api-football-v1.p.rapidapi.com"
+            }
+
+            result = {
+                "Fixture_ID": fixture_id,
+                "Home": None,
+                "Draw": None,
+                "Away": None
+            }
+
+            for market_id in market_ids:
+
+                querystring = {
+                    "fixture": fixture_id,
+                    "bet": str(market_id),
+                    "timezone": "Europe/London"
+                }
+
+                response = requests.get(
+                    url,
+                    headers=headers,
+                    params=querystring
+                )
+
+                data = response.json()
+
+                # st.write(f"Market {market_id} status:", response.status_code)
+                # st.write(f"Market {market_id} response:", data)
+
+                if 'response' not in data or not data['response']:
+                    continue
+
+                fixture_data = data['response'][0]
+
+                for bookmaker_data in fixture_data.get('bookmakers', []):
+
+                    if str(bookmaker_data['id']) not in bookmakers:
+                        continue
+
+                    for bet_data in bookmaker_data.get('bets', []):
+
+                        if bet_data['id'] != int(market_id):
+                            continue
+
+                        # Market 1 - Match Winner
+                        if int(market_id) == 1:
+
+                            for value in bet_data.get('values', []):
+
+                                selection = value['value']
+                                odd = value['odd']
+
+                                if selection == 'Home':
+                                    result['Home'] = odd
+
+                                elif selection == 'Draw':
+                                    result['Draw'] = odd
+
+                                elif selection == 'Away':
+                                    result['Away'] = odd
+
+                        # Market 5 - Over/Under
+                        elif int(market_id) == 5:
+
+                            wanted_selections = {
+                                "Over 2.5",
+                                "Under 2.5",
+                                "Over 3.5",
+                                "Under 3.5"
+                            }
+
+                            for value in bet_data.get('values', []):
+
+                                selection = value['value']
+                                odd = value['odd']
+
+                                if selection == "Over 2.5":
+                                    result["Over 2.5"] = odd
+
+                                elif selection == "Under 2.5":
+                                    result["Under 2.5"] = odd
+
+                                elif selection == "Over 3.5":
+                                    result["Over 3.5"] = odd
+
+                                elif selection == "Under 3.5":
+                                    result["Under 3.5"] = odd
+
+            return pd.DataFrame([result])
+
+
+        market_ids = ['1', '5']
+        bookmaker_ids = ['4']
+
+        # Find the selected fixture
+        fixture_row = df_fixtures[
+            df_fixtures['Fixture ID'] == fixture_id
+        ].iloc[0]
+
+        odds_df = get_odds(
+            fixture_id,
+            market_ids,
+            bookmaker_ids
+        )
+
+        # st.write('947', odds_df)
+        if odds_df['Home'].values == None:
+            st.write(f'Odds for next match unavailable (code line:949)')
+            st.stop()
+
+        # Add team names from df_fixtures
+        odds_df.insert(
+            1,
+            "Home Team",
+            fixture_row["Home Team"]
+        )
+
+        odds_df.insert(
+            2,
+            "Away Team",
+            fixture_row["Away Team"]
+        )
+
+        st.caption('Next fixture:')
+
+        if odds_df.empty:
+            st.write('Next fixture odds unavailable (code line: 970)')
+            st.stop()
+        else:
+            st.write(odds_df)
+
+
+        # filter only metrics which can be used for prop pricing
+        applicable_metric_list = ['Goals', 
+                                  'Assists', 
+                                  'Shots On', 
+                                  'Shots Total', 
+                                  'Fouls Committed']
+        
+        if selected_metric not in applicable_metric_list:
+            st.warning(f'{selected_metric} currently unavailable for player prop pricing')
+            st.stop()
+
+        # ====== CALCULATE TEAM XG ===========#
+
+        home_odds = float(odds_df['Home'].values[0])
+        draw_odds = float(odds_df['Draw'].values[0])
+        away_odds = float(odds_df['Away'].values[0])
+        over_2_5_odds = float(odds_df['Over 2.5'].values[0])
+        under_2_5_odds = float(odds_df['Under 2.5'].values[0])
+
+        # ===== Calculate GOALS metric ======#
+        hxg, axg = calculate_expected_team_goals_from_1x2_refined(home_odds, draw_odds, away_odds, over_2_5_odds, under_2_5_odds)
+
+        if odds_df['Home Team'].values[0] == selected_team:
+            team_xg = hxg
+        else:
+            team_xg = axg
+
+        # ===== Calculate Assists metric ======# 
+        # no code needed - output works for assists without any changes needed
+
+     # ===== Calculate SOT metric ======#   
+        if selected_metric == 'Shots On': 
+            # using formula from 'Relationships Analysis' -- ALL LEAGUES USED
+            # y_h = 0.177x2 + 0.905x + 4.162
+            # y_a = 0.237x2 -1.029x + 4.00
+
+            sup = hxg - axg
+            sot_exp_h = round((0.177 * sup * sup) + (0.905 * sup) + 4.162, 2)
+            sot_exp_a = round((0.237 * sup * sup) - (1.029 * sup) + 4.00, 2)
+
+            if odds_df['Home Team'].values[0] == selected_team:
+                team_xg = sot_exp_h
+            else:
+                team_xg = sot_exp_a
+
+
+    # ===== Calculate Shots Total metric ======#   
+        if selected_metric == 'Shots Total': 
+            # using formula from 'Relationships Analysis' -- ALL LEAGUES USED
+
+            sup = hxg - axg
+            shots_tot_h = round((0.156 * sup * sup) + (2.368 * sup) + 12.650, 2)
+            shots_tot_a = round((0.347 * sup * sup) - (2.314 * sup) + 11.677, 2)
+
+            if odds_df['Home Team'].values[0] == selected_team:
+                team_xg = shots_tot_h
+            else:
+                team_xg = shots_tot_a
+
+
+    # ===== Calculate Fouls metric ======# 
+        if selected_metric == 'Fouls Committed': 
+            # using formula from 'Relationships Analysis'
+            # y_h = -0.281x2 - 0.111x + 12.325
+            # y_a = -0.372x2 + 0.292x + 12.719
+
+            sup = hxg - axg
+            shots_exp_h_all_leagues = round((-0.281 * sup * sup) - (0.111 * sup) + 12.325, 2)
+            shots_exp_a_all_leagues = round((-0.372 * sup * sup) + (0.292 * sup) + 12.719, 2)
+
+            if selected_league == 'England Premier':
+                fouls_exp_h = round((-0.444 * sup * sup) + (0.245 * sup) + 11.212, 2)
+                fouls_exp_a = round((-0.386 * sup * sup) + (0.780 * sup) + 11.492, 2)
+
+            elif selected_league == 'Spain':
+                fouls_exp_h = round((-0.406 * sup * sup) - (0.923 * sup) + 13.207, 2)
+                fouls_exp_a = round((-0.534 * sup * sup) + (0.616 * sup) + 12.794, 2)
+
+            elif selected_league == 'Italy':
+                fouls_exp_h = round((-0.364 * sup * sup) - (0.005 * sup) + 12.824, 2)
+                fouls_exp_a = round((-0.596 * sup * sup) + (0.300 * sup) + 13.522, 2)
+
+            elif selected_league == 'Germany':
+                fouls_exp_h = round((-0.065 * sup * sup) - (0.458 * sup) + 11.041, 2)
+                fouls_exp_a = round((-0.276 * sup * sup) + (0.631 * sup) + 11.129, 2) 
+
+            elif selected_league == 'France':
+                fouls_exp_h = round((-0.065 * sup * sup) - (0.458 * sup) + 11.041, 2)
+                fouls_exp_a = round((-0.276 * sup * sup) + (0.631 * sup) + 11.129, 2)    
+
+            else: # use 'All Leagues' formula
+                fouls_exp_h = round((-0.281 * sup * sup) - (0.111 * sup) + 12.325, 2)
+                fouls_exp_a = round((-0.372 * sup * sup) + (0.292 * sup) + 12.719, 2)
+
+
+            if odds_df['Home Team'].values[0] == selected_team:
+                team_xg = fouls_exp_h
+            else:
+                team_xg = fouls_exp_a
+
+
+    # ========  Calculate Player Expected Share =============
+        player_expected_share = team_xg * player_form_boost * (average_share /90 * expected_minutes)
+
+        st.write(f"Expected {selected_metric} for {selected_team}: {team_xg:.2f}")
+        st.write(f"Expected Share for {selected_player}: {player_expected_share:.2f}")
+
+        # Write poisson formulas given player_expected_share lambda and over 0.5, over 1.5 and over 2.5 probabilities
+        from scipy.stats import poisson
+        fudge_boost_05 = 1.01  # add an insurance % to modelled output
+        fudge_boost_15 = 1.02
+        fudge_boost_25 = 1.03
+
+        prob_over_05 =poisson.sf(0, player_expected_share * fudge_boost_05 )
+        prob_over_15 = poisson.sf(1, player_expected_share * fudge_boost_15 )
+        prob_over_25 = poisson.sf(2, player_expected_share * fudge_boost_25 )
+
+        true_odds_05 = round(1/prob_over_05, 2)
+        true_odds_15 = round(1/prob_over_15, 2)
+        true_odds_25 = round(1/prob_over_25, 2)
+
+        st.write(f'{selected_player} true odds over 0.5 {selected_metric}:', true_odds_05)
+        st.write(f'{selected_player} true odds over 1.5 {selected_metric}:', true_odds_15)
+        st.write(f'{selected_player} true odds over 2.5 {selected_metric}:', true_odds_25)
+
+   
+
+
+
+   
+    # check player injury status and if he played last match
+    # check if player played last match
+
+
+
+
+
+
+if __name__ == '__main__':
+    main()

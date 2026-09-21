@@ -48,7 +48,7 @@ leagues_dict = {
 
 reverse_dict = {v: k for k, v in leagues_dict.items()}
 
-API_SEASON = '2025'
+API_SEASON = '2026'
 df_ou = pd.read_csv('data/over_under_exp_conversion.csv')
 
 def main():

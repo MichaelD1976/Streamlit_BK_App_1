@@ -91,6 +91,7 @@ def main():
             st.write("")
             with st.expander('Updates Log'): 
                 st.write(""" 
+                     - 23/09/26 Player Props - expected values & true odds added
                      - 14/09/26 Player Props page added with % share metrics coded
                      - 02/09/26 Shots (Total) model & page added
                      - 31/08/26 'Overs boost' parameter added to model pages
