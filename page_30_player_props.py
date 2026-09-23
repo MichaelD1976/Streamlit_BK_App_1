@@ -1,10 +1,8 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-# import plotly.express as px
 import time
 import gc
-import plotly.graph_objects as go
 from mymodule.functions import get_fixtures, calculate_expected_team_goals_from_1x2_refined
 import requests
 import joblib
@@ -390,34 +388,89 @@ def main():
         # HORIZONTAL BAR CHART
         # -----------------------------------------------------
 
-        fig = go.Figure()
+        comparison_df['Type'] = [
+            'Player',
+            'Team',
+            'Position'
+        ]
 
-        fig.add_trace(
-            go.Bar(
-                x=comparison_df['Average'],
-                y=comparison_df['Category'],
-                orientation='h',
-                text=comparison_df['Average'].round(2),
-                textposition='auto',
-                marker_color=[
-                    '#1f77b4',   # Player
-                    '#ff7f0e',   # Team
-                    '#2ca02c'    # Position
-                ],
-                showlegend=False
+        bars = (
+            alt.Chart(comparison_df)
+            .mark_bar()
+            .encode(
+                x=alt.X(
+                    'Average:Q',
+                    title=f'{selected_metric} per 90'
+                ),
+                y=alt.Y(
+                    'Category:N',
+                    title='',
+                    sort=None
+                ),
+                color=alt.Color(
+                    'Type:N',
+                    scale=alt.Scale(
+                        domain=[
+                            'Player',
+                            'Team',
+                            'Position'
+                        ],
+                        range=[
+                            '#1f77b4',
+                            '#ff7f0e',
+                            '#2ca02c'
+                        ]
+                    ),
+                    legend=None
+                ),
+                tooltip=[
+                    alt.Tooltip(
+                        'Category:N',
+                        title=''
+                    ),
+                    alt.Tooltip(
+                        'Average:Q',
+                        title=f'{selected_metric} per 90',
+                        format='.2f'
+                    )
+                ]
             )
         )
 
-        fig.update_layout(
-            title=f'{selected_metric} per 90: Player vs Team vs Position',
-            xaxis_title=f'{selected_metric} per 90',
-            yaxis_title='',
-            height=300,
-            margin=dict(l=20, r=20, t=60, b=20)
+        labels = (
+            alt.Chart(comparison_df)
+            .mark_text(
+                align='left',
+                baseline='middle',
+                dx=5
+            )
+            .encode(
+                x='Average:Q',
+                y=alt.Y(
+                    'Category:N',
+                    sort=None
+                ),
+                text=alt.Text(
+                    'Average:Q',
+                    format='.2f'
+                )
+            )
         )
 
-        st.plotly_chart(
-            fig,
+        chart = (
+            (bars + labels)
+            .properties(
+                title=f'{selected_metric} per 90: '
+                      f'Player vs Team vs Position',
+                height=200
+            )
+            .configure_view(
+                strokeWidth=0
+            )
+        )
+
+        st.altair_chart(
+            chart,
             use_container_width=True
         )
 
@@ -1038,8 +1091,6 @@ def main():
             # y_a = -0.372x2 + 0.292x + 12.719
 
             sup = hxg - axg
-            shots_exp_h_all_leagues = round((-0.281 * sup * sup) - (0.111 * sup) + 12.325, 2)
-            shots_exp_a_all_leagues = round((-0.372 * sup * sup) + (0.292 * sup) + 12.719, 2)
 
             if selected_league == 'England Premier':
                 fouls_exp_h = round((-0.444 * sup * sup) + (0.245 * sup) + 11.212, 2)
@@ -1079,7 +1130,6 @@ def main():
         st.write(f"Expected Share for {selected_player}: {player_expected_share:.2f}")
 
         # Write poisson formulas given player_expected_share lambda and over 0.5, over 1.5 and over 2.5 probabilities
-        from scipy.stats import poisson
         fudge_boost_05 = 1.01  # add an insurance % to modelled output
         fudge_boost_15 = 1.02
         fudge_boost_25 = 1.03
